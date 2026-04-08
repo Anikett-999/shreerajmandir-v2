@@ -1,0 +1,39 @@
+// Firestore security rules (starter template)
+// IMPORTANT: Review and adapt to your actual role fields and collection layout.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users (public read for basic profile, write restricted)
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Branch-level data (tables, orders, kots, bills, menu)
+    match /businesses/{businessId}/branches/{branchId}/{document=**} {
+      // Read: authenticated users only (further restrictions below)
+      allow read: if request.auth != null;
+
+      // Write rules should restrict by role. Placeholder check below:
+      // Replace `roles` claim check with how you map roles in your JWT / custom claims.
+
+      allow create, update, delete: if request.auth != null
+        && (request.auth.token.role == 'admin' || request.auth.token.role == 'cashier');
+
+      // For critical operations (billing, counters) require admin/cashier
+      // Example usage (adjust paths/fields according to your schema):
+      // match /bills/{billId} { allow create: if isAdminOrCashier(); }
+    }
+
+    // Fallback: deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+
+    function isAdminOrCashier() {
+      return request.auth != null && (request.auth.token.role == 'admin' || request.auth.token.role == 'cashier');
+    }
+  }
+}

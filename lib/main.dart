@@ -1,0 +1,37 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/app_theme.dart';
+import 'firebase_options.dart';
+import 'presentation/providers/auth_provider.dart';
+import 'presentation/screens/home_screen.dart';
+import 'presentation/screens/login_screen.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const ProviderScope(child: ShreeRajmandirPOSApp()));
+}
+
+class ShreeRajmandirPOSApp extends ConsumerWidget {
+  const ShreeRajmandirPOSApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+
+    return MaterialApp(
+      title: 'Shree Rajmandir POS',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      home: authState.when(
+        data: (user) => user == null ? const LoginScreen() : const HomeScreen(),
+        loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+        error: (e, s) => Scaffold(body: Center(child: Text('❌ Auth Error: $e'))),
+      ),
+    );
+  }
+}

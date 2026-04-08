@@ -1,0 +1,36 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'kot_model.freezed.dart';
+part 'kot_model.g.dart';
+
+@freezed
+class KOTItem with _$KOTItem {
+  const factory KOTItem({
+    required String itemId,
+    required String name,
+    required String category,
+    required int qty,
+    required double price,
+    @Default('') String note,
+    @Default('placed') String status, // placed | served | rejected
+  }) = _KOTItem;
+
+  factory KOTItem.fromJson(Map<String, dynamic> json) => _$KOTItemFromJson(json);
+}
+
+@freezed
+class KOTModel with _$KOTModel {
+  const factory KOTModel({
+    required String kotId,
+    required int kotNumber,
+    required String orderId,
+    required String tableId,
+    required List<KOTItem> items,
+    @Default(0.0) double totalAmount,
+    @Default(false) bool isPrinted,
+    required String createdBy,
+    required DateTime createdAt,
+  }) = _KOTModel;
+
+  factory KOTModel.fromJson(Map<String, dynamic> json) => _$KOTModelFromJson(json);
+}

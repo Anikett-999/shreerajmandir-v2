@@ -1,0 +1,15 @@
+{
+  "menu_categories": [
+    { "categoryId": "cat_sundaes", "name": "Sundaes", "order": 1 },
+    { "categoryId": "cat_scoops", "name": "Scoops", "order": 2 }
+  ],
+  "menu_items": [
+    { "itemId": "item_vanilla", "name": "Vanilla Scoop", "categoryId": "cat_scoops", "price": 60, "isAvailable": true },
+    { "itemId": "item_choco", "name": "Chocolate Scoop", "categoryId": "cat_scoops", "price": 70, "isAvailable": true }
+  ],
+  "tables": [
+    { "tableId": "T1", "name": "Table 1", "capacity": 4, "status": "available" },
+    { "tableId": "T2", "name": "Table 2", "capacity": 4, "status": "available" }
+  ],
+  "counters": { "kotCounter": 1000 }
+}
