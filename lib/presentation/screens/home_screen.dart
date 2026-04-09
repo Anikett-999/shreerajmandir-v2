@@ -4,6 +4,8 @@ import '../../core/app_theme.dart';
 import '../../domain/models/table_model.dart';
 import '../../services/table_service.dart';
 import '../widgets/table_card.dart';
+import '../widgets/app_drawer.dart';
+
 
 import '../../services/seed_data_service.dart';
 
@@ -34,40 +36,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: Image.asset('assets/branding/splash_logo.png', height: 40),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.cloud_upload),
-            tooltip: 'Seed Initial Data',
-            onPressed: () async {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Seeding Database...')),
-              );
-              try {
-                final seedService = SeedDataService();
-                await seedService.seedMenuData();
-                await seedService.seedInitialTables();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('✅ Data Seeded Successfully!')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('❌ Error: $e')),
-                  );
-                }
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              // TODO: Implement logout
-            },
-          ),
-        ],
       ),
+      drawer: AppDrawer(),
+
       body: Column(
         children: [
           // Filters
@@ -121,12 +92,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Add new table (Admin only)
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }

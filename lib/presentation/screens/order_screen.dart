@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/app_theme.dart';
-import '../../domain/models/category.dart';
-import '../../domain/models/item.dart';
-import '../../domain/models/table_model.dart';
-import '../../domain/models/kot_model.dart';
-import '../../services/menu_service.dart';
-import '../../services/kot_service.dart';
+import 'package:shreerajmandir_pos/core/app_theme.dart';
+import 'package:shreerajmandir_pos/domain/models/category.dart';
+import 'package:shreerajmandir_pos/domain/models/item.dart';
+import 'package:shreerajmandir_pos/domain/models/table_model.dart';
+import 'package:shreerajmandir_pos/domain/models/kot_model.dart';
+import 'package:shreerajmandir_pos/services/menu_service.dart';
+import 'package:shreerajmandir_pos/services/kot_service.dart';
+import 'package:uuid/uuid.dart';
 
 // --- State Providers ---
 final menuServiceProvider = Provider((ref) => MenuService());
@@ -26,33 +27,66 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 
 // --- Cart Logic ---
 class CartItem {
+  final String cartId;
   final Item item;
-  int quantity;
-  String note;
-  CartItem({required this.item, required this.quantity, this.note = ''});
+  final int quantity;
+  final String? variant;
+  final String note;
+
+  CartItem({
+    required this.cartId,
+    required this.item,
+    required this.quantity,
+    this.variant,
+    this.note = '',
+  });
+
+  CartItem copyWith({int? quantity, String? note}) {
+    return CartItem(
+      cartId: cartId,
+      item: item,
+      quantity: quantity ?? this.quantity,
+      variant: variant,
+      note: note ?? this.note,
+    );
+  }
 }
 
 class CartNotifier extends StateNotifier<List<CartItem>> {
   CartNotifier() : super([]);
 
-  void addItem(Item item) {
-    var index = state.indexWhere((i) => i.item.itemId == item.itemId);
+  void addItem(Item item, {String? variant}) {
+    final index = state.indexWhere((i) => i.item.itemId == item.itemId && i.variant == variant);
     if (index != -1) {
-      state[index] = CartItem(item: item, quantity: state[index].quantity + 1, note: state[index].note);
-      state = [...state];
+      state = [
+        for (int i = 0; i < state.length; i++)
+          if (i == index) state[i].copyWith(quantity: state[i].quantity + 1) else state[i]
+      ];
     } else {
-      state = [...state, CartItem(item: item, quantity: 1)];
+      state = [
+        ...state,
+        CartItem(
+          cartId: const Uuid().v4(),
+          item: item,
+          quantity: 1,
+          variant: variant,
+        ),
+      ];
     }
   }
 
-  void updateQuantity(String id, int delta) {
-    state = state.map((i) {
-      if (i.item.itemId == id) {
-        int nq = i.quantity + delta;
-        return CartItem(item: i.item, quantity: nq, note: i.note);
-      }
-      return i;
-    }).where((i) => i.quantity > 0).toList();
+  void updateQuantity(String cartId, int delta) {
+    state = state
+        .map((i) => i.cartId == cartId ? i.copyWith(quantity: i.quantity + delta) : i)
+        .where((i) => i.quantity > 0)
+        .toList();
+  }
+
+  void updateNote(String cartId, String note) {
+    state = [
+      for (final i in state)
+        if (i.cartId == cartId) i.copyWith(note: note) else i
+    ];
   }
 
   void clear() => state = [];
@@ -85,24 +119,29 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
     final cart = ref.read(cartProvider);
     if (cart.isEmpty) return;
     
+    print('🛒 SEND TO KITCHEN INITIALIZED!');
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Pushing KOT to Server...')),
     );
     
     try {
+      print('🚀 Calling KOTService...');
       final kotService = KOTService();
       await kotService.createKOT(
         tableId: widget.table.tableId,
         items: cart.map((i) => KOTItem(
+          uniqueId: i.cartId,
           itemId: i.item.itemId, 
           name: i.item.name, 
           category: i.item.categoryId, 
           qty: i.quantity, 
           price: i.item.price, 
+          variant: i.variant ?? '',
           note: i.note
         )).toList(),
         userId: 'admin', // Future scope: dynamically link logged-in waiter ID
       );
+      print('✅ KOTService returned successfully!');
       
       ref.read(cartProvider.notifier).clear();
       
@@ -110,15 +149,21 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
          ScaffoldMessenger.of(context).showSnackBar(
            const SnackBar(
              content: Text('✅ KOT Successfully Sent to Kitchen!'), 
-             backgroundColor: AppTheme.brandGreen,
+             backgroundColor: AppTheme.deepGreen,
              duration: Duration(seconds: 2),
            )
          );
          Navigator.pop(context); // Automatically leave Order Screen so they can serve other tables
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+       print('❌ CRITICAL ERROR in _sendToKitchen: $e');
+       print('❌ STACK TRACE: $stackTrace');
        if(mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red));
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+             content: Text('❌ Error: $e'), 
+             backgroundColor: Colors.red,
+             duration: const Duration(seconds: 5),
+         ));
        }
     }
   }
@@ -139,7 +184,8 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
              width: isDesktop ? 300 : MediaQuery.of(context).size.width * 0.45,
              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
              child: CupertinoSearchTextField(
-               placeholder: 'Search any item...',
+               placeholder: 'Search item',
+               placeholderStyle: const TextStyle(color: Colors.black54),
                backgroundColor: isDesktop ? null : Colors.white,
                style: TextStyle(color: isDesktop ? Colors.white : Colors.black),
                onChanged: (val) => ref.read(searchQueryProvider.notifier).state = val,
@@ -208,11 +254,15 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
               elevation: 4,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: InkWell(
+                borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  ref.read(cartProvider.notifier).addItem(item);
-                  if(isMobile) {
-                     ScaffoldMessenger.of(context).clearSnackBars(); // Prevent spam stack
-                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${item.name} added!'), duration: const Duration(milliseconds: 500)));
+                  if (item.variants.isNotEmpty) {
+                    _showVariantDialog(item);
+                  } else {
+                    ref.read(cartProvider.notifier).addItem(item);
+                    if (isMobile) {
+                      _showItemAddedFeedback(item.name);
+                    }
                   }
                 },
                 child: Padding(
@@ -220,25 +270,69 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(item.name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text(item.name,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       if (catName.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text(catName.toUpperCase(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontSize: 11, letterSpacing: 0.5)),
+                        Text(catName.toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.grey, fontSize: 11, letterSpacing: 0.5)),
                       ],
                       const SizedBox(height: 8),
-                      Text('₹${item.price.toStringAsFixed(0)}', style: const TextStyle(color: AppTheme.brandGreen, fontWeight: FontWeight.bold, fontSize: 18)),
+                      Text('₹${item.price.toStringAsFixed(0)}',
+                          style: const TextStyle(color: AppTheme.deepGreen, fontWeight: FontWeight.bold, fontSize: 18)),
+                      if (item.variants.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        const Text('Has Variants', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                      ],
                     ],
                   ),
                 ),
               ),
             );
+              },
+            );
           },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, s) => Center(child: Text('Error: $e')),
         );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Center(child: Text('Error: $e')),
-    );
-  }
+      }
+
+      void _showItemAddedFeedback(String itemName) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$itemName added!'),
+            duration: const Duration(milliseconds: 500),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      void _showVariantDialog(Item item) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Select Variant for ${item.name}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: item.variants
+                  .map((v) => ListTile(
+                        title: Text(v),
+                        onTap: () {
+                          ref.read(cartProvider.notifier).addItem(item, variant: v);
+                          Navigator.pop(context);
+                          _showItemAddedFeedback('${item.name} ($v)');
+                        },
+                      ))
+                  .toList(),
+            ),
+          ),
+        );
+      }
 
   // --- MOBILE LAYOUT: PORTRAIT MODES ---
   Widget _buildMobileLayout() {
@@ -270,7 +364,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                        child: ChoiceChip(
                          label: Text(cat.name, style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
                          selected: selected,
-                         selectedColor: AppTheme.billingBlue.withOpacity(0.3),
+                         selectedColor: AppTheme.maroon.withOpacity(0.1),
                          onSelected: (val) {
                            if(val) setState(() => _selectedCategoryId = cat.categoryId);
                          },
@@ -311,7 +405,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('$totalItems Items', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                Text('₹${total.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: AppTheme.primaryRed)),
+                Text('₹${total.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: AppTheme.maroon)),
               ],
             ),
             ElevatedButton.icon(
@@ -319,7 +413,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
               icon: const Icon(Icons.shopping_cart),
               label: const Text('SEE CART'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.billingBlue, 
+                backgroundColor: AppTheme.maroon, 
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -352,7 +446,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                 children: [
                    const Text('GRAND TOTAL', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                    Consumer(builder: (c, ref, _) {
-                     return Text('₹${ref.watch(cartProvider.notifier).total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryRed));
+                      return Text('₹${ref.watch(cartProvider.notifier).total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.maroon));
                    }),
                 ],
               ),
@@ -368,7 +462,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                        _sendToKitchen();
                      },
                      style: ElevatedButton.styleFrom(
-                       backgroundColor: AppTheme.availableGreen, 
+                       backgroundColor: AppTheme.deepGreen, 
                        foregroundColor: Colors.white,
                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                      ),
@@ -413,13 +507,13 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                      },
                      child: Container(
                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
-                       color: isSelected ? AppTheme.billingBlue.withOpacity(0.1) : null,
+                        color: isSelected ? AppTheme.maroon.withOpacity(0.1) : null,
                        child: Text(
                          cat.name,
                          textAlign: TextAlign.center,
                          style: TextStyle(
                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                           color: isSelected ? AppTheme.billingBlue : null,
+                            color: isSelected ? AppTheme.maroon : null,
                          ),
                        ),
                      ),
@@ -456,7 +550,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('TOTAL', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                        Text('₹${ref.read(cartProvider.notifier).total.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 26, color: AppTheme.primaryRed)),
+                        Text('₹${ref.read(cartProvider.notifier).total.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 26, color: AppTheme.maroon)),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -465,7 +559,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                       height: 58,
                       child: ElevatedButton(
                         onPressed: ref.watch(cartProvider).isEmpty ? null : _sendToKitchen,
-                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.availableGreen, foregroundColor: Colors.white),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.deepGreen, foregroundColor: Colors.white),
                         child: const Text('SEND TO KITCHEN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
                     ),
@@ -479,39 +573,82 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
     );
   }
 
-  // --- SHARED COMPONENT: CART LIST VIEW ---
-  // Works flawlessly for both the massive Desktop Right-Panel and Mobile Bottom Sheet
   Widget _buildCartList() {
     return Consumer(
       builder: (context, ref, child) {
         final cart = ref.watch(cartProvider);
         if(cart.isEmpty) return const Center(child: Text('Add items from the menu.', style: TextStyle(color: Colors.grey, fontSize: 18)));
 
-        return ListView.builder(
+        return ListView.separated(
           itemCount: cart.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final i = cart[index];
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: ListTile(
-                title: Text(i.item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                subtitle: Text('₹${(i.item.price * i.quantity).toStringAsFixed(0)}', style: const TextStyle(color: AppTheme.brandGreen, fontSize: 15)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(i.item.name, 
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                    if (i.variant != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.maroon.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(i.variant!, 
+                          style: const TextStyle(color: AppTheme.maroon, fontSize: 12, fontWeight: FontWeight.w600)),
+                      ),
+                  ],
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('₹${(i.item.price * i.quantity).toStringAsFixed(0)}', 
+                      style: const TextStyle(color: AppTheme.deepGreen, fontSize: 15, fontWeight: FontWeight.w600)),
+                    if (i.note.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text('Note: ${i.note}', 
+                          style: const TextStyle(color: Colors.orange, fontSize: 13, fontStyle: FontStyle.italic)),
+                      ),
+                    TextButton.icon(
+                      onPressed: () => _showNoteDialog(i.cartId, i.note),
+                      icon: const Icon(Icons.edit_note, size: 20),
+                      label: Text(i.note.isEmpty ? 'Add Note' : 'Edit Note', style: const TextStyle(fontSize: 12)),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: AppTheme.maroon,
+                      ),
+                    ),
+                  ],
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                        icon: const Icon(Icons.remove_circle_outline, size: 28), 
-                        onPressed: () => ref.read(cartProvider.notifier).updateQuantity(i.item.itemId, -1)
+                        icon: const Icon(Icons.remove_circle_outline, size: 24), 
+                        onPressed: () => ref.read(cartProvider.notifier).updateQuantity(i.cartId, -1)
                     ),
                     Container(
                         alignment: Alignment.center,
                         width: 32,
-                        child: Text('${i.quantity}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))
+                        child: Text('${i.quantity}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))
                     ),
                     IconButton(
-                        icon: const Icon(Icons.add_circle, size: 28), 
-                        color: AppTheme.primaryRed, 
-                        onPressed: () => ref.read(cartProvider.notifier).updateQuantity(i.item.itemId, 1)
+                        icon: const Icon(Icons.add_circle, size: 24), 
+                        color: AppTheme.maroon, 
+                        onPressed: () => ref.read(cartProvider.notifier).updateQuantity(i.cartId, 1)
                     ),
                   ],
                 ),
@@ -520,6 +657,31 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
           },
         );
       }
+    );
+  }
+
+  void _showNoteDialog(String cartId, String currentNote) {
+    final controller = TextEditingController(text: currentNote);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Special Instructions'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: 'e.g. Less spicy, No onion'),
+          maxLines: 2,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(cartProvider.notifier).updateNote(cartId, controller.text);
+              Navigator.pop(context);
+            },
+            child: const Text('SAVE'),
+          ),
+        ],
+      ),
     );
   }
 }

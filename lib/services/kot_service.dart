@@ -4,9 +4,12 @@ import '../domain/models/order_model.dart';
 import 'package:uuid/uuid.dart';
 
 class KOTService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
   final String businessId = 'rajmandir_main';
   final String branchId = 'branch_001';
+
+  KOTService({FirebaseFirestore? firestore}) 
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
   DocumentReference get _branchRef => _firestore
       .collection('businesses')
@@ -26,12 +29,22 @@ class KOTService {
     required String userId,
   }) async {
     return await _firestore.runTransaction((transaction) async {
-      // 1. Get or Create active order for table
+      // --- READS (All reads MUST happen before any writes) ---
+      // 1. Get active order for table
       final tableSnapshot = await transaction.get(_tableCollection.doc(tableId));
       if (!tableSnapshot.exists) throw Exception('Table not found');
 
+      // 2. Get global KOT counter
+      final counterSnapshot = await transaction.get(_counterDoc);
+      
+      // --- WRITES ---
       final tableData = tableSnapshot.data() as Map<String, dynamic>;
       String? orderId = tableData['activeOrderId'];
+
+      final Map<String, dynamic> tableUpdates = {};
+
+      final kotId = const Uuid().v4();
+      final double kotTotal = items.fold(0.0, (sum, i) => sum + (i.price * i.qty));
 
       if (orderId == null) {
         final newOrderRef = _orderCollection.doc();
@@ -40,18 +53,21 @@ class KOTService {
         final newOrder = OrderModel(
           orderId: orderId,
           tableId: tableId,
+          kotIds: [kotId],
           createdAt: DateTime.now(),
         );
 
         transaction.set(newOrderRef, newOrder.toJson());
-        transaction.update(_tableCollection.doc(tableId), {
-          'activeOrderId': orderId,
-          'status': 'occupied',
+        
+        tableUpdates['activeOrderId'] = orderId;
+        tableUpdates['status'] = 'occupied';
+      } else {
+        transaction.update(_orderCollection.doc(orderId), {
+          'kotIds': FieldValue.arrayUnion([kotId]),
         });
       }
 
-      // 2. Increment global KOT counter
-      final counterSnapshot = await transaction.get(_counterDoc);
+      // Calculate KOT number
       int kotNumber = 1001;
       if (counterSnapshot.exists) {
         kotNumber = (counterSnapshot.data() as Map<String, dynamic>)['kotCounter'] + 1;
@@ -59,9 +75,6 @@ class KOTService {
       transaction.set(_counterDoc, {'kotCounter': kotNumber});
 
       // 3. Create KOT document
-      final kotId = const Uuid().v4();
-      final double kotTotal = items.fold(0.0, (sum, i) => sum + (i.price * i.qty));
-
       final kot = KOTModel(
         kotId: kotId,
         kotNumber: kotNumber,
@@ -75,22 +88,17 @@ class KOTService {
 
       transaction.set(_kotCollection.doc(kotId), kot.toJson());
 
-      // 4. Update order with new KOT ID
-      transaction.update(_orderCollection.doc(orderId), {
-        'kotIds': FieldValue.arrayUnion([kotId]),
-      });
-
-      // 5. Update Table denormalized counts/totals
+      // 4. Update Table denormalized counts/totals
       final double currentTotal = (tableData['totalAmount'] ?? 0.0) + kotTotal;
       final int currentItemCount = (tableData['itemCount'] ?? 0) + items.length;
       final int currentKotCount = (tableData['kotCount'] ?? 0) + 1;
 
-      transaction.update(_tableCollection.doc(tableId), {
-        'totalAmount': currentTotal,
-        'itemCount': currentItemCount,
-        'kotCount': currentKotCount,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      tableUpdates['totalAmount'] = currentTotal;
+      tableUpdates['itemCount'] = currentItemCount;
+      tableUpdates['kotCount'] = currentKotCount;
+      tableUpdates['updatedAt'] = FieldValue.serverTimestamp();
+
+      transaction.update(_tableCollection.doc(tableId), tableUpdates);
 
       return kot;
     });
@@ -106,6 +114,42 @@ class KOTService {
       return snapshot.docs.map((doc) {
         return KOTModel.fromJson(doc.data() as Map<String, dynamic>);
       }).toList();
+    });
+  }
+
+  // Watch all active KOTs for a branch (live KOT screen)
+  Stream<List<KOTModel>> watchLiveKOTs() {
+    return _kotCollection
+        .orderBy('createdAt', descending: true)
+        .limit(50)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return KOTModel.fromJson(doc.data() as Map<String, dynamic>);
+      }).toList();
+    });
+  }
+
+  // Update status of a specific item in a KOT
+  Future<void> updateItemStatus({
+    required String kotId,
+    required String itemUniqueId,
+    required String status,
+  }) async {
+    final kotRef = _kotCollection.doc(kotId);
+    
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(kotRef);
+      if (!snapshot.exists) throw Exception('KOT not found');
+      
+      final kotData = snapshot.data() as Map<String, dynamic>;
+      final List<dynamic> items = List.from(kotData['items']);
+      
+      final itemIndex = items.indexWhere((i) => i['uniqueId'] == itemUniqueId);
+      if (itemIndex != -1) {
+        items[itemIndex]['status'] = status;
+        transaction.update(kotRef, {'items': items});
+      }
     });
   }
 }

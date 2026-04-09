@@ -8,22 +8,26 @@ part of 'kot_model.dart';
 
 _$KOTItemImpl _$$KOTItemImplFromJson(Map<String, dynamic> json) =>
     _$KOTItemImpl(
+      uniqueId: json['uniqueId'] as String? ?? '',
       itemId: json['itemId'] as String,
       name: json['name'] as String,
       category: json['category'] as String,
       qty: (json['qty'] as num).toInt(),
       price: (json['price'] as num).toDouble(),
+      variant: json['variant'] as String? ?? '',
       note: json['note'] as String? ?? '',
       status: json['status'] as String? ?? 'placed',
     );
 
 Map<String, dynamic> _$$KOTItemImplToJson(_$KOTItemImpl instance) =>
     <String, dynamic>{
+      'uniqueId': instance.uniqueId,
       'itemId': instance.itemId,
       'name': instance.name,
       'category': instance.category,
       'qty': instance.qty,
       'price': instance.price,
+      'variant': instance.variant,
       'note': instance.note,
       'status': instance.status,
     };
@@ -49,7 +53,7 @@ Map<String, dynamic> _$$KOTModelImplToJson(_$KOTModelImpl instance) =>
       'kotNumber': instance.kotNumber,
       'orderId': instance.orderId,
       'tableId': instance.tableId,
-      'items': instance.items,
+      'items': instance.items.map((e) => e.toJson()).toList(),
       'totalAmount': instance.totalAmount,
       'isPrinted': instance.isPrinted,
       'createdBy': instance.createdBy,

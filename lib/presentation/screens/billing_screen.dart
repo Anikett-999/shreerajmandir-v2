@@ -152,7 +152,7 @@ class _BillingScreenState extends State<BillingScreen> {
                     height: 60,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _handleGenerateBill,
-                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.occupiedOrange, foregroundColor: Colors.white),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.statusOccupied, foregroundColor: Colors.white),
                       child: _isLoading 
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text('PRINT & SETTLE', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -175,7 +175,7 @@ class _BillingScreenState extends State<BillingScreen> {
         Text(value, style: TextStyle(
           fontSize: isTotal ? 32 : 20, 
           fontWeight: FontWeight.bold,
-          color: isTotal ? AppTheme.billingBlue : null,
+          color: isTotal ? AppTheme.maroon : null,
         )),
       ],
     );

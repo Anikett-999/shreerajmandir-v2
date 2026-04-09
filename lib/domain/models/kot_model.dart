@@ -6,13 +6,15 @@ part 'kot_model.g.dart';
 @freezed
 class KOTItem with _$KOTItem {
   const factory KOTItem({
+    required String uniqueId,
     required String itemId,
     required String name,
     required String category,
     required int qty,
     required double price,
+    @Default('') String variant,
     @Default('') String note,
-    @Default('placed') String status, // placed | served | rejected
+    @Default('placed') String status, // placed | served
   }) = _KOTItem;
 
   factory KOTItem.fromJson(Map<String, dynamic> json) => _$KOTItemFromJson(json);

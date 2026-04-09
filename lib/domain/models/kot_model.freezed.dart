@@ -21,11 +21,13 @@ KOTItem _$KOTItemFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$KOTItem {
+  String get uniqueId => throw _privateConstructorUsedError;
   String get itemId => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String get category => throw _privateConstructorUsedError;
   int get qty => throw _privateConstructorUsedError;
   double get price => throw _privateConstructorUsedError;
+  String get variant => throw _privateConstructorUsedError;
   String get note => throw _privateConstructorUsedError;
   String get status => throw _privateConstructorUsedError;
 
@@ -44,11 +46,13 @@ abstract class $KOTItemCopyWith<$Res> {
       _$KOTItemCopyWithImpl<$Res, KOTItem>;
   @useResult
   $Res call({
+    String uniqueId,
     String itemId,
     String name,
     String category,
     int qty,
     double price,
+    String variant,
     String note,
     String status,
   });
@@ -69,16 +73,22 @@ class _$KOTItemCopyWithImpl<$Res, $Val extends KOTItem>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? uniqueId = null,
     Object? itemId = null,
     Object? name = null,
     Object? category = null,
     Object? qty = null,
     Object? price = null,
+    Object? variant = null,
     Object? note = null,
     Object? status = null,
   }) {
     return _then(
       _value.copyWith(
+            uniqueId: null == uniqueId
+                ? _value.uniqueId
+                : uniqueId // ignore: cast_nullable_to_non_nullable
+                      as String,
             itemId: null == itemId
                 ? _value.itemId
                 : itemId // ignore: cast_nullable_to_non_nullable
@@ -99,6 +109,10 @@ class _$KOTItemCopyWithImpl<$Res, $Val extends KOTItem>
                 ? _value.price
                 : price // ignore: cast_nullable_to_non_nullable
                       as double,
+            variant: null == variant
+                ? _value.variant
+                : variant // ignore: cast_nullable_to_non_nullable
+                      as String,
             note: null == note
                 ? _value.note
                 : note // ignore: cast_nullable_to_non_nullable
@@ -122,11 +136,13 @@ abstract class _$$KOTItemImplCopyWith<$Res> implements $KOTItemCopyWith<$Res> {
   @override
   @useResult
   $Res call({
+    String uniqueId,
     String itemId,
     String name,
     String category,
     int qty,
     double price,
+    String variant,
     String note,
     String status,
   });
@@ -146,16 +162,22 @@ class __$$KOTItemImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? uniqueId = null,
     Object? itemId = null,
     Object? name = null,
     Object? category = null,
     Object? qty = null,
     Object? price = null,
+    Object? variant = null,
     Object? note = null,
     Object? status = null,
   }) {
     return _then(
       _$KOTItemImpl(
+        uniqueId: null == uniqueId
+            ? _value.uniqueId
+            : uniqueId // ignore: cast_nullable_to_non_nullable
+                  as String,
         itemId: null == itemId
             ? _value.itemId
             : itemId // ignore: cast_nullable_to_non_nullable
@@ -176,6 +198,10 @@ class __$$KOTItemImplCopyWithImpl<$Res>
             ? _value.price
             : price // ignore: cast_nullable_to_non_nullable
                   as double,
+        variant: null == variant
+            ? _value.variant
+            : variant // ignore: cast_nullable_to_non_nullable
+                  as String,
         note: null == note
             ? _value.note
             : note // ignore: cast_nullable_to_non_nullable
@@ -193,11 +219,13 @@ class __$$KOTItemImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$KOTItemImpl implements _KOTItem {
   const _$KOTItemImpl({
+    this.uniqueId = '',
     required this.itemId,
     required this.name,
     required this.category,
     required this.qty,
     required this.price,
+    this.variant = '',
     this.note = '',
     this.status = 'placed',
   });
@@ -205,6 +233,9 @@ class _$KOTItemImpl implements _KOTItem {
   factory _$KOTItemImpl.fromJson(Map<String, dynamic> json) =>
       _$$KOTItemImplFromJson(json);
 
+  @override
+  @JsonKey()
+  final String uniqueId;
   @override
   final String itemId;
   @override
@@ -217,6 +248,9 @@ class _$KOTItemImpl implements _KOTItem {
   final double price;
   @override
   @JsonKey()
+  final String variant;
+  @override
+  @JsonKey()
   final String note;
   @override
   @JsonKey()
@@ -224,7 +258,7 @@ class _$KOTItemImpl implements _KOTItem {
 
   @override
   String toString() {
-    return 'KOTItem(itemId: $itemId, name: $name, category: $category, qty: $qty, price: $price, note: $note, status: $status)';
+    return 'KOTItem(uniqueId: $uniqueId, itemId: $itemId, name: $name, category: $category, qty: $qty, price: $price, variant: $variant, note: $note, status: $status)';
   }
 
   @override
@@ -232,12 +266,15 @@ class _$KOTItemImpl implements _KOTItem {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$KOTItemImpl &&
+            (identical(other.uniqueId, uniqueId) ||
+                other.uniqueId == uniqueId) &&
             (identical(other.itemId, itemId) || other.itemId == itemId) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.category, category) ||
                 other.category == category) &&
             (identical(other.qty, qty) || other.qty == qty) &&
             (identical(other.price, price) || other.price == price) &&
+            (identical(other.variant, variant) || other.variant == variant) &&
             (identical(other.note, note) || other.note == note) &&
             (identical(other.status, status) || other.status == status));
   }
@@ -246,11 +283,13 @@ class _$KOTItemImpl implements _KOTItem {
   @override
   int get hashCode => Object.hash(
     runtimeType,
+    uniqueId,
     itemId,
     name,
     category,
     qty,
     price,
+    variant,
     note,
     status,
   );
@@ -271,17 +310,21 @@ class _$KOTItemImpl implements _KOTItem {
 
 abstract class _KOTItem implements KOTItem {
   const factory _KOTItem({
+    final String uniqueId,
     required final String itemId,
     required final String name,
     required final String category,
     required final int qty,
     required final double price,
+    final String variant,
     final String note,
     final String status,
   }) = _$KOTItemImpl;
 
   factory _KOTItem.fromJson(Map<String, dynamic> json) = _$KOTItemImpl.fromJson;
 
+  @override
+  String get uniqueId;
   @override
   String get itemId;
   @override
@@ -292,6 +335,8 @@ abstract class _KOTItem implements KOTItem {
   int get qty;
   @override
   double get price;
+  @override
+  String get variant;
   @override
   String get note;
   @override

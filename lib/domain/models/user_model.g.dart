@@ -30,5 +30,5 @@ Map<String, dynamic> _$$UserModelImplToJson(_$UserModelImpl instance) =>
       'userId': instance.userId,
       'name': instance.name,
       'email': instance.email,
-      'roles': instance.roles,
+      'roles': instance.roles.map((e) => e.toJson()).toList(),
     };

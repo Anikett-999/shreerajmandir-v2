@@ -1,4 +1,4 @@
-package com.shreerajmandir.shreerajmandir_pos
+package com.shreerajmandir.pos
 
 import io.flutter.embedding.android.FlutterActivity
 

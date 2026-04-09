@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../core/app_theme.dart';
-import '../../domain/models/table_model.dart';
-import '../../services/table_service.dart';
-import '../screens/order_screen.dart';
-import '../screens/billing_screen.dart';
+import 'package:shreerajmandir_pos/core/app_theme.dart';
+import 'package:shreerajmandir_pos/domain/models/table_model.dart';
+import 'package:shreerajmandir_pos/services/table_service.dart';
+import 'package:shreerajmandir_pos/presentation/screens/order_screen.dart';
+import 'package:shreerajmandir_pos/presentation/screens/billing_screen.dart';
 
 class TableCard extends StatelessWidget {
   final TableModel table;
@@ -13,11 +13,11 @@ class TableCard extends StatelessWidget {
   Color _getStatusColor() {
     switch (table.status.toLowerCase()) {
       case 'available':
-        return AppTheme.availableGreen;
+        return AppTheme.statusAvailable;
       case 'occupied':
-        return AppTheme.primaryRed;
+        return AppTheme.maroon;
       case 'billing':
-        return AppTheme.occupiedOrange;
+        return AppTheme.statusOccupied;
       default:
         return Colors.grey;
     }
@@ -38,17 +38,18 @@ class TableCard extends StatelessWidget {
         _showQuickActions(context);
       },
       child: Card(
-        elevation: 4,
+        elevation: 1,
+        color: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: statusColor.withOpacity(0.5), width: 2),
+          side: BorderSide.none, // Explicitly no lines
         ),
         child: Column(
           children: [
             // Status Header
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
                 color: statusColor,
                 borderRadius: const BorderRadius.only(
@@ -62,7 +63,8 @@ class TableCard extends StatelessWidget {
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontSize: 10,
+                  letterSpacing: 1.2,
                 ),
               ),
             ),
@@ -77,24 +79,27 @@ class TableCard extends StatelessWidget {
                     Text(
                       table.name,
                       style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.maroon,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     if (table.activeOrderId != null) ...[
-                      Text('Items: ${table.itemCount}'),
-                      const SizedBox(height: 4),
+                      Text('${table.itemCount} Items', 
+                        style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
                       Text(
                         '₹${table.totalAmount.toStringAsFixed(0)}',
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.billingBlue,
+                          color: AppTheme.deepGreen,
                         ),
                       ),
                     ] else
-                      Text('Capacity: ${table.capacity}'),
+                      Text('Seats: ${table.capacity}', 
+                        style: const TextStyle(color: Colors.grey)),
                   ],
                 ),
               ),
@@ -114,7 +119,7 @@ class TableCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.receipt_long, color: AppTheme.occupiedOrange),
+                leading: const Icon(Icons.receipt_long, color: AppTheme.maroon),
                 title: const Text('Generate Bill'),
                 onTap: () {
                   Navigator.pop(context);
@@ -125,7 +130,7 @@ class TableCard extends StatelessWidget {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.cleaning_services, color: AppTheme.billingBlue),
+                leading: const Icon(Icons.cleaning_services, color: AppTheme.statusOccupied),
                 title: const Text('Clear Table'),
                 onTap: () async {
                   Navigator.pop(context);
