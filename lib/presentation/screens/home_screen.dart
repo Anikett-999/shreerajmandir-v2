@@ -28,6 +28,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _selectedFilter = 'All';
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -45,26 +46,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       body: Column(
         children: [
-          // Filters
+          // Header Controls: Status Dropdown + Search
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: ['All', 'Available', 'Occupied', 'Billing'].map((filter) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ChoiceChip(
-                      label: Text(filter),
-                      selected: _selectedFilter == filter,
-                      onSelected: (selected) {
-                        if (selected) setState(() => _selectedFilter = filter);
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: Row(
+              children: [
+                // Status Filter Dropdown
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  height: 45,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedFilter,
+                      icon: const Icon(Icons.filter_list, size: 18),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) setState(() => _selectedFilter = newValue);
                       },
+                      items: ['All', 'Available', 'Occupied', 'Billing']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value, style: const TextStyle(fontSize: 14)),
+                        );
+                      }).toList(),
                     ),
-                  );
-                }).toList(),
-              ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Search Bar
+                Expanded(
+                  child: SizedBox(
+                    height: 45,
+                    child: TextField(
+                      onChanged: (value) => setState(() => _searchQuery = value),
+                      decoration: InputDecoration(
+                        hintText: 'Search table...',
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        isDense: true,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           
@@ -73,8 +105,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: tablesAsync.when(
               data: (tables) {
                 final filteredTables = tables.where((table) {
-                  if (_selectedFilter == 'All') return true;
-                  return table.status.toLowerCase() == _selectedFilter.toLowerCase();
+                  final matchesFilter = _selectedFilter == 'All' || 
+                                       table.status.toLowerCase() == _selectedFilter.toLowerCase();
+                  final matchesSearch = table.name.toLowerCase().contains(_searchQuery.toLowerCase());
+                  return matchesFilter && matchesSearch;
                 }).toList();
 
                 return GridView.builder(

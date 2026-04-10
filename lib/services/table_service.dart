@@ -16,7 +16,7 @@ class TableService {
   // Stream of all tables for the current branch
   Stream<List<TableModel>> watchTables() {
     return _tableCollection.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
+      final tables = snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         // Fix: Convert Firestore Timestamp to ISO string for Freezed DateTime parsing
         if (data['updatedAt'] is Timestamp) {
@@ -24,6 +24,19 @@ class TableService {
         }
         return TableModel.fromJson(data);
       }).toList();
+
+      // Implement natural sorting (1, 2, 3... instead of 1, 10, 2)
+      tables.sort((a, b) {
+        final aNum = int.tryParse(RegExp(r'\d+').stringMatch(a.name) ?? '');
+        final bNum = int.tryParse(RegExp(r'\d+').stringMatch(b.name) ?? '');
+        
+        if (aNum != null && bNum != null) {
+          if (aNum != bNum) return aNum.compareTo(bNum);
+        }
+        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      });
+
+      return tables;
     });
   }
 

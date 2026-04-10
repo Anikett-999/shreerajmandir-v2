@@ -137,7 +137,7 @@ class KOTService {
   Stream<List<KOTModel>> watchKOTsByOrder(String orderId) {
     return _kotCollection
         .where('orderId', isEqualTo: orderId)
-        .orderBy('createdAt', descending: true)
+        // .orderBy('createdAt', descending: true) // Using client-side sort as failsafe
         .snapshots()
         .map((snapshot) {
       final List<KOTModel> kots = [];
@@ -148,6 +148,8 @@ class KOTService {
           print('❌ Skipping corrupted KOT ${doc.id}: $e');
         }
       }
+      // Client-side sort by createdAt descending
+      kots.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return kots;
     });
   }

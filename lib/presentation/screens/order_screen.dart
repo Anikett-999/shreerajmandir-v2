@@ -11,6 +11,7 @@ import 'package:shreerajmandir_pos/services/kot_service.dart';
 import 'package:shreerajmandir_pos/services/print_service.dart';
 import 'package:shreerajmandir_pos/presentation/providers/auth_provider.dart';
 import 'package:shreerajmandir_pos/presentation/providers/printer_provider.dart';
+import 'package:shreerajmandir_pos/presentation/widgets/global/profile_menu.dart';
 import 'package:uuid/uuid.dart';
 
 // --- State Providers ---
@@ -101,7 +102,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   double get total => state.fold(0, (sum, i) => sum + (i.item.price * i.quantity));
 }
 
-final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) => CartNotifier());
+final cartProvider = StateNotifierProvider.family<CartNotifier, List<CartItem>, String>((ref, tableId) => CartNotifier());
 
 // --- Core Screen ---
 class OrderScreen extends ConsumerStatefulWidget {
@@ -123,7 +124,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
   }
 
   Future<void> _sendToKitchen() async {
-    final cart = ref.read(cartProvider);
+    final cart = ref.read(cartProvider(widget.table.tableId));
     if (cart.isEmpty) return;
 
     final kotService = ref.read(kotServiceProvider);
@@ -208,7 +209,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
         }
       }
 
-      ref.read(cartProvider.notifier).clear();
+      ref.read(cartProvider(widget.table.tableId).notifier).clear();
 
       if (mounted) {
         final message = config.autoPrintKOT 
@@ -231,29 +232,67 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
     }
   }
 
+  void _handleBack(BuildContext context, WidgetRef ref) {
+    Navigator.maybePop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     // Determine screen layout boundaries (900px is the crossover point)
     final isDesktop = MediaQuery.of(context).size.width > 900;
     final tableName = widget.table.name.replaceAll('Table ', '');
 
-    return Scaffold(
+    final cart = ref.watch(cartProvider(widget.table.tableId));
+
+    return PopScope(
+      canPop: cart.isEmpty,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldDiscard = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Discard Cart?'),
+            content: const Text('You have items in your cart. Leaving this screen will keep them saved for this table, but you won\'t be able to see them from the dashboard. Do you want to go back?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Stay')),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('Go Back', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              ),
+            ],
+          ),
+        );
+        if (shouldDiscard == true && context.mounted) {
+          ref.read(cartProvider(widget.table.tableId).notifier).clear();
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
-        title: Text('Table $tableName'),
-        centerTitle: false,
+        title: Text('Table $tableName', 
+          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.maroon),
+          onPressed: () => _handleBack(context, ref),
+        ),
         actions: [
-           // Universal Global Search Input across all modes
-           Container(
-             width: isDesktop ? 300 : MediaQuery.of(context).size.width * 0.45,
-             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-             child: CupertinoSearchTextField(
-               placeholder: 'Search item',
-               placeholderStyle: const TextStyle(color: Colors.black54),
-               backgroundColor: isDesktop ? null : Colors.white,
-               style: TextStyle(color: isDesktop ? Colors.white : Colors.black),
-               onChanged: (val) => ref.read(searchQueryProvider.notifier).state = val,
-             ),
-           ),
+          // Search Input
+          Container(
+            width: isDesktop ? 300 : MediaQuery.of(context).size.width * 0.35,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: CupertinoSearchTextField(
+              placeholder: 'Search',
+              onChanged: (val) => ref.read(searchQueryProvider.notifier).state = val,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.history, color: AppTheme.maroon),
+            tooltip: 'View Sent Items',
+            onPressed: () => _showOrderHistory(context),
+          ),
+          const ProfileAppBarActions(),
         ],
       ),
       body: LayoutBuilder(
@@ -267,7 +306,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
       ),
       // Only attach Bottom App Bar for Mobile instances
       bottomNavigationBar: isDesktop ? null : _buildMobileCartBottomBar(),
-    );
+    ),);
   }
 
   // --- COMPONENT: SHARED ITEM GRID ---
@@ -322,7 +361,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                   if (item.variants.isNotEmpty) {
                     _showVariantDialog(item, catName);
                   } else {
-                    ref.read(cartProvider.notifier).addItem(item, catName);
+                    ref.read(cartProvider(widget.table.tableId).notifier).addItem(item, catName);
                     if (isMobile) {
                       _showItemAddedFeedback(item.name);
                     }
@@ -386,7 +425,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                   .map((v) => ListTile(
                         title: Text(v),
                         onTap: () {
-                          ref.read(cartProvider.notifier).addItem(item, catName, variant: v);
+                          ref.read(cartProvider(widget.table.tableId).notifier).addItem(item, catName, variant: v);
                           Navigator.pop(context);
                           _showItemAddedFeedback('${item.name} ($v)');
                         },
@@ -396,6 +435,144 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
           ),
         );
       }
+
+  void _showOrderHistory(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.4,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: AppTheme.cream,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'ACTIVE KOTs',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.maroon,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppTheme.maroon),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: widget.table.activeOrderId == null
+                    ? const Center(
+                        child: Text(
+                          'No active order for this table',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                    : StreamBuilder<List<KOTModel>>(
+                        stream: ref.read(kotServiceProvider).watchKOTsByOrder(widget.table.activeOrderId!),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator(color: AppTheme.maroon));
+                          }
+                          if (snapshot.hasError) {
+                            return Center(child: Text('Error: ${snapshot.error}'));
+                          }
+                          final kots = snapshot.data ?? [];
+                          if (kots.isEmpty) {
+                            return const Center(child: Text('No KOTs found'));
+                          }
+
+                          return ListView.builder(
+                            controller: scrollController,
+                            padding: const EdgeInsets.all(16),
+                            itemCount: kots.length,
+                            itemBuilder: (context, index) {
+                              final kot = kots[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                elevation: 0,
+                                color: Colors.white,
+                                child: Theme(
+                                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                                  child: ExpansionTile(
+                                    title: Text(
+                                      'KOT #${kot.kotNumber}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon),
+                                    ),
+                                    subtitle: Text(
+                                      'Time: ${kot.createdAt.hour}:${kot.createdAt.minute.toString().padLeft(2, '0')} | Total: ₹${kot.totalAmount.toStringAsFixed(0)}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Column(
+                                          children: kot.items.map((item) {
+                                            return Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 4),
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    '${item.qty}x ',
+                                                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon),
+                                                  ),
+                                                  Expanded(
+                                                    child: Text(
+                                                      '${item.name}${item.variant.isNotEmpty ? " (${item.variant})" : ""}',
+                                                      style: const TextStyle(fontSize: 14),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    '₹${(item.price * item.qty).toStringAsFixed(0)}',
+                                                    style: const TextStyle(fontWeight: FontWeight.w500),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   // --- MOBILE LAYOUT: PORTRAIT MODES ---
   Widget _buildMobileLayout() {
@@ -446,8 +623,8 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
   }
 
   Widget _buildMobileCartBottomBar() {
-    final cart = ref.watch(cartProvider);
-    final total = ref.read(cartProvider.notifier).total;
+    final cart = ref.watch(cartProvider(widget.table.tableId));
+    final total = ref.read(cartProvider(widget.table.tableId).notifier).total;
     if (cart.isEmpty) return const SizedBox.shrink();
 
     int totalItems = cart.fold(0, (sum, i) => sum + i.quantity);
@@ -509,7 +686,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                 children: [
                    const Text('GRAND TOTAL', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                    Consumer(builder: (c, ref, _) {
-                      return Text('₹${ref.watch(cartProvider.notifier).total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.maroon));
+                      return Text('₹${ref.read(cartProvider(widget.table.tableId).notifier).total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.maroon));
                    }),
                 ],
               ),
@@ -518,7 +695,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                 width: double.infinity,
                 height: 60,
                 child: Consumer(builder: (c, ref, _) {
-                   final cart = ref.watch(cartProvider);
+                   final cart = ref.watch(cartProvider(widget.table.tableId));
                    return ElevatedButton(
                      onPressed: cart.isEmpty ? null : () {
                        Navigator.pop(ctx);
@@ -613,7 +790,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('TOTAL', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                        Text('₹${ref.read(cartProvider.notifier).total.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 26, color: AppTheme.maroon)),
+                        Text('₹${ref.read(cartProvider(widget.table.tableId).notifier).total.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 26, color: AppTheme.maroon)),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -621,7 +798,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                       width: double.infinity,
                       height: 58,
                       child: ElevatedButton(
-                        onPressed: ref.watch(cartProvider).isEmpty ? null : _sendToKitchen,
+                        onPressed: ref.watch(cartProvider(widget.table.tableId)).isEmpty ? null : _sendToKitchen,
                         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.deepGreen, foregroundColor: Colors.white),
                         child: const Text('SEND TO KITCHEN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
@@ -639,7 +816,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
   Widget _buildCartList() {
     return Consumer(
       builder: (context, ref, child) {
-        final cart = ref.watch(cartProvider);
+        final cart = ref.watch(cartProvider(widget.table.tableId));
         if(cart.isEmpty) return const Center(child: Text('Add items from the menu.', style: TextStyle(color: Colors.grey, fontSize: 18)));
 
         return ListView.separated(
@@ -719,7 +896,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                   children: [
                     IconButton(
                         icon: const Icon(Icons.remove_circle_outline, size: 24), 
-                        onPressed: () => ref.read(cartProvider.notifier).updateQuantity(i.cartId, -1)
+                        onPressed: () => ref.read(cartProvider(widget.table.tableId).notifier).updateQuantity(i.cartId, -1)
                     ),
                     Container(
                         alignment: Alignment.center,
@@ -729,7 +906,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                     IconButton(
                         icon: const Icon(Icons.add_circle, size: 24), 
                         color: AppTheme.maroon, 
-                        onPressed: () => ref.read(cartProvider.notifier).updateQuantity(i.cartId, 1)
+                        onPressed: () => ref.read(cartProvider(widget.table.tableId).notifier).updateQuantity(i.cartId, 1)
                     ),
                   ],
                 ),
@@ -756,7 +933,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
           ElevatedButton(
             onPressed: () {
-              ref.read(cartProvider.notifier).updateNote(cartId, controller.text);
+              ref.read(cartProvider(widget.table.tableId).notifier).updateNote(cartId, controller.text);
               Navigator.pop(context);
             },
             child: const Text('SAVE'),
