@@ -1,3 +1,7 @@
+/// PROTECTED MODULE: WAITER
+/// DO NOT MODIFY this file for Admin feature development.
+/// Contact system architect before changing core waiter workflows.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +16,7 @@ import 'package:shreerajmandir_pos/services/print_service.dart';
 import 'package:shreerajmandir_pos/presentation/providers/auth_provider.dart';
 import 'package:shreerajmandir_pos/presentation/providers/printer_provider.dart';
 import 'package:shreerajmandir_pos/presentation/widgets/global/profile_menu.dart';
+import 'package:shreerajmandir_pos/presentation/widgets/global/base_widgets.dart'; // Added for LoadingIndicator
 import 'package:uuid/uuid.dart';
 
 // --- State Providers ---
@@ -115,6 +120,8 @@ class OrderScreen extends ConsumerStatefulWidget {
 
 class _OrderScreenState extends ConsumerState<OrderScreen> {
   String? _selectedCategoryId;
+  bool _isProcessing = false;
+  String _processingStatus = "";
 
   @override
   void initState() {
@@ -125,7 +132,12 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
 
   Future<void> _sendToKitchen() async {
     final cart = ref.read(cartProvider(widget.table.tableId));
-    if (cart.isEmpty) return;
+    if (cart.isEmpty || _isProcessing) return;
+
+    setState(() {
+      _isProcessing = true;
+      _processingStatus = "Initializing KOT...";
+    });
 
     final kotService = ref.read(kotServiceProvider);
     final authUser = ref.read(authStateProvider).value;
@@ -139,6 +151,10 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
     final categories = ref.read(categoriesProvider).value ?? [];
 
     try {
+      setState(() {
+        _processingStatus = "Registering order in system...";
+      });
+
       final kot = await kotService.createKOT(
         tableId: widget.table.tableId,
         tableName: widget.table.name,
@@ -160,15 +176,20 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
         userName: userName,
       );
 
+      final printService = ref.read(printServiceProvider);
       final config = ref.read(printerConfigProvider);
+
       bool printSuccess = true;
-      String? printError;
+      String printError = '';
 
       if (config.autoPrintKOT) {
+        setState(() {
+          _processingStatus = "Sending to printer...";
+        });
         try {
-          final printService = ref.read(printServiceProvider);
           final bytes = await printService.generateKOTBytes(kot, config.paperSize);
           await printService.printReceipt(bytes, config);
+          printSuccess = true;
         } catch (e) {
           printSuccess = false;
           printError = e.toString();
@@ -176,6 +197,10 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
       }
 
       if (!printSuccess && mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+
         final proceed = await showDialog<bool>(
           context: context,
           barrierDismissible: false,
@@ -191,12 +216,14 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                 'KOT was saved to system, but printing failed.\n\nError: $printError\n\nDo you want to retry printing or finish order?'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () => Navigator.pop(context, false), // RETRY
                 child: const Text('RETRY PRINT'),
               ),
               ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.maroon, foregroundColor: Colors.white),
+                onPressed: () => Navigator.pop(context, true), // FINISH
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.maroon,
+                    foregroundColor: Colors.white),
                 child: const Text('FINISH ANYWAY'),
               ),
             ],
@@ -204,12 +231,32 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
         );
 
         if (proceed != true) {
-          // If they chose retry (returned false), we trigger printing loop again
-          return _sendToKitchen();
+          setState(() {
+            _isProcessing = true;
+            _processingStatus = "Retrying print...";
+          });
+
+          try {
+            final bytes = await printService.generateKOTBytes(kot, config.paperSize);
+            await printService.printReceipt(bytes, config);
+          } catch (e) {
+            setState(() {
+              _isProcessing = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Print failed again: $e'),
+              backgroundColor: Colors.red,
+            ));
+            return;
+          }
         }
       }
 
       ref.read(cartProvider(widget.table.tableId).notifier).clear();
+
+      setState(() {
+        _isProcessing = false;
+      });
 
       if (mounted) {
         final message = config.autoPrintKOT 
@@ -223,6 +270,9 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
+      setState(() {
+        _isProcessing = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('❌ Error: $e'),
@@ -244,69 +294,88 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
 
     final cart = ref.watch(cartProvider(widget.table.tableId));
 
-    return PopScope(
-      canPop: cart.isEmpty,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        final shouldDiscard = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Discard Cart?'),
-            content: const Text('You have items in your cart. Leaving this screen will keep them saved for this table, but you won\'t be able to see them from the dashboard. Do you want to go back?'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Stay')),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('Go Back', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+    return Stack(
+      children: [
+        PopScope(
+          canPop: cart.isEmpty && !_isProcessing,
+          onPopInvokedWithResult: (didPop, result) async {
+            if (didPop) return;
+            final shouldDiscard = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Discard Cart?'),
+                content: const Text(
+                    'You have items in your cart. Leaving this screen will keep them saved for this table. Do you want to go back?'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Stay')),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text('Go Back',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  ),
+                ],
               ),
-            ],
+            );
+            if (shouldDiscard == true && context.mounted) {
+              ref.read(cartProvider(widget.table.tableId).notifier).clear();
+              Navigator.of(context).pop();
+            }
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text('Table $tableName',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: AppTheme.maroon)),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: AppTheme.maroon),
+                onPressed: () => _handleBack(context, ref),
+              ),
+              actions: [
+                // Search Input
+                Container(
+                  width: isDesktop ? 300 : MediaQuery.of(context).size.width * 0.35,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: CupertinoSearchTextField(
+                    placeholder: 'Search',
+                    onChanged: (val) =>
+                        ref.read(searchQueryProvider.notifier).state = val,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.history, color: AppTheme.maroon),
+                  tooltip: 'View Sent Items',
+                  onPressed: () => _showOrderHistory(context),
+                ),
+                const ProfileMenu(),
+              ],
+            ),
+            body: LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 900) {
+                  return _buildDesktopLayout();
+                } else {
+                  return _buildMobileLayout();
+                }
+              },
+            ),
+            bottomNavigationBar: isDesktop ? null : _buildMobileCartBottomBar(),
           ),
-        );
-        if (shouldDiscard == true && context.mounted) {
-          ref.read(cartProvider(widget.table.tableId).notifier).clear();
-          Navigator.of(context).pop();
-        }
-      },
-      child: Scaffold(
-      appBar: AppBar(
-        title: Text('Table $tableName', 
-          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.maroon),
-          onPressed: () => _handleBack(context, ref),
         ),
-        actions: [
-          // Search Input
-          Container(
-            width: isDesktop ? 300 : MediaQuery.of(context).size.width * 0.35,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: CupertinoSearchTextField(
-              placeholder: 'Search',
-              onChanged: (val) => ref.read(searchQueryProvider.notifier).state = val,
+        if (_isProcessing)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.5),
+              child: Center(
+                child: LoadingIndicator(message: _processingStatus),
+              ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.history, color: AppTheme.maroon),
-            tooltip: 'View Sent Items',
-            onPressed: () => _showOrderHistory(context),
-          ),
-          const ProfileAppBarActions(),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth > 900) {
-            return _buildDesktopLayout();
-          } else {
-            return _buildMobileLayout();
-          }
-        },
-      ),
-      // Only attach Bottom App Bar for Mobile instances
-      bottomNavigationBar: isDesktop ? null : _buildMobileCartBottomBar(),
-    ),);
+      ],
+    );
   }
 
   // --- COMPONENT: SHARED ITEM GRID ---

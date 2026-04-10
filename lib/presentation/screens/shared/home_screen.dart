@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/app_theme.dart';
-import '../../domain/models/table_model.dart';
-import '../../services/table_service.dart';
-import '../widgets/table_card.dart';
-import '../widgets/app_drawer.dart';
-import '../widgets/global/profile_menu.dart';
+import '../../../core/app_theme.dart';
+import '../../../domain/models/table_model.dart';
+import '../../../services/table_service.dart';
+import '../../widgets/table_card.dart';
+import '../../widgets/app_drawer.dart';
+import '../../widgets/global/profile_menu.dart';
 
 
-import '../../services/seed_data_service.dart';
+import '../../../services/seed_data_service.dart';
 
 // Provider for TableService
 final tableServiceProvider = Provider((ref) => TableService());
@@ -39,7 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: Image.asset('assets/branding/splash_logo.png', height: 40),
         centerTitle: true,
         actions: const [
-          ProfileAppBarActions(),
+          const ProfileMenu(),
         ],
       ),
       drawer: AppDrawer(),

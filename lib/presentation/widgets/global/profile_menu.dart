@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
-import '../../screens/global/profile_screen.dart';
-import '../../screens/global/settings_screen.dart';
+import '../../screens/shared/profile_screen.dart';
+import '../../screens/shared/settings_screen.dart';
 import '../../../core/app_theme.dart';
 import '../../../services/auth_service.dart';
 
 
-class ProfileAppBarActions extends ConsumerWidget {
-  const ProfileAppBarActions({super.key});
+class ProfileMenu extends ConsumerWidget {
+  const ProfileMenu({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

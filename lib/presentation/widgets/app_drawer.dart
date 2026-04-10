@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../../core/app_theme.dart';
-import '../screens/home_screen.dart';
-import '../screens/global/profile_screen.dart';
-import '../screens/global/settings_screen.dart';
-import '../screens/global/printer_settings_screen.dart';
-import '../screens/global/kot_screen.dart';
+import '../screens/shared/home_screen.dart';
+import '../screens/shared/profile_screen.dart';
+import '../screens/shared/settings_screen.dart';
+import '../screens/shared/printer_settings_screen.dart';
+import '../screens/shared/kot_screen.dart';
+import '../screens/admin/admin_dashboard_screen.dart';
 import './global/confirmation_dialog.dart';
 import '../providers/branch_provider.dart';
 
@@ -71,6 +72,18 @@ class AppDrawer extends ConsumerWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const KOTScreen()),
+              );
+            },
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.admin_panel_settings, color: AppTheme.maroon),
+            title: const Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
               );
             },
           ),

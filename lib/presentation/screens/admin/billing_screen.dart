@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/app_theme.dart';
-import '../../domain/models/bill_model.dart';
-import '../../domain/models/table_model.dart';
-import '../../services/billing_service.dart';
-import '../../services/print_service.dart';
-import '../providers/printer_provider.dart';
-import '../providers/auth_provider.dart';
+import '../../../core/app_theme.dart';
+import '../../../domain/models/bill_model.dart';
+import '../../../domain/models/table_model.dart';
+import '../../../services/billing_service.dart';
+import '../../../services/print_service.dart';
+import '../../providers/printer_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
   final TableModel table;

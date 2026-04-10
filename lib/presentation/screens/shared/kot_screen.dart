@@ -29,7 +29,7 @@ class KOTScreen extends ConsumerWidget {
         elevation: 0,
         foregroundColor: AppTheme.maroon,
         actions: [
-          ProfileAppBarActions(),
+          const ProfileMenu(),
         ],
       ),
       body: liveKOTs.when(
