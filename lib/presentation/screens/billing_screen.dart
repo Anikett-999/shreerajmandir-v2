@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../domain/models/bill_model.dart';
 import '../../domain/models/table_model.dart';
 import '../../services/billing_service.dart';
 import '../../services/print_service.dart';
+import '../providers/printer_provider.dart';
+import '../providers/auth_provider.dart';
 
-class BillingScreen extends StatefulWidget {
+class BillingScreen extends ConsumerStatefulWidget {
   final TableModel table;
   const BillingScreen({super.key, required this.table});
 
   @override
-  State<BillingScreen> createState() => _BillingScreenState();
+  ConsumerState<BillingScreen> createState() => _BillingScreenState();
 }
 
-class _BillingScreenState extends State<BillingScreen> {
+class _BillingScreenState extends ConsumerState<BillingScreen> {
   final _discountController = TextEditingController(text: '0');
   final _extraChargesController = TextEditingController(text: '0');
   String _selectedPaymentMode = 'Cash';
@@ -25,6 +28,13 @@ class _BillingScreenState extends State<BillingScreen> {
   void initState() {
     super.initState();
     _loadPreview();
+  }
+
+  @override
+  void dispose() {
+    _discountController.dispose();
+    _extraChargesController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPreview() async {
@@ -45,20 +55,34 @@ class _BillingScreenState extends State<BillingScreen> {
     setState(() => _isLoading = true);
     try {
       final billingService = BillingService();
-      final printService = PrintService();
+      final config = ref.read(printerConfigProvider);
+      final printService = ref.read(printServiceProvider);
+      final currentUser = ref.read(authServiceProvider).currentUser;
+      final cleanUserName = currentUser?.displayName ?? currentUser?.email?.split('@')[0] ?? 'Admin';
 
       final bill = await billingService.generateBill(
         orderId: widget.table.activeOrderId!,
         tableId: widget.table.tableId,
+        tableName: widget.table.name,
+        userName: cleanUserName,
         discountPercent: double.tryParse(_discountController.text) ?? 0,
         extraCharges: double.tryParse(_extraChargesController.text) ?? 0,
         payments: [Payment(mode: _selectedPaymentMode, amount: _total)],
-        userId: 'admin', // TODO: Get from auth
+        userId: currentUser?.uid ?? 'admin',
       );
 
-      // Print Bill
-      final bytes = await printService.generateBillBytes(bill);
-      await printService.sendToRawBT(bytes);
+      // Print Bill Integration
+      try {
+        final bytes = await printService.generateBillBytes(bill, config.paperSize);
+        await printService.printReceipt(bytes, config);
+      } catch (printErr) {
+        print('⚠️ Bill printing failed: $printErr');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Bill saved but printing failed: $printErr')),
+          );
+        }
+      }
 
       // Finalize and Clear
       await billingService.finalizeAndClearTable(widget.table.tableId, widget.table.activeOrderId!);
@@ -68,9 +92,13 @@ class _BillingScreenState extends State<BillingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Bill Generated & Table Cleared!')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e')));
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

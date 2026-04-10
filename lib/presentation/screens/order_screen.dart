@@ -8,10 +8,14 @@ import 'package:shreerajmandir_pos/domain/models/table_model.dart';
 import 'package:shreerajmandir_pos/domain/models/kot_model.dart';
 import 'package:shreerajmandir_pos/services/menu_service.dart';
 import 'package:shreerajmandir_pos/services/kot_service.dart';
+import 'package:shreerajmandir_pos/services/print_service.dart';
+import 'package:shreerajmandir_pos/presentation/providers/auth_provider.dart';
+import 'package:shreerajmandir_pos/presentation/providers/printer_provider.dart';
 import 'package:uuid/uuid.dart';
 
 // --- State Providers ---
 final menuServiceProvider = Provider((ref) => MenuService());
+final kotServiceProvider = Provider((ref) => KOTService());
 
 final categoriesProvider = StreamProvider<List<Category>>((ref) {
   return ref.watch(menuServiceProvider).watchCategories();
@@ -25,10 +29,10 @@ final allItemsProvider = StreamProvider<List<Item>>((ref) {
 // Holds the current Search Text state globally for the UI
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
-// --- Cart Logic ---
 class CartItem {
   final String cartId;
   final Item item;
+  final String categoryName;
   final int quantity;
   final String? variant;
   final String note;
@@ -36,6 +40,7 @@ class CartItem {
   CartItem({
     required this.cartId,
     required this.item,
+    required this.categoryName,
     required this.quantity,
     this.variant,
     this.note = '',
@@ -45,6 +50,7 @@ class CartItem {
     return CartItem(
       cartId: cartId,
       item: item,
+      categoryName: categoryName,
       quantity: quantity ?? this.quantity,
       variant: variant,
       note: note ?? this.note,
@@ -55,7 +61,7 @@ class CartItem {
 class CartNotifier extends StateNotifier<List<CartItem>> {
   CartNotifier() : super([]);
 
-  void addItem(Item item, {String? variant}) {
+  void addItem(Item item, String categoryName, {String? variant}) {
     final index = state.indexWhere((i) => i.item.itemId == item.itemId && i.variant == variant);
     if (index != -1) {
       state = [
@@ -68,6 +74,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
         CartItem(
           cartId: const Uuid().v4(),
           item: item,
+          categoryName: categoryName,
           quantity: 1,
           variant: variant,
         ),
@@ -126,22 +133,52 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
     
     try {
       print('🚀 Calling KOTService...');
-      final kotService = KOTService();
-      await kotService.createKOT(
+      final kotService = ref.read(kotServiceProvider);
+      final authUser = ref.read(authStateProvider).value;
+      String userName = 'Staff';
+      if (authUser?.displayName != null && authUser!.displayName!.isNotEmpty) {
+        userName = authUser.displayName!;
+      } else if (authUser?.email != null) {
+        userName = authUser!.email!.split('@')[0];
+      }
+      
+      final categories = ref.read(categoriesProvider).value ?? [];
+      
+      final kot = await kotService.createKOT(
         tableId: widget.table.tableId,
-        items: cart.map((i) => KOTItem(
-          uniqueId: i.cartId,
-          itemId: i.item.itemId, 
-          name: i.item.name, 
-          category: i.item.categoryId, 
-          qty: i.quantity, 
-          price: i.item.price, 
-          variant: i.variant ?? '',
-          note: i.note
-        )).toList(),
-        userId: 'admin', // Future scope: dynamically link logged-in waiter ID
+        tableName: widget.table.name,
+        items: cart.map((i) {
+          final matchedCat = categories.where((c) => c.categoryId == i.item.categoryId);
+          final catName = matchedCat.isNotEmpty ? matchedCat.first.name : 'General';
+          
+          return KOTItem(
+            uniqueId: i.cartId,
+            itemId: i.item.itemId, 
+            name: i.item.name, 
+            category: catName, 
+            qty: i.quantity, 
+            price: i.item.price, 
+            variant: i.variant ?? '',
+            note: i.note
+          );
+        }).toList(),
+        userId: authUser?.uid ?? 'unknown',
+        userName: userName,
       );
       print('✅ KOTService returned successfully!');
+
+      // Auto-Print Integration
+      final config = ref.read(printerConfigProvider);
+      if (config.autoPrintKOT) {
+        try {
+          final printService = ref.read(printServiceProvider);
+          final bytes = await printService.generateKOTBytes(kot, config.paperSize);
+          await printService.printReceipt(bytes, config);
+        } catch (printErr) {
+          print('⚠️ Auto-print failed but KOT saved: $printErr');
+          // We don't block the UI for print failures if KOT is saved
+        }
+      }
       
       ref.read(cartProvider.notifier).clear();
       
@@ -257,9 +294,9 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
                   if (item.variants.isNotEmpty) {
-                    _showVariantDialog(item);
+                    _showVariantDialog(item, catName);
                   } else {
-                    ref.read(cartProvider.notifier).addItem(item);
+                    ref.read(cartProvider.notifier).addItem(item, catName);
                     if (isMobile) {
                       _showItemAddedFeedback(item.name);
                     }
@@ -312,7 +349,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
         );
       }
 
-      void _showVariantDialog(Item item) {
+      void _showVariantDialog(Item item, String catName) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -323,7 +360,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                   .map((v) => ListTile(
                         title: Text(v),
                         onTap: () {
-                          ref.read(cartProvider.notifier).addItem(item, variant: v);
+                          ref.read(cartProvider.notifier).addItem(item, catName, variant: v);
                           Navigator.pop(context);
                           _showItemAddedFeedback('${item.name} ($v)');
                         },
@@ -594,18 +631,36 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                 title: Row(
                   children: [
                     Expanded(
-                      child: Text(i.item.name, 
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(i.item.name, 
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(i.categoryName.toUpperCase(), 
+                              style: TextStyle(color: Colors.grey[700], fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                          ),
+                        ],
+                      ),
                     ),
                     if (i.variant != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.maroon.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.maroon.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(i.variant!, 
+                            style: const TextStyle(color: AppTheme.maroon, fontSize: 11, fontWeight: FontWeight.w600)),
                         ),
-                        child: Text(i.variant!, 
-                          style: const TextStyle(color: AppTheme.maroon, fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
                   ],
                 ),

@@ -25,8 +25,10 @@ class KOTService {
   // Create KOT for a table
   Future<KOTModel> createKOT({
     required String tableId,
+    required String tableName,
     required List<KOTItem> items,
     required String userId,
+    required String userName,
   }) async {
     return await _firestore.runTransaction((transaction) async {
       // --- READS (All reads MUST happen before any writes) ---
@@ -67,12 +69,37 @@ class KOTService {
         });
       }
 
-      // Calculate KOT number
+      // 2. Fetch/Calculate KOT number with Daily Reset (Start from 1001)
+      final now = DateTime.now();
+      final String todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+      
       int kotNumber = 1001;
       if (counterSnapshot.exists) {
-        kotNumber = (counterSnapshot.data() as Map<String, dynamic>)['kotCounter'] + 1;
+        final counterData = counterSnapshot.data() as Map<String, dynamic>;
+        final String lastReset = counterData['lastResetDate'] ?? '';
+        
+        if (lastReset == todayStr) {
+          kotNumber = (counterData['kotCounter'] ?? 1000) + 1;
+        } else {
+          // New day reset
+          kotNumber = 1001;
+        }
       }
-      transaction.set(_counterDoc, {'kotCounter': kotNumber});
+
+      // Update counters (Global)
+      transaction.set(_counterDoc, {
+        'kotCounter': kotNumber,
+        'lastResetDate': todayStr,
+      });
+
+      // Update Daily Stats summary
+      final dailyStatRef = _branchRef.collection('daily_stats').doc(todayStr);
+      transaction.set(dailyStatRef, {
+        'totalKots': kotNumber - 1000, // actual count of the day
+        'lastKotNumber': kotNumber,
+        'date': todayStr,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
       // 3. Create KOT document
       final kot = KOTModel(
@@ -80,10 +107,12 @@ class KOTService {
         kotNumber: kotNumber,
         orderId: orderId,
         tableId: tableId,
+        tableName: tableName,
         items: items,
         totalAmount: kotTotal,
         createdBy: userId,
-        createdAt: DateTime.now(),
+        userName: userName,
+        createdAt: now,
       );
 
       transaction.set(_kotCollection.doc(kotId), kot.toJson());

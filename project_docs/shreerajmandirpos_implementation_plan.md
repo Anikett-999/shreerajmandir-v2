@@ -36,9 +36,13 @@ This plan is written from a high-level **Software Engineering View**, outlining 
 *   **Step 4.1:** Build the 3-Panel `OrderScreen` UI (Left: Categories, Center: Items, Right: Cart/Current KOT).
 *   **Step 4.2:** Create local state management for the `Cart` (Adding, removing, and adjusting quantities without lag).
 *   **Step 4.3:** Create `KOTService.createKOT()`. When the waiter hits "Submit":
-    *   Upload KOT to Firestore.
+    *   Upload KOT to Firestore with **Denormalized Table Name** and **Waiter Information** (User Name).
     *   Find the selected Table and update its status from `Available` to `Occupied`.
     *   Wipe the local cart clean.
+*   **Step 4.4: KOT Data Specification**
+    *   `tableName`: Required string for kitchen identification.
+    *   `userName`: First 5 characters of waiter's name stored for accountability.
+    *   `items`: Must include category for compartmentalized kitchen prep.
 
 ---
 
@@ -53,10 +57,30 @@ This plan is written from a high-level **Software Engineering View**, outlining 
 ---
 
 ## 🖨️ Phase 6: Hardware Integration (Thermal Printing)
-**Goal:** Connect the digital app to the physical Dosiflow thermal printer.
-*   **Step 6.1:** Build `PrintService` to translate Bills and KOTs into ESC/POS bytecode.
-*   **Step 6.2:** Integrate Intent logic to pass the base64 byte stream directly to the **RawBT** Android Service natively.
-*   **Step 6.3:** Test UI fallbacks (if the printer is off, display an alert; don't crash).
+**Goal:** Connect the digital app to physical thermal printers across Android and Desktop.
+*   **Step 6.1: Hardware Foundation & Persistence**
+    *   Add `flutter_pos_printer_platform` to `pubspec.yaml` for native USB/BT/TCP support.
+    *   Create `PrinterConfig` model (ConnectionType: BT, USB, IP, RawBT; Width: 58mm/80mm; Address/Port).
+    *   Implement persistent storage for printer settings using `SharedPreferences`.
+*   **Step 6.2: Universal Print Engine (`PrintService`)**
+    *   Refactor `PrintService` to handle multi-platform routing.
+    *   Logic: If Android + RawBT enabled -> use Intent; Else -> Use Direct Native Connection (USB/IP/BT).
+    *   Implement ESC/POS templating for both KOT (Internal) and Bills (Customer-facing).
+*   **Step 6.3: Advanced Printer Settings Screen**
+    *   Build a premium UI for device discovery (scan for Bluetooth/USB devices).
+    *   Add manual IP configuration for network-based thermal printers.
+    *   Implement a "Test Print" tool with real-time connectivity status.
+*   **Step 6.4: KOT Professional Layout Specification**
+    *   **Header**: Bold Itemized KOT # (Left) | HH:mm Time (Top Right).
+    *   **Metadata**: Table Name (Left) | Waiter "by:xxxxx" (Right).
+    *   **3-Column Grid**: Items (6 units) | Category (4 units) | Qty (2 units).
+    *   **Inline Notes**: Instruction text immediately below the affected item.
+    *   **Separation**: Logical `hr()` line breaks for maximum clarity in heat.
+*   **Step 6.5: Workflow Integration**
+    *   Connect `KOTService` -> `PrintService` for automatic KOT printing on submission.
+    *   Connect `BillingService` -> `PrintService` for automatic Bill printing on checkout.
+    *   Implement "Reprint" logic in KOT and History screens.
+
 
 ---
 

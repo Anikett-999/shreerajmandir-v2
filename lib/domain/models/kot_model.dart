@@ -27,10 +27,12 @@ class KOTModel with _$KOTModel {
     required int kotNumber,
     required String orderId,
     required String tableId,
+    @Default('') String tableName,
     required List<KOTItem> items,
     @Default(0.0) double totalAmount,
     @Default(false) bool isPrinted,
     required String createdBy,
+    @Default('') String userName,
     required DateTime createdAt,
   }) = _KOTModel;
 

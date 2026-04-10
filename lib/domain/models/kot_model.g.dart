@@ -8,7 +8,7 @@ part of 'kot_model.dart';
 
 _$KOTItemImpl _$$KOTItemImplFromJson(Map<String, dynamic> json) =>
     _$KOTItemImpl(
-      uniqueId: json['uniqueId'] as String? ?? '',
+      uniqueId: json['uniqueId'] as String,
       itemId: json['itemId'] as String,
       name: json['name'] as String,
       category: json['category'] as String,
@@ -38,12 +38,14 @@ _$KOTModelImpl _$$KOTModelImplFromJson(Map<String, dynamic> json) =>
       kotNumber: (json['kotNumber'] as num).toInt(),
       orderId: json['orderId'] as String,
       tableId: json['tableId'] as String,
+      tableName: json['tableName'] as String? ?? '',
       items: (json['items'] as List<dynamic>)
           .map((e) => KOTItem.fromJson(e as Map<String, dynamic>))
           .toList(),
       totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
       isPrinted: json['isPrinted'] as bool? ?? false,
       createdBy: json['createdBy'] as String,
+      userName: json['userName'] as String? ?? '',
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
 
@@ -53,9 +55,11 @@ Map<String, dynamic> _$$KOTModelImplToJson(_$KOTModelImpl instance) =>
       'kotNumber': instance.kotNumber,
       'orderId': instance.orderId,
       'tableId': instance.tableId,
+      'tableName': instance.tableName,
       'items': instance.items.map((e) => e.toJson()).toList(),
       'totalAmount': instance.totalAmount,
       'isPrinted': instance.isPrinted,
       'createdBy': instance.createdBy,
+      'userName': instance.userName,
       'createdAt': instance.createdAt.toIso8601String(),
     };

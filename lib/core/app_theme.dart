@@ -13,6 +13,12 @@ class AppTheme {
   static const Color statusOccupied = Color(0xFFC27D0E); // Deep Gold/Amber
   static const Color statusBilling = maroon;
   static const Color darkBg = Color(0xFF1A1A1A);
+  
+  // Color Aliases for legacy code and status
+  static const Color successGreen = deepGreen;
+  static const Color occupiedOrange = statusOccupied;
+  static const Color billingBlue = Color(0xFF1F4E6B); // Deep Steel Blue
+  static const Color primaryRed = maroon;
 
   // Premium Button Style (Editorial look)
   static final _buttonStyle = ElevatedButton.styleFrom(

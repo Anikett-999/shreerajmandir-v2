@@ -36,6 +36,8 @@ _$BillModelImpl _$$BillModelImplFromJson(Map<String, dynamic> json) =>
       billId: json['billId'] as String,
       orderId: json['orderId'] as String,
       tableId: json['tableId'] as String,
+      tableName: json['tableName'] as String,
+      userName: json['userName'] as String,
       items: (json['items'] as List<dynamic>)
           .map((e) => BillItem.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -62,6 +64,8 @@ Map<String, dynamic> _$$BillModelImplToJson(_$BillModelImpl instance) =>
       'billId': instance.billId,
       'orderId': instance.orderId,
       'tableId': instance.tableId,
+      'tableName': instance.tableName,
+      'userName': instance.userName,
       'items': instance.items.map((e) => e.toJson()).toList(),
       'subtotal': instance.subtotal,
       'discountPercent': instance.discountPercent,

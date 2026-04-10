@@ -1,92 +1,211 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:io';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:flutter_pos_printer_platform_image_3/flutter_pos_printer_platform_image_3.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../domain/models/bill_model.dart';
 import '../domain/models/kot_model.dart';
+import '../domain/models/printer_config.dart';
 import 'package:intl/intl.dart';
 
 class PrintService {
   // Generate KOT ESC/POS commands
-  Future<List<int>> generateKOTBytes(KOTModel kot) async {
+  Future<List<int>> generateKOTBytes(KOTModel kot, PrinterPaperSize paperSize) async {
     final profile = await CapabilityProfile.load();
-    final generator = Generator(PaperSize.mm58, profile);
+    final generator = Generator(
+      paperSize == PrinterPaperSize.mm80 ? PaperSize.mm80 : PaperSize.mm58, 
+      profile
+    );
     List<int> bytes = [];
 
+    // 0. INITIALIZE PRINTER & RESET MARGIN
+    bytes += [0x1B, 0x40]; // Initialize
+    bytes += [0x1D, 0x4C, 0x00, 0x00]; // GS L 0 0 (Set left margin to 0)
+
+    // Configuration for 80mm vs 58mm
+    final int maxChars = paperSize == PrinterPaperSize.mm80 ? 48 : 32;
+    
+    // Helper for manual rows (C1: Items, C2: Category, C3: Qty)
+    String formatKOTRow(String c1, String c2, String c3) {
+      // Configuration for 48-character width (Standard 80mm)
+      // [Items: 28] + [Gap: 2] + [Cat: 12] + [Gap: 2] + [Qty: 4] = 48
+      int w1 = 28; 
+      int w2 = 12; 
+      int w3 = 4;  
+      
+      String s1 = c1.padRight(w1).substring(0, w1);
+      String s2 = c2.padRight(w2).substring(0, w2);
+      String s3 = c3.padLeft(w3).substring(0, w3);
+      
+      return "$s1  $s2  $s3"; 
+    }
+
+    final String sep = '-' * maxChars;
+
+    // 1. Header: Large Bold KOT Number
+    final String timeStr = DateFormat('HH:mm').format(kot.createdAt);
     bytes += generator.text('KOT #${kot.kotNumber}', 
-        styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-    bytes += generator.text('Table: ${kot.tableId}', styles: const PosStyles(align: PosAlign.center, bold: true));
-    bytes += generator.text('Time: ${DateFormat('HH:mm').format(kot.createdAt)}', styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.hr();
+      styles: const PosStyles(
+        bold: true, 
+        align: PosAlign.center, 
+        height: PosTextSize.size2, 
+        width: PosTextSize.size2
+      ));
+    
+    bytes += generator.feed(1);
+
+    // Header Info: Consolidated into ONE line (Table | Time | By)
+    final String cleanUserName = kot.userName.isEmpty ? 'Staff' : kot.userName;
+    final String printerBy = "by:${cleanUserName.length > 5 ? cleanUserName.substring(0, 5) : cleanUserName}".toLowerCase();
+    
+    String timeAndBy = "$timeStr           $printerBy"; // Increased to 4 spaces
+    String tableInfo = ': ${kot.tableName.toString().toUpperCase()}           ';
+    
+    // Fill space between Table and TimeAndBy
+    String headerLine = tableInfo.padRight(maxChars - timeAndBy.length) + timeAndBy;
+    bytes += generator.text(headerLine, styles: const PosStyles(bold: true));
+
+    bytes += generator.text(sep);
+
+    // 3-Column Item Header (Manual - Systematically Tighter)
+    bytes += generator.text(formatKOTRow('ITEMS', 'CAT', 'QTY'), styles: const PosStyles(bold: true));
+    bytes += generator.text(sep);
 
     for (var item in kot.items) {
-      bytes += generator.row([
-        PosColumn(text: item.name, width: 9),
-        PosColumn(text: 'x${item.qty}', width: 3, styles: const PosStyles(align: PosAlign.right)),
-      ]);
+      // Main Item Line
+      bytes += generator.text(formatKOTRow(item.name, item.category, '${item.qty}'));
+      
+      // Inline Note (immediately below the item)
       if (item.note.isNotEmpty) {
-        bytes += generator.text('Note: ${item.note}');
+        bytes += generator.text('  note: ${item.note.toLowerCase()}');
       }
+      bytes += generator.text(sep); // Separator between each KOT item
     }
     
-    bytes += generator.hr();
     bytes += generator.feed(2);
     bytes += generator.cut();
+
     return bytes;
   }
 
   // Generate Bill ESC/POS commands
-  Future<List<int>> generateBillBytes(BillModel bill) async {
+  Future<List<int>> generateBillBytes(BillModel bill, PrinterPaperSize paperSize) async {
     final profile = await CapabilityProfile.load();
-    final generator = Generator(PaperSize.mm58, profile);
+    final generator = Generator(
+      paperSize == PrinterPaperSize.mm80 ? PaperSize.mm80 : PaperSize.mm58, 
+      profile
+    );
     List<int> bytes = [];
 
-    bytes += generator.text('SHREE RAJMANDIR', 
-        styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-    bytes += generator.text('Ice Cream POS', styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.hr();
-    bytes += generator.text('Bill ID: ${bill.billId.substring(0, 8)}', styles: const PosStyles(bold: true));
-    bytes += generator.text('Table: ${bill.tableId}');
-    bytes += generator.text('Date: ${DateFormat('dd/MM/yyyy HH:mm').format(bill.createdAt)}');
-    bytes += generator.hr();
+    // 0. INITIALIZE PRINTER & RESET MARGIN
+    bytes += [0x1B, 0x40]; 
+    bytes += [0x1D, 0x4C, 0x00, 0x00]; 
 
-    for (var item in bill.items) {
-      bytes += generator.row([
-        PosColumn(text: item.name, width: 7),
-        PosColumn(text: '${item.qty}', width: 2, styles: const PosStyles(align: PosAlign.center)),
-        PosColumn(text: (item.price * item.qty).toStringAsFixed(0), width: 3, styles: const PosStyles(align: PosAlign.right)),
-      ]);
+    final int maxChars = paperSize == PrinterPaperSize.mm80 ? 48 : 32;
+    final String sep = '-' * maxChars;
+
+    // Helper for Bill rows (C1: Items, C2: Qty, C3: Amount)
+    String formatBillRow(String c1, String c2, String c3) {
+      // [Items: 34] + [Gap: 2] + [Qty: 4] + [Gap: 2] + [Amount: 6] = 48
+      int w1 = 34; 
+      int w2 = 4;  
+      int w3 = 6;  
+      
+      String s1 = c1.padRight(w1).substring(0, w1);
+      String s2 = c2.padLeft(w2).substring(0, w2);
+      String s3 = c3.padLeft(w3).substring(0, w3);
+      
+      return "$s1  $s2  $s3"; 
     }
 
-    bytes += generator.hr();
-    bytes += generator.row([
-      PosColumn(text: 'Subtotal', width: 8),
-      PosColumn(text: bill.subtotal.toStringAsFixed(2), width: 4, styles: const PosStyles(align: PosAlign.right)),
-    ]);
+    // 1. Branding Header
+    bytes += generator.text('SHREE RAJMANDIR', 
+        styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+    bytes += generator.text('QUALITY ICE CREAM & SNACKS', styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.feed(1);
+
+    // 2. Metadata
+    String timeAndBy = "${DateFormat('HH:mm').format(bill.createdAt)}    by:${bill.userName.toLowerCase()}";
+    String tableInfo = 'TABLE: ${bill.tableName.toUpperCase()}';
+    
+    bytes += generator.text('Bill ID: ${bill.billId.substring(0, 8).toUpperCase()}'.padRight(maxChars - 10) + DateFormat('dd/MM/yy').format(bill.createdAt).padLeft(10));
+    bytes += generator.text(tableInfo.padRight(maxChars - timeAndBy.length) + timeAndBy);
+    
+    bytes += generator.text(sep);
+    bytes += generator.text(formatBillRow('ITEMS', 'QTY', 'AMOUNT'), styles: const PosStyles(bold: true));
+    bytes += generator.text(sep);
+
+    // 3. Items List
+    for (var item in bill.items) {
+      bytes += generator.text(formatBillRow(item.name, '${item.qty}', (item.price * item.qty).toStringAsFixed(0)));
+      bytes += generator.text(sep); // Separator between bill items
+    }
+
+    // 4. Totals Logic
+    String formatTotalLine(String label, String value) {
+      return label.padRight(maxChars - value.length) + value;
+    }
+
+    bytes += generator.text(formatTotalLine('Subtotal', bill.subtotal.toStringAsFixed(2)));
 
     if (bill.discountAmount > 0) {
-      bytes += generator.row([
-        PosColumn(text: 'Discount (${bill.discountPercent}%)', width: 8),
-        PosColumn(text: '-${bill.discountAmount.toStringAsFixed(2)}', width: 4, styles: const PosStyles(align: PosAlign.right)),
-      ]);
+      bytes += generator.text(formatTotalLine('Discount (${bill.discountPercent}%)', '-${bill.discountAmount.toStringAsFixed(2)}'));
     }
 
     if (bill.extraCharges > 0) {
-      bytes += generator.row([
-        PosColumn(text: 'Extra Charges', width: 8),
-        PosColumn(text: '+${bill.extraCharges.toStringAsFixed(2)}', width: 4, styles: const PosStyles(align: PosAlign.right)),
-      ]);
+      bytes += generator.text(formatTotalLine('Extra Charges', '+${bill.extraCharges.toStringAsFixed(2)}'));
     }
 
-    bytes += generator.hr();
-    bytes += generator.text('TOTAL: ${bill.total.toStringAsFixed(2)}', 
+    bytes += generator.text(sep);
+    bytes += generator.text('TOTAL: ₹${bill.total.toStringAsFixed(2)}', 
         styles: const PosStyles(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+    bytes += generator.text(sep);
     
-    bytes += generator.hr();
-    bytes += generator.text('Thank You!', styles: const PosStyles(align: PosAlign.center));
+    // 5. Footer
+    bytes += generator.feed(1);
+    bytes += generator.text(sep); // Closing line
+    bytes += generator.text('Visit Again!', styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('THANK YOU', styles: const PosStyles(align: PosAlign.center, bold: true));
+    bytes += generator.text(sep); // Final line
     bytes += generator.feed(2);
     bytes += generator.cut();
+    
     return bytes;
+  }
+
+  // Master Print Function
+  Future<void> printReceipt(List<int> bytes, PrinterConfig config) async {
+    if (config.connectionType == PrinterConnectionType.rawbt && Platform.isAndroid) {
+      await sendToRawBT(bytes);
+      return;
+    }
+
+    // Direct Printing via flutter_pos_printer_platform
+    var type = PrinterType.bluetooth;
+    switch (config.connectionType) {
+      case PrinterConnectionType.usb:
+        type = PrinterType.usb;
+        break;
+      case PrinterConnectionType.network:
+        type = PrinterType.network;
+        break;
+      case PrinterConnectionType.bluetooth:
+        type = PrinterType.bluetooth;
+        break;
+      default:
+        type = PrinterType.bluetooth;
+    }
+
+    await PrinterManager.instance.connect(
+      type: type,
+      model: TcpPrinterInput(
+        ipAddress: config.address ?? '',
+        port: config.port,
+      ), // Note: For USB/BT we need different Input models, but this is a starting point
+    );
+
+    await PrinterManager.instance.send(type: type, bytes: bytes);
+    await PrinterManager.instance.disconnect(type: type);
   }
 
   // Print via RawBT (Android)

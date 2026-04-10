@@ -7,12 +7,25 @@ import 'presentation/providers/auth_provider.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/login_screen.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'presentation/providers/printer_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const ProviderScope(child: ShreeRajmandirPOSApp()));
+  
+  final prefs = await SharedPreferences.getInstance();
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        sharedPrefsProvider.overrideWithValue(prefs),
+      ],
+      child: const ShreeRajmandirPOSApp(),
+    ),
+  );
 }
 
 class ShreeRajmandirPOSApp extends ConsumerWidget {

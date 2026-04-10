@@ -52,6 +52,8 @@ class BillingService {
   Future<BillModel> generateBill({
     required String orderId,
     required String tableId,
+    required String tableName,
+    required String userName,
     required double discountPercent,
     required double extraCharges,
     required List<Payment> payments,
@@ -99,6 +101,8 @@ class BillingService {
         billId: billId,
         orderId: orderId,
         tableId: tableId,
+        tableName: tableName,
+        userName: userName,
         items: billItems,
         subtotal: subtotal,
         discountPercent: discountPercent,

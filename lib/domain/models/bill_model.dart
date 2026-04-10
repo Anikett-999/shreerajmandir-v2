@@ -31,6 +31,8 @@ class BillModel with _$BillModel {
     required String billId,
     required String orderId,
     required String tableId,
+    required String tableName,
+    required String userName,
     required List<BillItem> items,
     required double subtotal,
     @Default(0.0) double discountPercent,

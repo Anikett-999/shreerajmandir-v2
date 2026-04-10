@@ -400,6 +400,8 @@ mixin _$BillModel {
   String get billId => throw _privateConstructorUsedError;
   String get orderId => throw _privateConstructorUsedError;
   String get tableId => throw _privateConstructorUsedError;
+  String get tableName => throw _privateConstructorUsedError;
+  String get userName => throw _privateConstructorUsedError;
   List<BillItem> get items => throw _privateConstructorUsedError;
   double get subtotal => throw _privateConstructorUsedError;
   double get discountPercent => throw _privateConstructorUsedError;
@@ -433,6 +435,8 @@ abstract class $BillModelCopyWith<$Res> {
     String billId,
     String orderId,
     String tableId,
+    String tableName,
+    String userName,
     List<BillItem> items,
     double subtotal,
     double discountPercent,
@@ -467,6 +471,8 @@ class _$BillModelCopyWithImpl<$Res, $Val extends BillModel>
     Object? billId = null,
     Object? orderId = null,
     Object? tableId = null,
+    Object? tableName = null,
+    Object? userName = null,
     Object? items = null,
     Object? subtotal = null,
     Object? discountPercent = null,
@@ -494,6 +500,14 @@ class _$BillModelCopyWithImpl<$Res, $Val extends BillModel>
             tableId: null == tableId
                 ? _value.tableId
                 : tableId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            tableName: null == tableName
+                ? _value.tableName
+                : tableName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            userName: null == userName
+                ? _value.userName
+                : userName // ignore: cast_nullable_to_non_nullable
                       as String,
             items: null == items
                 ? _value.items
@@ -566,6 +580,8 @@ abstract class _$$BillModelImplCopyWith<$Res>
     String billId,
     String orderId,
     String tableId,
+    String tableName,
+    String userName,
     List<BillItem> items,
     double subtotal,
     double discountPercent,
@@ -599,6 +615,8 @@ class __$$BillModelImplCopyWithImpl<$Res>
     Object? billId = null,
     Object? orderId = null,
     Object? tableId = null,
+    Object? tableName = null,
+    Object? userName = null,
     Object? items = null,
     Object? subtotal = null,
     Object? discountPercent = null,
@@ -626,6 +644,14 @@ class __$$BillModelImplCopyWithImpl<$Res>
         tableId: null == tableId
             ? _value.tableId
             : tableId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        tableName: null == tableName
+            ? _value.tableName
+            : tableName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        userName: null == userName
+            ? _value.userName
+            : userName // ignore: cast_nullable_to_non_nullable
                   as String,
         items: null == items
             ? _value._items
@@ -691,6 +717,8 @@ class _$BillModelImpl implements _BillModel {
     required this.billId,
     required this.orderId,
     required this.tableId,
+    required this.tableName,
+    required this.userName,
     required final List<BillItem> items,
     required this.subtotal,
     this.discountPercent = 0.0,
@@ -716,6 +744,10 @@ class _$BillModelImpl implements _BillModel {
   final String orderId;
   @override
   final String tableId;
+  @override
+  final String tableName;
+  @override
+  final String userName;
   final List<BillItem> _items;
   @override
   List<BillItem> get items {
@@ -762,7 +794,7 @@ class _$BillModelImpl implements _BillModel {
 
   @override
   String toString() {
-    return 'BillModel(billId: $billId, orderId: $orderId, tableId: $tableId, items: $items, subtotal: $subtotal, discountPercent: $discountPercent, discountAmount: $discountAmount, extraCharges: $extraCharges, total: $total, payments: $payments, printCount: $printCount, isSuspicious: $isSuspicious, createdBy: $createdBy, createdAt: $createdAt, printedAt: $printedAt, lastPrintedBy: $lastPrintedBy)';
+    return 'BillModel(billId: $billId, orderId: $orderId, tableId: $tableId, tableName: $tableName, userName: $userName, items: $items, subtotal: $subtotal, discountPercent: $discountPercent, discountAmount: $discountAmount, extraCharges: $extraCharges, total: $total, payments: $payments, printCount: $printCount, isSuspicious: $isSuspicious, createdBy: $createdBy, createdAt: $createdAt, printedAt: $printedAt, lastPrintedBy: $lastPrintedBy)';
   }
 
   @override
@@ -773,6 +805,10 @@ class _$BillModelImpl implements _BillModel {
             (identical(other.billId, billId) || other.billId == billId) &&
             (identical(other.orderId, orderId) || other.orderId == orderId) &&
             (identical(other.tableId, tableId) || other.tableId == tableId) &&
+            (identical(other.tableName, tableName) ||
+                other.tableName == tableName) &&
+            (identical(other.userName, userName) ||
+                other.userName == userName) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.subtotal, subtotal) ||
                 other.subtotal == subtotal) &&
@@ -805,6 +841,8 @@ class _$BillModelImpl implements _BillModel {
     billId,
     orderId,
     tableId,
+    tableName,
+    userName,
     const DeepCollectionEquality().hash(_items),
     subtotal,
     discountPercent,
@@ -839,6 +877,8 @@ abstract class _BillModel implements BillModel {
     required final String billId,
     required final String orderId,
     required final String tableId,
+    required final String tableName,
+    required final String userName,
     required final List<BillItem> items,
     required final double subtotal,
     final double discountPercent,
@@ -863,6 +903,10 @@ abstract class _BillModel implements BillModel {
   String get orderId;
   @override
   String get tableId;
+  @override
+  String get tableName;
+  @override
+  String get userName;
   @override
   List<BillItem> get items;
   @override
