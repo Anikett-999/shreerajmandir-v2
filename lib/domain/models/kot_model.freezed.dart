@@ -365,6 +365,7 @@ mixin _$KOTModel {
   bool get isPrinted => throw _privateConstructorUsedError;
   String get createdBy => throw _privateConstructorUsedError;
   String get userName => throw _privateConstructorUsedError;
+  @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this KOTModel to a JSON map.
@@ -393,7 +394,7 @@ abstract class $KOTModelCopyWith<$Res> {
     bool isPrinted,
     String createdBy,
     String userName,
-    DateTime createdAt,
+    @TimestampConverter() DateTime createdAt,
   });
 }
 
@@ -496,7 +497,7 @@ abstract class _$$KOTModelImplCopyWith<$Res>
     bool isPrinted,
     String createdBy,
     String userName,
-    DateTime createdAt,
+    @TimestampConverter() DateTime createdAt,
   });
 }
 
@@ -591,7 +592,7 @@ class _$KOTModelImpl implements _KOTModel {
     this.isPrinted = false,
     required this.createdBy,
     this.userName = '',
-    required this.createdAt,
+    @TimestampConverter() required this.createdAt,
   }) : _items = items;
 
   factory _$KOTModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -628,6 +629,7 @@ class _$KOTModelImpl implements _KOTModel {
   @JsonKey()
   final String userName;
   @override
+  @TimestampConverter()
   final DateTime createdAt;
 
   @override
@@ -703,7 +705,7 @@ abstract class _KOTModel implements KOTModel {
     final bool isPrinted,
     required final String createdBy,
     final String userName,
-    required final DateTime createdAt,
+    @TimestampConverter() required final DateTime createdAt,
   }) = _$KOTModelImpl;
 
   factory _KOTModel.fromJson(Map<String, dynamic> json) =
@@ -730,6 +732,7 @@ abstract class _KOTModel implements KOTModel {
   @override
   String get userName;
   @override
+  @TimestampConverter()
   DateTime get createdAt;
 
   /// Create a copy of KOTModel

@@ -9,6 +9,7 @@ import 'presentation/screens/login_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/providers/printer_provider.dart';
+import 'presentation/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,11 +36,14 @@ class ShreeRajmandirPOSApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
 
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
       title: 'Shree Rajmandir POS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       home: authState.when(
         data: (user) => user == null ? const LoginScreen() : const HomeScreen(),
         loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),

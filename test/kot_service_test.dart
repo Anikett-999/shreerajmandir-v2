@@ -34,6 +34,7 @@ void main() {
       try {
         final kot = await kotService.createKOT(
           tableId: 'T3',
+          tableName: 'Table 3',
           items: [
             const KOTItem(
               uniqueId: 'item_1_test',
@@ -45,6 +46,7 @@ void main() {
             ),
           ],
           userId: 'dev123',
+          userName: 'Staff User',
         );
 
         expect(kot.kotNumber, equals(1001));

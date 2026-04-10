@@ -30,6 +30,7 @@ mixin _$PrinterConfig {
   String get name => throw _privateConstructorUsedError;
   bool get autoPrintKOT => throw _privateConstructorUsedError;
   bool get autoPrintBill => throw _privateConstructorUsedError;
+  bool get isBle => throw _privateConstructorUsedError;
 
   /// Serializes this PrinterConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -56,6 +57,7 @@ abstract class $PrinterConfigCopyWith<$Res> {
     String name,
     bool autoPrintKOT,
     bool autoPrintBill,
+    bool isBle,
   });
 }
 
@@ -81,6 +83,7 @@ class _$PrinterConfigCopyWithImpl<$Res, $Val extends PrinterConfig>
     Object? name = null,
     Object? autoPrintKOT = null,
     Object? autoPrintBill = null,
+    Object? isBle = null,
   }) {
     return _then(
       _value.copyWith(
@@ -112,6 +115,10 @@ class _$PrinterConfigCopyWithImpl<$Res, $Val extends PrinterConfig>
                 ? _value.autoPrintBill
                 : autoPrintBill // ignore: cast_nullable_to_non_nullable
                       as bool,
+            isBle: null == isBle
+                ? _value.isBle
+                : isBle // ignore: cast_nullable_to_non_nullable
+                      as bool,
           )
           as $Val,
     );
@@ -135,6 +142,7 @@ abstract class _$$PrinterConfigImplCopyWith<$Res>
     String name,
     bool autoPrintKOT,
     bool autoPrintBill,
+    bool isBle,
   });
 }
 
@@ -159,6 +167,7 @@ class __$$PrinterConfigImplCopyWithImpl<$Res>
     Object? name = null,
     Object? autoPrintKOT = null,
     Object? autoPrintBill = null,
+    Object? isBle = null,
   }) {
     return _then(
       _$PrinterConfigImpl(
@@ -190,6 +199,10 @@ class __$$PrinterConfigImplCopyWithImpl<$Res>
             ? _value.autoPrintBill
             : autoPrintBill // ignore: cast_nullable_to_non_nullable
                   as bool,
+        isBle: null == isBle
+            ? _value.isBle
+            : isBle // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -206,6 +219,7 @@ class _$PrinterConfigImpl implements _PrinterConfig {
     this.name = 'Default Printer',
     this.autoPrintKOT = true,
     this.autoPrintBill = true,
+    this.isBle = false,
   });
 
   factory _$PrinterConfigImpl.fromJson(Map<String, dynamic> json) =>
@@ -232,10 +246,13 @@ class _$PrinterConfigImpl implements _PrinterConfig {
   @override
   @JsonKey()
   final bool autoPrintBill;
+  @override
+  @JsonKey()
+  final bool isBle;
 
   @override
   String toString() {
-    return 'PrinterConfig(connectionType: $connectionType, paperSize: $paperSize, address: $address, port: $port, name: $name, autoPrintKOT: $autoPrintKOT, autoPrintBill: $autoPrintBill)';
+    return 'PrinterConfig(connectionType: $connectionType, paperSize: $paperSize, address: $address, port: $port, name: $name, autoPrintKOT: $autoPrintKOT, autoPrintBill: $autoPrintBill, isBle: $isBle)';
   }
 
   @override
@@ -253,7 +270,8 @@ class _$PrinterConfigImpl implements _PrinterConfig {
             (identical(other.autoPrintKOT, autoPrintKOT) ||
                 other.autoPrintKOT == autoPrintKOT) &&
             (identical(other.autoPrintBill, autoPrintBill) ||
-                other.autoPrintBill == autoPrintBill));
+                other.autoPrintBill == autoPrintBill) &&
+            (identical(other.isBle, isBle) || other.isBle == isBle));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -267,6 +285,7 @@ class _$PrinterConfigImpl implements _PrinterConfig {
     name,
     autoPrintKOT,
     autoPrintBill,
+    isBle,
   );
 
   /// Create a copy of PrinterConfig
@@ -292,6 +311,7 @@ abstract class _PrinterConfig implements PrinterConfig {
     final String name,
     final bool autoPrintKOT,
     final bool autoPrintBill,
+    final bool isBle,
   }) = _$PrinterConfigImpl;
 
   factory _PrinterConfig.fromJson(Map<String, dynamic> json) =
@@ -311,6 +331,8 @@ abstract class _PrinterConfig implements PrinterConfig {
   bool get autoPrintKOT;
   @override
   bool get autoPrintBill;
+  @override
+  bool get isBle;
 
   /// Create a copy of PrinterConfig
   /// with the given fields replaced by the non-null parameter values.

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:timeago/timeago.dart' as timeago;
+import 'dart:async';
 import 'package:shreerajmandir_pos/services/kot_service.dart';
 import 'package:shreerajmandir_pos/domain/models/kot_model.dart';
 import 'package:shreerajmandir_pos/core/app_theme.dart';
+import '../../widgets/global/profile_menu.dart';
 
 final kotServiceProvider = Provider<KOTService>((ref) => KOTService());
 
@@ -19,9 +20,17 @@ class KOTScreen extends ConsumerWidget {
     final liveKOTs = ref.watch(liveKOTsProvider);
 
     return Scaffold(
+      backgroundColor: AppTheme.cream,
       appBar: AppBar(
-        title: const Text('KOT MONITOR'),
+        title: const Text('LIVE KOT MONITOR', 
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: AppTheme.maroon,
+        actions: [
+          ProfileAppBarActions(),
+        ],
       ),
       body: liveKOTs.when(
         data: (kots) {
@@ -30,21 +39,24 @@ class KOTScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
+                  Icon(Icons.restaurant_menu, size: 80, color: AppTheme.maroon),
                   SizedBox(height: 16),
-                  Text('No Active KOTs', style: TextStyle(fontSize: 20, color: Colors.grey, fontWeight: FontWeight.bold)),
+                  Text('Kitchen is Quiet', 
+                    style: TextStyle(fontSize: 22, color: AppTheme.maroon, fontWeight: FontWeight.bold)),
+                  Text('No active KOTs to display', 
+                    style: TextStyle(color: Colors.grey)),
                 ],
               ),
             );
           }
 
           return GridView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 400,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              mainAxisExtent: 450,
+              maxCrossAxisExtent: 450,
+              mainAxisSpacing: 20,
+              crossAxisSpacing: 20,
+              mainAxisExtent: 480,
             ),
             itemCount: kots.length,
             itemBuilder: (context, index) {
@@ -52,63 +64,121 @@ class KOTScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
         error: (e, s) => Center(child: Text('Error: $e')),
       ),
     );
   }
 }
 
-class _KOTCard extends ConsumerWidget {
+class _KOTCard extends ConsumerStatefulWidget {
   final KOTModel kot;
   const _KOTCard({required this.kot});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final timeStr = timeago.format(kot.createdAt, locale: 'en_short');
+  ConsumerState<_KOTCard> createState() => _KOTCardState();
+}
+
+class _KOTCardState extends ConsumerState<_KOTCard> {
+  late Timer _timer;
+  late Duration _elapsed;
+
+  @override
+  void initState() {
+    super.initState();
+    _elapsed = DateTime.now().difference(widget.kot.createdAt);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _elapsed = DateTime.now().difference(widget.kot.createdAt);
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  Color _getTimerColor() {
+    if (_elapsed.inMinutes < 5) return Colors.green;
+    if (_elapsed.inMinutes < 10) return Colors.orange;
+    return Colors.red;
+  }
+
+  String _formatDuration(Duration d) {
+    if (d.inSeconds < 0) return "0m";
+    if (d.inHours > 0) {
+      return "${d.inHours}h ${d.inMinutes % 60}m";
+    }
+    return "${d.inMinutes}m";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isFullyServed = widget.kot.items.every((i) => i.status == 'served');
     
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: AppTheme.maroon.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Header with Gradient
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
-              color: AppTheme.maroon,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              gradient: LinearGradient(
+                colors: [AppTheme.maroon, Color(0xFF500000)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Table ${kot.tableId}', 
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                    Text('KOT #${kot.kotNumber}', 
-                      style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text((widget.kot.tableName ?? '').toUpperCase(), 
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+                      Text('KOT #${widget.kot.kotNumber}', 
+                        style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13, letterSpacing: 1.1)),
+                    ],
                   ),
-                  child: Text(timeStr, 
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                ),
+                const SizedBox(width: 16), // Increased space between table name and timer
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getTimerColor().withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: _getTimerColor().withOpacity(0.5)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.timer_outlined, size: 14, color: _getTimerColor()),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatDuration(_elapsed), 
+                        style: TextStyle(color: _getTimerColor(), fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -116,65 +186,115 @@ class _KOTCard extends ConsumerWidget {
           
           // Items List
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: kot.items.length,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: widget.kot.items.length,
+              separatorBuilder: (c, i) => const Divider(height: 1),
               itemBuilder: (context, idx) {
-                final item = kot.items[idx];
+                final item = widget.kot.items[idx];
                 final isServed = item.status == 'served';
 
-                return ListTile(
-                  dense: true,
-                  leading: Text('${item.qty}x', 
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold, 
-                      fontSize: 16,
-                      color: isServed ? Colors.grey : AppTheme.maroon,
-                    )),
-                  title: Text(item.name, 
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      decoration: isServed ? TextDecoration.lineThrough : null,
-                      color: isServed ? Colors.grey : Colors.black87,
-                    )),
-                  subtitle: item.variant.isNotEmpty || item.note.isNotEmpty 
-                    ? Text('${item.variant}${item.note.isNotEmpty ? " • ${item.note}" : ""}',
-                        style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic))
-                    : null,
-                  trailing: isServed 
-                    ? const Icon(Icons.check_circle, color: AppTheme.deepGreen)
-                    : OutlinedButton(
-                        onPressed: () {
-                          ref.read(kotServiceProvider).updateItemStatus(
-                            kotId: kot.kotId,
-                            itemUniqueId: item.uniqueId,
-                            status: 'served',
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppTheme.deepGreen),
-                          foregroundColor: AppTheme.deepGreen,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          minimumSize: const Size(0, 32),
-                        ),
-                        child: const Text('SERVE'),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isServed ? Colors.grey.shade100 : AppTheme.maroon.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(8),
                       ),
+                      child: Text('${item.qty}x', 
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold, 
+                          color: isServed ? Colors.grey : AppTheme.maroon,
+                        )),
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item.name, 
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            decoration: isServed ? TextDecoration.lineThrough : null,
+                            color: isServed ? Colors.grey : Colors.black87,
+                          )),
+                        const SizedBox(height: 2),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: isServed ? Colors.grey.shade100 : AppTheme.maroon.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(item.category.toUpperCase(), 
+                            style: TextStyle(
+                              color: isServed ? Colors.grey : AppTheme.maroon.withOpacity(0.6), 
+                              fontSize: 9, 
+                              fontWeight: FontWeight.w900, 
+                              letterSpacing: 0.5
+                            )),
+                        ),
+                      ],
+                    ),
+                    subtitle: item.note.isNotEmpty 
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(item.note, style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.blueGrey)),
+                        )
+                      : null,
+                    trailing: isServed 
+                      ? const Icon(Icons.check_circle, color: AppTheme.successGreen)
+                      : TextButton(
+                          onPressed: () {
+                            ref.read(kotServiceProvider).updateItemStatus(
+                              kotId: widget.kot.kotId,
+                              itemUniqueId: item.uniqueId,
+                              status: 'served',
+                            );
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.successGreen,
+                            backgroundColor: AppTheme.successGreen.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('SERVE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                  ),
                 );
               },
             ),
           ),
           
           // Footer
-          Padding(
+          Container(
             padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('By: ${kot.createdBy}', 
-                  style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                if (kot.items.every((i) => i.status == 'served'))
-                  const Text('FULLY SERVED', 
-                    style: TextStyle(color: AppTheme.deepGreen, fontWeight: FontWeight.bold, fontSize: 12)),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(widget.kot.userName ?? 'Staff', 
+                      style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+                if (isFullyServed)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.successGreen.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text('COMPLETED', 
+                      style: TextStyle(color: AppTheme.successGreen, fontWeight: FontWeight.w900, fontSize: 10)),
+                  ),
               ],
             ),
           ),

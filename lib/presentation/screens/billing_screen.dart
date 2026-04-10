@@ -72,15 +72,49 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       );
 
       // Print Bill Integration
+      bool printSuccess = true;
+      String? printError;
+
       try {
         final bytes = await printService.generateBillBytes(bill, config.paperSize);
         await printService.printReceipt(bytes, config);
       } catch (printErr) {
-        print('⚠️ Bill printing failed: $printErr');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Bill saved but printing failed: $printErr')),
-          );
+        printSuccess = false;
+        printError = printErr.toString();
+      }
+
+      if (!printSuccess && mounted) {
+        final proceed = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.print_disabled, color: Colors.orange),
+                SizedBox(width: 8),
+                Text('Print Failed'),
+              ],
+            ),
+            content: Text(
+                'Bill was saved to system, but printing failed.\n\nError: $printError\n\nDo you want to retry printing or finish settling?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('RETRY PRINT'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.maroon, foregroundColor: Colors.white),
+                child: const Text('FINISH ANYWAY'),
+              ),
+            ],
+          ),
+        );
+
+        if (proceed != true) {
+          // If they chose retry (returned false), we trigger the printing part again
+          setState(() => _isLoading = false);
+          return _handleGenerateBill();
         }
       }
 

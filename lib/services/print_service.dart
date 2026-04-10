@@ -41,9 +41,11 @@ class PrintService {
     }
 
     final String sep = '-' * maxChars;
+    final String dsep = '=' * maxChars;
 
     // 1. Header: Large Bold KOT Number
-    final String timeStr = DateFormat('HH:mm').format(kot.createdAt);
+    final String timeStr = DateFormat('hh:mm a').format(kot.createdAt);
+    bytes += generator.text(dsep); // Top divider
     bytes += generator.text('KOT #${kot.kotNumber}', 
       styles: const PosStyles(
         bold: true, 
@@ -58,30 +60,28 @@ class PrintService {
     final String cleanUserName = kot.userName.isEmpty ? 'Staff' : kot.userName;
     final String printerBy = "by:${cleanUserName.length > 5 ? cleanUserName.substring(0, 5) : cleanUserName}".toLowerCase();
     
-    String timeAndBy = "$timeStr           $printerBy"; // Increased to 4 spaces
+    String timeAndBy = "$timeStr           $printerBy"; 
     String tableInfo = ': ${kot.tableName.toString().toUpperCase()}           ';
     
-    // Fill space between Table and TimeAndBy
     String headerLine = tableInfo.padRight(maxChars - timeAndBy.length) + timeAndBy;
     bytes += generator.text(headerLine, styles: const PosStyles(bold: true));
 
     bytes += generator.text(sep);
 
-    // 3-Column Item Header (Manual - Systematically Tighter)
+    // 3-Column Item Header
     bytes += generator.text(formatKOTRow('ITEMS', 'CAT', 'QTY'), styles: const PosStyles(bold: true));
     bytes += generator.text(sep);
 
     for (var item in kot.items) {
-      // Main Item Line
       bytes += generator.text(formatKOTRow(item.name, item.category, '${item.qty}'));
       
-      // Inline Note (immediately below the item)
       if (item.note.isNotEmpty) {
         bytes += generator.text('  note: ${item.note.toLowerCase()}');
       }
       bytes += generator.text(sep); // Separator between each KOT item
     }
     
+    bytes += generator.text(dsep); // Closing divider
     bytes += generator.feed(2);
     bytes += generator.cut();
 
@@ -97,16 +97,15 @@ class PrintService {
     );
     List<int> bytes = [];
 
-    // 0. INITIALIZE PRINTER & RESET MARGIN
     bytes += [0x1B, 0x40]; 
     bytes += [0x1D, 0x4C, 0x00, 0x00]; 
 
     final int maxChars = paperSize == PrinterPaperSize.mm80 ? 48 : 32;
     final String sep = '-' * maxChars;
+    final String dsep = '=' * maxChars;
 
-    // Helper for Bill rows (C1: Items, C2: Qty, C3: Amount)
+    // Helper for Bill rows
     String formatBillRow(String c1, String c2, String c3) {
-      // [Items: 34] + [Gap: 2] + [Qty: 4] + [Gap: 2] + [Amount: 6] = 48
       int w1 = 34; 
       int w2 = 4;  
       int w3 = 6;  
@@ -119,13 +118,14 @@ class PrintService {
     }
 
     // 1. Branding Header
+    bytes += generator.text(dsep);
     bytes += generator.text('SHREE RAJMANDIR', 
         styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
     bytes += generator.text('QUALITY ICE CREAM & SNACKS', styles: const PosStyles(align: PosAlign.center));
     bytes += generator.feed(1);
 
     // 2. Metadata
-    String timeAndBy = "${DateFormat('HH:mm').format(bill.createdAt)}    by:${bill.userName.toLowerCase()}";
+    String timeAndBy = "${DateFormat('hh:mm a').format(bill.createdAt)}    by:${bill.userName.toLowerCase()}";
     String tableInfo = 'TABLE: ${bill.tableName.toUpperCase()}';
     
     bytes += generator.text('Bill ID: ${bill.billId.substring(0, 8).toUpperCase()}'.padRight(maxChars - 10) + DateFormat('dd/MM/yy').format(bill.createdAt).padLeft(10));
@@ -138,7 +138,7 @@ class PrintService {
     // 3. Items List
     for (var item in bill.items) {
       bytes += generator.text(formatBillRow(item.name, '${item.qty}', (item.price * item.qty).toStringAsFixed(0)));
-      bytes += generator.text(sep); // Separator between bill items
+      bytes += generator.text(sep);
     }
 
     // 4. Totals Logic
@@ -159,14 +159,13 @@ class PrintService {
     bytes += generator.text(sep);
     bytes += generator.text('TOTAL: ₹${bill.total.toStringAsFixed(2)}', 
         styles: const PosStyles(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-    bytes += generator.text(sep);
+    bytes += generator.text(dsep);
     
     // 5. Footer
     bytes += generator.feed(1);
-    bytes += generator.text(sep); // Closing line
     bytes += generator.text('Visit Again!', styles: const PosStyles(align: PosAlign.center));
     bytes += generator.text('THANK YOU', styles: const PosStyles(align: PosAlign.center, bold: true));
-    bytes += generator.text(sep); // Final line
+    bytes += generator.text(dsep);
     bytes += generator.feed(2);
     bytes += generator.cut();
     
@@ -181,31 +180,62 @@ class PrintService {
     }
 
     // Direct Printing via flutter_pos_printer_platform
-    var type = PrinterType.bluetooth;
+    late PrinterType type;
+    late BasePrinterInput model;
+
     switch (config.connectionType) {
       case PrinterConnectionType.usb:
         type = PrinterType.usb;
+        model = UsbPrinterInput(
+          name: config.address ?? 'USB Printer',
+        );
         break;
       case PrinterConnectionType.network:
         type = PrinterType.network;
+        model = TcpPrinterInput(
+          ipAddress: config.address ?? '',
+          port: config.port,
+        );
         break;
       case PrinterConnectionType.bluetooth:
         type = PrinterType.bluetooth;
+        model = BluetoothPrinterInput(
+          name: config.name,
+          address: config.address ?? '',
+          isBle: config.isBle,
+        );
         break;
-      default:
-        type = PrinterType.bluetooth;
+      case PrinterConnectionType.rawbt:
+        // Already handled above
+        return;
     }
 
-    await PrinterManager.instance.connect(
-      type: type,
-      model: TcpPrinterInput(
-        ipAddress: config.address ?? '',
-        port: config.port,
-      ), // Note: For USB/BT we need different Input models, but this is a starting point
-    );
+    try {
+      print('🖨️ Connecting to ${config.connectionType.name} at ${config.address}...');
+      await PrinterManager.instance.connect(
+        type: type,
+        model: model,
+      );
 
-    await PrinterManager.instance.send(type: type, bytes: bytes);
-    await PrinterManager.instance.disconnect(type: type);
+      // Give Bluetooth printers a moment to initialize after connection
+      if (type == PrinterType.bluetooth) {
+        print('📡 Bluetooth connected, waiting for initialization...');
+        await Future.delayed(const Duration(milliseconds: 1000));
+      }
+
+      print('✉️ Sending ${bytes.length} bytes to printer...');
+      await PrinterManager.instance.send(type: type, bytes: bytes);
+      
+      // Short delay for some printers to finish processing before disconnect
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      print('🔌 Disconnecting...');
+      await PrinterManager.instance.disconnect(type: type);
+      print('✅ Print Job Completed.');
+    } catch (e) {
+      print('❌ Native Print Error: $e');
+      rethrow;
+    }
   }
 
   // Print via RawBT (Android)

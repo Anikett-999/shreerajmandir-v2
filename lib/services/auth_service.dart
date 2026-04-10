@@ -119,4 +119,53 @@ class AuthService extends ChangeNotifier {
     );
     await _firestore.collection('users').doc(user.userId).set(user.toJson());
   }
+
+  Future<String?> requestAccountDeletion() async {
+    try {
+      _setLoading(true);
+      final user = _auth.currentUser;
+      if (user != null) {
+        final userData = await getCurrentUserData();
+        
+        await _firestore.collection('account_deletion_requests').doc(user.uid).set({
+          'userId': user.uid,
+          'email': user.email,
+          'name': userData?.name ?? 'Unknown',
+          'requestedAt': FieldValue.serverTimestamp(),
+          'status': 'pending',
+          'note': 'Automated cleanup request from Waiter Module',
+        });
+        
+        return null; // success
+      }
+      return 'No active session found.';
+    } catch (e) {
+      return 'An unexpected error occurred while requesting deletion.';
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<String?> deleteAccount() async {
+    // Keep this for admin-level physical cleanup or re-authentication flows
+    try {
+      _setLoading(true);
+      final user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).delete();
+        await user.delete();
+        return null;
+      }
+      return 'No active session found.';
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        return 'Please log out and log in again to perform this sensitive action.';
+      }
+      return _mapFirebaseAuthError(e);
+    } catch (e) {
+      return 'An unexpected error occurred during account deletion.';
+    } finally {
+      _setLoading(false);
+    }
+  }
 }

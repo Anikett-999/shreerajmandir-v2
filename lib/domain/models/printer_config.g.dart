@@ -22,6 +22,7 @@ _$PrinterConfigImpl _$$PrinterConfigImplFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String? ?? 'Default Printer',
       autoPrintKOT: json['autoPrintKOT'] as bool? ?? true,
       autoPrintBill: json['autoPrintBill'] as bool? ?? true,
+      isBle: json['isBle'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$PrinterConfigImplToJson(
@@ -34,6 +35,7 @@ Map<String, dynamic> _$$PrinterConfigImplToJson(
   'name': instance.name,
   'autoPrintKOT': instance.autoPrintKOT,
   'autoPrintBill': instance.autoPrintBill,
+  'isBle': instance.isBle,
 };
 
 const _$PrinterConnectionTypeEnumMap = {

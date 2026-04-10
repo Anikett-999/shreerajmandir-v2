@@ -62,4 +62,8 @@ class PrinterSettingsNotifier extends StateNotifier<PrinterConfig> {
   Future<void> toggleAutoBill(bool value) async {
     await updateConfig(state.copyWith(autoPrintBill: value));
   }
+
+  Future<void> toggleBle(bool value) async {
+    await updateConfig(state.copyWith(isBle: value));
+  }
 }

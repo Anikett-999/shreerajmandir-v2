@@ -1,7 +1,22 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'kot_model.freezed.dart';
 part 'kot_model.g.dart';
+
+class TimestampConverter implements JsonConverter<DateTime, dynamic> {
+  const TimestampConverter();
+
+  @override
+  DateTime fromJson(dynamic json) {
+    if (json is Timestamp) return json.toDate();
+    if (json is String) return DateTime.parse(json);
+    return DateTime.now();
+  }
+
+  @override
+  dynamic toJson(DateTime date) => date.toIso8601String();
+}
 
 @freezed
 class KOTItem with _$KOTItem {
@@ -33,7 +48,7 @@ class KOTModel with _$KOTModel {
     @Default(false) bool isPrinted,
     required String createdBy,
     @Default('') String userName,
-    required DateTime createdAt,
+    @TimestampConverter() required DateTime createdAt,
   }) = _KOTModel;
 
   factory KOTModel.fromJson(Map<String, dynamic> json) => _$KOTModelFromJson(json);

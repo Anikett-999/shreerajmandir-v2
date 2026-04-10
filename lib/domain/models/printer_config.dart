@@ -25,6 +25,7 @@ class PrinterConfig with _$PrinterConfig {
     @Default('Default Printer') String name,
     @Default(true) bool autoPrintKOT,
     @Default(true) bool autoPrintBill,
+    @Default(false) bool isBle,
   }) = _PrinterConfig;
 
   factory PrinterConfig.fromJson(Map<String, dynamic> json) => _$PrinterConfigFromJson(json);

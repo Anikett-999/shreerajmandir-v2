@@ -8,9 +8,9 @@ import '../screens/global/settings_screen.dart';
 import '../screens/global/printer_settings_screen.dart';
 import '../screens/global/kot_screen.dart';
 import './global/confirmation_dialog.dart';
-import '../../services/auth_service.dart';
+import '../providers/branch_provider.dart';
 
-final authServiceProvider = Provider<AuthService>((ref) => AuthService());
+// We rely on the authServiceProvider from auth_provider.dart via the build method's ref
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -18,6 +18,7 @@ class AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).value;
+    final branchAsync = ref.watch(branchProvider);
 
     return Drawer(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -26,16 +27,25 @@ class AppDrawer extends ConsumerWidget {
           // Drawer Header
           UserAccountsDrawerHeader(
             decoration: const BoxDecoration(color: AppTheme.maroon),
-            accountName: Text(
-              user?.displayName ?? 'Rajmandir POS User',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            accountName: branchAsync.when(
+              data: (branch) => Text(
+                branch.branchName,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              loading: () => const Text('Loading Branch...', style: TextStyle(fontSize: 16)),
+              error: (_, __) => Text(user?.displayName ?? 'Rajmandir User', 
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             ),
-            accountEmail: Text(user?.email ?? 'branch_001@rajmandir.com'),
-            currentAccountPicture: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Image.asset('assets/branding/splash_logo.png'),
+            accountEmail: branchAsync.when(
+              data: (branch) => Text('${branch.location} | ${user?.email ?? ""}'),
+              loading: () => Text(user?.email ?? ''),
+              error: (_, __) => Text(user?.email ?? ''),
+            ),
+            currentAccountPicture: const Hero(
+              tag: 'profile-avatar',
+              child: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.store_rounded, color: AppTheme.maroon, size: 36),
               ),
             ),
           ),

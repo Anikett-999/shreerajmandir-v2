@@ -125,83 +125,109 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
   Future<void> _sendToKitchen() async {
     final cart = ref.read(cartProvider);
     if (cart.isEmpty) return;
-    
-    print('🛒 SEND TO KITCHEN INITIALIZED!');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pushing KOT to Server...')),
-    );
-    
+
+    final kotService = ref.read(kotServiceProvider);
+    final authUser = ref.read(authStateProvider).value;
+    String userName = 'Staff';
+    if (authUser?.displayName != null && authUser!.displayName!.isNotEmpty) {
+      userName = authUser.displayName!;
+    } else if (authUser?.email != null) {
+      userName = authUser!.email!.split('@')[0];
+    }
+
+    final categories = ref.read(categoriesProvider).value ?? [];
+
     try {
-      print('🚀 Calling KOTService...');
-      final kotService = ref.read(kotServiceProvider);
-      final authUser = ref.read(authStateProvider).value;
-      String userName = 'Staff';
-      if (authUser?.displayName != null && authUser!.displayName!.isNotEmpty) {
-        userName = authUser.displayName!;
-      } else if (authUser?.email != null) {
-        userName = authUser!.email!.split('@')[0];
-      }
-      
-      final categories = ref.read(categoriesProvider).value ?? [];
-      
       final kot = await kotService.createKOT(
         tableId: widget.table.tableId,
         tableName: widget.table.name,
         items: cart.map((i) {
           final matchedCat = categories.where((c) => c.categoryId == i.item.categoryId);
           final catName = matchedCat.isNotEmpty ? matchedCat.first.name : 'General';
-          
+
           return KOTItem(
-            uniqueId: i.cartId,
-            itemId: i.item.itemId, 
-            name: i.item.name, 
-            category: catName, 
-            qty: i.quantity, 
-            price: i.item.price, 
-            variant: i.variant ?? '',
-            note: i.note
-          );
+              uniqueId: i.cartId,
+              itemId: i.item.itemId,
+              name: i.item.name,
+              category: catName,
+              qty: i.quantity,
+              price: i.item.price,
+              variant: i.variant ?? '',
+              note: i.note);
         }).toList(),
         userId: authUser?.uid ?? 'unknown',
         userName: userName,
       );
-      print('✅ KOTService returned successfully!');
 
-      // Auto-Print Integration
       final config = ref.read(printerConfigProvider);
+      bool printSuccess = true;
+      String? printError;
+
       if (config.autoPrintKOT) {
         try {
           final printService = ref.read(printServiceProvider);
           final bytes = await printService.generateKOTBytes(kot, config.paperSize);
           await printService.printReceipt(bytes, config);
-        } catch (printErr) {
-          print('⚠️ Auto-print failed but KOT saved: $printErr');
-          // We don't block the UI for print failures if KOT is saved
+        } catch (e) {
+          printSuccess = false;
+          printError = e.toString();
         }
       }
-      
-      ref.read(cartProvider.notifier).clear();
-      
-      if(mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-           const SnackBar(
-             content: Text('✅ KOT Successfully Sent to Kitchen!'), 
-             backgroundColor: AppTheme.deepGreen,
-             duration: Duration(seconds: 2),
-           )
-         );
-         Navigator.pop(context); // Automatically leave Order Screen so they can serve other tables
+
+      if (!printSuccess && mounted) {
+        final proceed = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.print_disabled, color: Colors.orange),
+                SizedBox(width: 8),
+                Text('Print Failed'),
+              ],
+            ),
+            content: Text(
+                'KOT was saved to system, but printing failed.\n\nError: $printError\n\nDo you want to retry printing or finish order?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('RETRY PRINT'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.maroon, foregroundColor: Colors.white),
+                child: const Text('FINISH ANYWAY'),
+              ),
+            ],
+          ),
+        );
+
+        if (proceed != true) {
+          // If they chose retry (returned false), we trigger printing loop again
+          return _sendToKitchen();
+        }
       }
-    } catch (e, stackTrace) {
-       print('❌ CRITICAL ERROR in _sendToKitchen: $e');
-       print('❌ STACK TRACE: $stackTrace');
-       if(mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-             content: Text('❌ Error: $e'), 
-             backgroundColor: Colors.red,
-             duration: const Duration(seconds: 5),
-         ));
-       }
+
+      ref.read(cartProvider.notifier).clear();
+
+      if (mounted) {
+        final message = config.autoPrintKOT 
+            ? '✅ KOT Sent and Printed!' 
+            : '✅ KOT Sent to Kitchen (Auto-Print OFF)';
+        
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(message),
+          backgroundColor: AppTheme.deepGreen,
+        ));
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('❌ Error: $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
     }
   }
 

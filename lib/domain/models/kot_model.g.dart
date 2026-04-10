@@ -46,7 +46,7 @@ _$KOTModelImpl _$$KOTModelImplFromJson(Map<String, dynamic> json) =>
       isPrinted: json['isPrinted'] as bool? ?? false,
       createdBy: json['createdBy'] as String,
       userName: json['userName'] as String? ?? '',
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: const TimestampConverter().fromJson(json['createdAt']),
     );
 
 Map<String, dynamic> _$$KOTModelImplToJson(_$KOTModelImpl instance) =>
@@ -61,5 +61,5 @@ Map<String, dynamic> _$$KOTModelImplToJson(_$KOTModelImpl instance) =>
       'isPrinted': instance.isPrinted,
       'createdBy': instance.createdBy,
       'userName': instance.userName,
-      'createdAt': instance.createdAt.toIso8601String(),
+      'createdAt': const TimestampConverter().toJson(instance.createdAt),
     };

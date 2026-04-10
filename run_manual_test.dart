@@ -26,6 +26,7 @@ void main() async {
 
     final kot = await kotService.createKOT(
       tableId: 'T3',
+      tableName: 'Table 3',
       items: [
         const KOTItem(
           uniqueId: 'cart_item_1',
@@ -37,6 +38,7 @@ void main() async {
         ),
       ],
       userId: 'dev123',
+      userName: 'Developer Admin',
     );
 
     print('KOT Created! KOT ID: ${kot.kotId}');

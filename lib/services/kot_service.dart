@@ -46,7 +46,7 @@ class KOTService {
       final Map<String, dynamic> tableUpdates = {};
 
       final kotId = const Uuid().v4();
-      final double kotTotal = items.fold(0.0, (sum, i) => sum + (i.price * i.qty));
+      final double kotTotal = items.fold(0.0, (total, i) => total + (i.price * i.qty));
 
       if (orderId == null) {
         final newOrderRef = _orderCollection.doc();
@@ -140,9 +140,15 @@ class KOTService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return KOTModel.fromJson(doc.data() as Map<String, dynamic>);
-      }).toList();
+      final List<KOTModel> kots = [];
+      for (var doc in snapshot.docs) {
+        try {
+          kots.add(KOTModel.fromJson(doc.data() as Map<String, dynamic>));
+        } catch (e) {
+          print('❌ Skipping corrupted KOT ${doc.id}: $e');
+        }
+      }
+      return kots;
     });
   }
 
@@ -153,9 +159,15 @@ class KOTService {
         .limit(50)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return KOTModel.fromJson(doc.data() as Map<String, dynamic>);
-      }).toList();
+      final List<KOTModel> kots = [];
+      for (var doc in snapshot.docs) {
+        try {
+          kots.add(KOTModel.fromJson(doc.data() as Map<String, dynamic>));
+        } catch (e) {
+          print('❌ Skipping corrupted KOT ${doc.id}: $e');
+        }
+      }
+      return kots;
     });
   }
 

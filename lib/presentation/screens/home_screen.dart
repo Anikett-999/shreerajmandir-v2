@@ -5,6 +5,7 @@ import '../../domain/models/table_model.dart';
 import '../../services/table_service.dart';
 import '../widgets/table_card.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/global/profile_menu.dart';
 
 
 import '../../services/seed_data_service.dart';
@@ -36,6 +37,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: Image.asset('assets/branding/splash_logo.png', height: 40),
         centerTitle: true,
+        actions: const [
+          ProfileAppBarActions(),
+        ],
       ),
       drawer: AppDrawer(),
 

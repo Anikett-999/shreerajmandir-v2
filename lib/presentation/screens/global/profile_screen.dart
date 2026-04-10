@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../services/auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/global/base_widgets.dart';
-
-final authServiceProvider = Provider<AuthService>((ref) => AuthService());
+import '../../../core/app_theme.dart';
+import '../../../services/auth_service.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -14,15 +14,26 @@ class ProfileScreen extends ConsumerWidget {
     final authService = ref.watch(authServiceProvider);
     
     return Scaffold(
+      backgroundColor: AppTheme.cream,
       appBar: AppBar(
-        title: const Text('User Profile'),
+        title: const Text('MY PROFILE', 
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2)),
         elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppTheme.maroon,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen())),
+          ),
+        ],
       ),
       body: FutureBuilder(
         future: authService.getCurrentUserData(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const LoadingIndicator(message: 'Fetching profile...');
+            return const LoadingIndicator(message: 'Loading your profile...');
           }
           
           if (snapshot.hasError) {
@@ -32,49 +43,148 @@ class ProfileScreen extends ConsumerWidget {
           final user = snapshot.data;
           if (user == null) {
             return const EmptyStateWidget(
-              title: 'No Profile Found', 
-              message: 'Could not load your user profile information.',
-              icon: Icons.person_off,
+              title: 'Profile Missing', 
+              message: 'We couldn\'t find your profile details.',
+              icon: Icons.person_off_rounded,
             );
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            physics: const BouncingScrollPhysics(),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.blueAccent,
-                  child: Icon(Icons.person, size: 60, color: Colors.white),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  user.name,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  user.email,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                const Divider(),
-                const SizedBox(height: 16),
-                _buildInfoRow(context, Icons.badge, 'Roles', user.roles.map((e) => e.toString().split('.').last).join(', ')),
-                _buildInfoRow(context, Icons.fingerprint, 'User ID', user.userId),
-                const SizedBox(height: 40),
-                SizedBox(
+                // Header Profile Section
+                Container(
                   width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Logic to change password can be added later
-                    },
-                    icon: const Icon(Icons.lock_outline),
-                    label: const Text('Change Password'),
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Stack(
+                        children: [
+                          Hero(
+                            tag: 'profile-avatar',
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppTheme.maroon.withOpacity(0.2), width: 2),
+                              ),
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundColor: AppTheme.maroon.withOpacity(0.05),
+                                child: const Icon(Icons.person_rounded, size: 60, color: AppTheme.maroon),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: AppTheme.successGreen,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.check, size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        user.name,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        user.email,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        children: user.roles.map((role) => Chip(
+                          label: Text(
+                            role.toString().split('.').last.toUpperCase(),
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          backgroundColor: AppTheme.maroon,
+                          padding: EdgeInsets.zero,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        )).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'ACCOUNT INFORMATION',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.maroon,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInfoCard([
+                        _buildInfoRow(context, Icons.badge_outlined, 'Employee ID', user.userId.substring(0, 8).toUpperCase()),
+                        _buildInfoRow(context, Icons.calendar_today_outlined, 'Status', 'Active Member'),
+                      ]),
+                      
+                      const SizedBox(height: 32),
+                      const Text(
+                        'DANGER ZONE',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.red,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildActionCard([
+                        _buildActionRow(
+                          context, 
+                          Icons.lock_reset_rounded, 
+                          'Reset Password', 
+                          'Securely change your account password',
+                          () => _showPasswordResetDialog(context, authService, user.email),
+                          color: Colors.blue.shade700,
+                        ),
+                        _buildActionRow(
+                          context, 
+                          Icons.delete_outline_rounded, 
+                          'Cleanup Request', 
+                          'Request permanent data removal',
+                          () => _showDeleteAccountDialog(context, ref, authService),
+                          color: Colors.red.shade700,
+                          isLast: true,
+                        ),
+                      ]),
+                    ],
                   ),
                 ),
               ],
@@ -85,30 +195,158 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.blueAccent),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Colors.grey,
-                ),
-              ),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
+  Widget _buildInfoCard(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildActionCard(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.red.withOpacity(0.1)),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildActionRow(
+    BuildContext context, 
+    IconData icon, 
+    String title, 
+    String subtitle, 
+    VoidCallback onTap, 
+    {required Color color, bool isLast = false}
+  ) {
+    return Column(
+      children: [
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color),
+          ),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+          onTap: onTap,
+        ),
+        if (!isLast) Divider(height: 1, indent: 70, color: Colors.grey.shade100),
+      ],
+    );
+  }
+
+  void _showPasswordResetDialog(BuildContext context, AuthService auth, String email) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Reset Password?'),
+        content: Text('A secure link will be sent to $email.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final error = await auth.sendResetEmail(email);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error ?? 'Reset link sent! Check your email.'),
+                    backgroundColor: error != null ? Colors.red : AppTheme.successGreen,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            }, 
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.maroon,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('SEND LINK', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref, AuthService auth) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Request Cleanup?', style: TextStyle(color: Colors.red)),
+        content: const Text('This will request the Admin to permanently remove your data and logs from the system. This action cannot be reversed.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              _showDoubleConfirmationDialog(context, ref, auth);
+            }, 
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            child: const Text('CONTINUE', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDoubleConfirmationDialog(BuildContext context, WidgetRef ref, AuthService auth) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Confirm Request'),
+        content: const Text('Are you sure you want to notify the Admin to delete your account?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('BACK')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final error = await auth.requestAccountDeletion();
+              if (context.mounted) {
+                if (error != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(error), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+                  );
+                } else {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Cleanup request sent to Admin successfully.'), 
+                      backgroundColor: Colors.black87,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
+            }, 
+            child: const Text('SUBMIT REQUEST', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(BuildContext context, IconData icon, String label, String value) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: Icon(icon, color: AppTheme.maroon, size: 22),
+      title: Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+      subtitle: Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
     );
   }
 }
