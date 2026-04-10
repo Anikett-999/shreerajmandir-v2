@@ -125,6 +125,7 @@ class KOTService {
       tableUpdates['totalAmount'] = currentTotal;
       tableUpdates['itemCount'] = currentItemCount;
       tableUpdates['kotCount'] = currentKotCount;
+      tableUpdates['unprintedKotCount'] = (tableData['unprintedKotCount'] ?? 0) + 1;
       tableUpdates['updatedAt'] = FieldValue.serverTimestamp();
 
       transaction.update(_tableCollection.doc(tableId), tableUpdates);
@@ -192,6 +193,31 @@ class KOTService {
       if (itemIndex != -1) {
         items[itemIndex]['status'] = status;
         transaction.update(kotRef, {'items': items});
+      }
+    });
+  }
+
+  // Mark KOT as printed and update table count
+  Future<void> markAsPrinted(String kotId, String tableId) async {
+    final kotRef = _kotCollection.doc(kotId);
+    final tableRef = _tableCollection.doc(tableId);
+
+    await _firestore.runTransaction((transaction) async {
+      final kotSnap = await transaction.get(kotRef);
+      final tableSnap = await transaction.get(tableRef);
+
+      if (kotSnap.exists && tableSnap.exists) {
+        final kotData = kotSnap.data() as Map<String, dynamic>;
+        // Only decrement if it wasn't already printed
+        if (kotData['isPrinted'] != true) {
+          transaction.update(kotRef, {'isPrinted': true});
+          
+          final tableData = tableSnap.data() as Map<String, dynamic>;
+          final int count = tableData['unprintedKotCount'] ?? 0;
+          if (count > 0) {
+            transaction.update(tableRef, {'unprintedKotCount': count - 1});
+          }
+        }
       }
     });
   }

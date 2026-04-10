@@ -173,10 +173,14 @@ class PrintService {
   }
 
   // Master Print Function
-  Future<void> printReceipt(List<int> bytes, PrinterConfig config) async {
+  Future<bool> printReceipt(List<int> bytes, PrinterConfig config) async {
     if (config.connectionType == PrinterConnectionType.rawbt && Platform.isAndroid) {
-      await sendToRawBT(bytes);
-      return;
+      try {
+        await sendToRawBT(bytes);
+        return true; // Sent to external app successfully
+      } catch (e) {
+        return false;
+      }
     }
 
     // Direct Printing via flutter_pos_printer_platform
@@ -206,16 +210,25 @@ class PrintService {
         );
         break;
       case PrinterConnectionType.rawbt:
-        // Already handled above
-        return;
+        return false;
     }
 
     try {
       print('🖨️ Connecting to ${config.connectionType.name} at ${config.address}...');
-      await PrinterManager.instance.connect(
+      
+      // Use a timeout for connection
+      final connected = await PrinterManager.instance.connect(
         type: type,
         model: model,
-      );
+      ).timeout(const Duration(seconds: 5), onTimeout: () {
+        print('⏳ Connection Timeout');
+        return false;
+      });
+
+      if (!connected) {
+        print('❌ Failed to connect to printer');
+        return false;
+      }
 
       // Give Bluetooth printers a moment to initialize after connection
       if (type == PrinterType.bluetooth) {
@@ -224,7 +237,12 @@ class PrintService {
       }
 
       print('✉️ Sending ${bytes.length} bytes to printer...');
-      await PrinterManager.instance.send(type: type, bytes: bytes);
+      final sent = await PrinterManager.instance.send(type: type, bytes: bytes);
+      
+      if (!sent) {
+        print('❌ Failed to send bytes to printer');
+        return false;
+      }
       
       // Short delay for some printers to finish processing before disconnect
       await Future.delayed(const Duration(milliseconds: 500));
@@ -232,9 +250,10 @@ class PrintService {
       print('🔌 Disconnecting...');
       await PrinterManager.instance.disconnect(type: type);
       print('✅ Print Job Completed.');
+      return true;
     } catch (e) {
       print('❌ Native Print Error: $e');
-      rethrow;
+      return false;
     }
   }
 

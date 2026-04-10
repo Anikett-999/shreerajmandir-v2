@@ -14,6 +14,7 @@ class TableModel with _$TableModel {
     @Default(0.0) double totalAmount,
     @Default(0) int itemCount,
     @Default(0) int kotCount,
+    @Default(0) int unprintedKotCount,
     DateTime? updatedAt,
   }) = _TableModel;
 

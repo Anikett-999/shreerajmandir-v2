@@ -112,7 +112,8 @@ final cartProvider = StateNotifierProvider.family<CartNotifier, List<CartItem>, 
 // --- Core Screen ---
 class OrderScreen extends ConsumerStatefulWidget {
   final TableModel table;
-  const OrderScreen({super.key, required this.table});
+  final int initialIndex;
+  const OrderScreen({super.key, required this.table, this.initialIndex = 0});
 
   @override
   ConsumerState<OrderScreen> createState() => _OrderScreenState();
@@ -128,15 +129,23 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
     super.initState();
     // Wipe any lingering search state when navigating to a new table
     Future.microtask(() => ref.read(searchQueryProvider.notifier).state = '');
+    
+    // Auto-open history if requested (e.g. from TableCard "Print Pending" action)
+    if (widget.initialIndex == 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showOrderHistory(context);
+      });
+    }
   }
 
-  Future<void> _sendToKitchen() async {
+  Future<void> _sendToKitchen({KOTModel? existingKOT}) async {
     final cart = ref.read(cartProvider(widget.table.tableId));
-    if (cart.isEmpty || _isProcessing) return;
+    if (cart.isEmpty && existingKOT == null) return;
+    if (_isProcessing) return;
 
     setState(() {
       _isProcessing = true;
-      _processingStatus = "Initializing KOT...";
+      _processingStatus = existingKOT == null ? "Initializing KOT..." : "Preparing Print...";
     });
 
     final kotService = ref.read(kotServiceProvider);
@@ -151,128 +160,119 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
     final categories = ref.read(categoriesProvider).value ?? [];
 
     try {
-      setState(() {
-        _processingStatus = "Registering order in system...";
-      });
+      KOTModel? kot = existingKOT;
 
-      final kot = await kotService.createKOT(
-        tableId: widget.table.tableId,
-        tableName: widget.table.name,
-        items: cart.map((i) {
-          final matchedCat = categories.where((c) => c.categoryId == i.item.categoryId);
-          final catName = matchedCat.isNotEmpty ? matchedCat.first.name : 'General';
-
-          return KOTItem(
-              uniqueId: i.cartId,
-              itemId: i.item.itemId,
-              name: i.item.name,
-              category: catName,
-              qty: i.quantity,
-              price: i.item.price,
-              variant: i.variant ?? '',
-              note: i.note);
-        }).toList(),
-        userId: authUser?.uid ?? 'unknown',
-        userName: userName,
-      );
+      if (kot == null) {
+        setState(() => _processingStatus = "Registering order in system...");
+        kot = await kotService.createKOT(
+          tableId: widget.table.tableId,
+          tableName: widget.table.name,
+          items: cart.map((i) {
+            final matchedCat = categories.where((c) => c.categoryId == i.item.categoryId);
+            final catName = matchedCat.isNotEmpty ? matchedCat.first.name : 'General';
+            return KOTItem(
+                uniqueId: i.cartId,
+                itemId: i.item.itemId,
+                name: i.item.name,
+                category: catName,
+                qty: i.quantity,
+                price: i.item.price,
+                variant: i.variant ?? '',
+                note: i.note);
+          }).toList(),
+          userId: authUser?.uid ?? 'unknown',
+          userName: userName,
+        );
+      }
 
       final printService = ref.read(printServiceProvider);
       final config = ref.read(printerConfigProvider);
 
       bool printSuccess = true;
-      String printError = '';
 
-      if (config.autoPrintKOT) {
-        setState(() {
-          _processingStatus = "Sending to printer...";
-        });
-        try {
-          final bytes = await printService.generateKOTBytes(kot, config.paperSize);
-          await printService.printReceipt(bytes, config);
-          printSuccess = true;
-        } catch (e) {
-          printSuccess = false;
-          printError = e.toString();
+      if (config.autoPrintKOT || existingKOT != null) {
+        setState(() => _processingStatus = "Sending to printer...");
+        final bytes = await printService.generateKOTBytes(kot!, config.paperSize);
+        printSuccess = await printService.printReceipt(bytes, config);
+        
+        if (printSuccess) {
+          await kotService.markAsPrinted(kot.kotId, widget.table.tableId);
         }
       }
 
       if (!printSuccess && mounted) {
-        setState(() {
-          _isProcessing = false;
-        });
+        setState(() => _isProcessing = false);
 
-        final proceed = await showDialog<bool>(
+        await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Row(
+            title: Row(
               children: [
-                Icon(Icons.print_disabled, color: Colors.orange),
-                SizedBox(width: 8),
-                Text('Print Failed'),
+                Icon(Icons.warning_rounded, color: Colors.orange[700]),
+                const SizedBox(width: 8),
+                const Text('Printer Issue'),
               ],
             ),
-            content: Text(
-                'KOT was saved to system, but printing failed.\n\nError: $printError\n\nDo you want to retry printing or finish order?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Order Saved Successfully! 🟢', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                const SizedBox(height: 12),
+                const Text('But printing failed. 🔴', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                const SizedBox(height: 16),
+                const Text('What would you like to do?'),
+              ],
+            ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false), // RETRY
+                onPressed: () {
+                  Navigator.pop(context);
+                  _sendToKitchen(existingKOT: kot);
+                },
                 child: const Text('RETRY PRINT'),
               ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true), // FINISH
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.maroon,
-                    foregroundColor: Colors.white),
-                child: const Text('FINISH ANYWAY'),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (existingKOT == null) {
+                    ref.read(cartProvider(widget.table.tableId).notifier).clear();
+                  }
+                  Navigator.pop(context); // Exit Order Screen
+                },
+                child: const Text('FINISH (MANUAL)', style: TextStyle(color: AppTheme.maroon)),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (existingKOT == null) {
+                    ref.read(cartProvider(widget.table.tableId).notifier).clear();
+                  }
+                },
+                child: const Text('STAY HERE'),
               ),
             ],
           ),
         );
-
-        if (proceed != true) {
-          setState(() {
-            _isProcessing = true;
-            _processingStatus = "Retrying print...";
-          });
-
-          try {
-            final bytes = await printService.generateKOTBytes(kot, config.paperSize);
-            await printService.printReceipt(bytes, config);
-          } catch (e) {
-            setState(() {
-              _isProcessing = false;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('Print failed again: $e'),
-              backgroundColor: Colors.red,
-            ));
-            return;
-          }
-        }
+        return;
       }
 
-      ref.read(cartProvider(widget.table.tableId).notifier).clear();
+      if (existingKOT == null) {
+        ref.read(cartProvider(widget.table.tableId).notifier).clear();
+      }
 
-      setState(() {
-        _isProcessing = false;
-      });
+      setState(() => _isProcessing = false);
 
       if (mounted) {
-        final message = config.autoPrintKOT 
-            ? '✅ KOT Sent and Printed!' 
-            : '✅ KOT Sent to Kitchen (Auto-Print OFF)';
-        
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(message),
+          content: Text(printSuccess ? '✅ KOT Sent and Printed!' : '✅ KOT Saved Successfully!'),
           backgroundColor: AppTheme.deepGreen,
         ));
-        Navigator.pop(context);
+        if (existingKOT == null) Navigator.pop(context);
       }
     } catch (e) {
-      setState(() {
-        _isProcessing = false;
-      });
+      setState(() => _isProcessing = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('❌ Error: $e'),
@@ -602,29 +602,74 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                                       Padding(
                                         padding: const EdgeInsets.all(16.0),
                                         child: Column(
-                                          children: kot.items.map((item) {
-                                            return Padding(
-                                              padding: const EdgeInsets.symmetric(vertical: 4),
-                                              child: Row(
-                                                children: [
-                                                  Text(
-                                                    '${item.qty}x ',
-                                                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon),
-                                                  ),
-                                                  Expanded(
-                                                    child: Text(
-                                                      '${item.name}${item.variant.isNotEmpty ? " (${item.variant})" : ""}',
-                                                      style: const TextStyle(fontSize: 14),
+                                          children: [
+                                            ...kot.items.map((item) {
+                                              return Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                                child: Row(
+                                                  children: [
+                                                    Text(
+                                                      '${item.qty}x ',
+                                                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon),
                                                     ),
+                                                    Expanded(
+                                                      child: Text(
+                                                        '${item.name}${item.variant.isNotEmpty ? " (${item.variant})" : ""}',
+                                                        style: const TextStyle(fontSize: 14),
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      '₹${(item.price * item.qty).toStringAsFixed(0)}',
+                                                      style: const TextStyle(fontWeight: FontWeight.w500),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList(),
+                                            const Divider(height: 24),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: kot.isPrinted ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(6),
                                                   ),
-                                                  Text(
-                                                    '₹${(item.price * item.qty).toStringAsFixed(0)}',
-                                                    style: const TextStyle(fontWeight: FontWeight.w500),
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        kot.isPrinted ? Icons.check_circle : Icons.warning_rounded,
+                                                        size: 14,
+                                                        color: kot.isPrinted ? Colors.green : Colors.orange[800],
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        kot.isPrinted ? 'PRINTED' : 'NOT PRINTED',
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: kot.isPrinted ? Colors.green : Colors.orange[800],
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                ],
-                                              ),
-                                            );
-                                          }).toList(),
+                                                ),
+                                                ElevatedButton.icon(
+                                                  onPressed: () => _sendToKitchen(existingKOT: kot),
+                                                  icon: const Icon(Icons.print, size: 16),
+                                                  label: const Text('PRINT SLIP'),
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: AppTheme.maroon,
+                                                    foregroundColor: Colors.white,
+                                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                    minimumSize: const Size(0, 36),
+                                                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],

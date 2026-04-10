@@ -16,6 +16,7 @@ _$TableModelImpl _$$TableModelImplFromJson(Map<String, dynamic> json) =>
       totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
       itemCount: (json['itemCount'] as num?)?.toInt() ?? 0,
       kotCount: (json['kotCount'] as num?)?.toInt() ?? 0,
+      unprintedKotCount: (json['unprintedKotCount'] as num?)?.toInt() ?? 0,
       updatedAt: json['updatedAt'] == null
           ? null
           : DateTime.parse(json['updatedAt'] as String),
@@ -31,5 +32,6 @@ Map<String, dynamic> _$$TableModelImplToJson(_$TableModelImpl instance) =>
       'totalAmount': instance.totalAmount,
       'itemCount': instance.itemCount,
       'kotCount': instance.kotCount,
+      'unprintedKotCount': instance.unprintedKotCount,
       'updatedAt': instance.updatedAt?.toIso8601String(),
     };
