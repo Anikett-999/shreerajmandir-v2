@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class TimestampConverter {
-  const TimestampConverter();
+class LocalTimestampConverter {
+  const LocalTimestampConverter();
 
   static DateTime? fromJson(dynamic json) {
     if (json == null) return null;
@@ -72,7 +72,7 @@ class UserModel {
       role: json['role'] as String? ?? 'waiter',
       branchIds: List<String>.from(json['branchIds'] as List? ?? []),
       isActive: json['isActive'] as bool? ?? true,
-      lastLogin: TimestampConverter.fromJson(json['lastLogin']),
+      lastLogin: LocalTimestampConverter.fromJson(json['lastLogin']),
       profileImageUrl: json['profileImageUrl'] as String?,
     );
   }
@@ -85,7 +85,7 @@ class UserModel {
       'role': role,
       'branchIds': branchIds,
       'isActive': isActive,
-      'lastLogin': TimestampConverter.toJson(lastLogin),
+      'lastLogin': LocalTimestampConverter.toJson(lastLogin),
       'profileImageUrl': profileImageUrl,
     };
   }

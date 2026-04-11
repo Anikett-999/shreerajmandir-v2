@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/timestamp_converter.dart';
 
 part 'table_model.freezed.dart';

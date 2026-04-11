@@ -132,18 +132,20 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false), // Cancel logic handled by caller
+                onPressed: () => Navigator.pop(context, false), // Returns to retry logic
                 child: const Text('RETRY PRINT'),
               ),
-              OutlinedButton.icon(
-                onPressed: () => _handleShareDigitalBill(bill),
-                icon: const Icon(Icons.share, color: Colors.green),
-                label: const Text('SHARE WHATSAPP', style: TextStyle(color: Colors.green)),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.maroon, foregroundColor: Colors.white),
-                child: const Text('FINISH ANYWAY'),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await _handleShareDigitalBill(bill);
+                  if (context.mounted) Navigator.pop(context, true); // Trigger finalize after share
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                icon: const Icon(Icons.share),
+                label: const Text('SHARE WHATSAPP'),
               ),
             ],
           ),
@@ -224,55 +226,53 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             );
           } else {
             // Mobile Stacked Layout - Modern & Professional
-            return Stack(
+            return Column(
               children: [
-                ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 180), // Extra padding for bottom card
-                  children: [
-                    const Text('ORDER HISTORY', 
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueGrey)),
-                    const SizedBox(height: 12),
-                    _buildKOTHistoryPanel(kots, shrinkWrap: true),
-                    
-                    const SizedBox(height: 24),
-                    const Text('BILL PREVIEW', 
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.maroon)),
-                    const SizedBox(height: 12),
-                    BillAggregatedList(items: items),
-                    const SizedBox(height: 24),
-                  ],
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      const Text('ORDER HISTORY', 
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueGrey)),
+                      const SizedBox(height: 12),
+                      _buildKOTHistoryPanel(kots, shrinkWrap: true),
+                      
+                      const SizedBox(height: 24),
+                      const Text('BILL PREVIEW', 
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.maroon)),
+                      const SizedBox(height: 12),
+                      BillAggregatedList(items: items),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
                 // Persistent Settlement Panel at bottom for Mobile
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2)),
-                      ],
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-                    ),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Total Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                                Text('₹${_total.toStringAsFixed(2)}', 
-                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.maroon)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            _buildMobileActionButtons(),
-                          ],
-                        ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2)),
+                    ],
+                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Total Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                              Text('₹${_total.toStringAsFixed(2)}', 
+                                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.maroon)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _buildMobileActionButtons(),
+                        ],
                       ),
                     ),
                   ),

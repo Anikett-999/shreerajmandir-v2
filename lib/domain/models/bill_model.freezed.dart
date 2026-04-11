@@ -22,6 +22,7 @@ BillItem _$BillItemFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$BillItem {
   String get name => throw _privateConstructorUsedError;
+  String get category => throw _privateConstructorUsedError;
   int get qty => throw _privateConstructorUsedError;
   double get price => throw _privateConstructorUsedError;
   String get note => throw _privateConstructorUsedError;
@@ -41,7 +42,7 @@ abstract class $BillItemCopyWith<$Res> {
   factory $BillItemCopyWith(BillItem value, $Res Function(BillItem) then) =
       _$BillItemCopyWithImpl<$Res, BillItem>;
   @useResult
-  $Res call({String name, int qty, double price, String note});
+  $Res call({String name, String category, int qty, double price, String note});
 }
 
 /// @nodoc
@@ -60,6 +61,7 @@ class _$BillItemCopyWithImpl<$Res, $Val extends BillItem>
   @override
   $Res call({
     Object? name = null,
+    Object? category = null,
     Object? qty = null,
     Object? price = null,
     Object? note = null,
@@ -69,6 +71,10 @@ class _$BillItemCopyWithImpl<$Res, $Val extends BillItem>
             name: null == name
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            category: null == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
                       as String,
             qty: null == qty
                 ? _value.qty
@@ -97,7 +103,7 @@ abstract class _$$BillItemImplCopyWith<$Res>
   ) = __$$BillItemImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String name, int qty, double price, String note});
+  $Res call({String name, String category, int qty, double price, String note});
 }
 
 /// @nodoc
@@ -115,6 +121,7 @@ class __$$BillItemImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? name = null,
+    Object? category = null,
     Object? qty = null,
     Object? price = null,
     Object? note = null,
@@ -124,6 +131,10 @@ class __$$BillItemImplCopyWithImpl<$Res>
         name: null == name
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        category: null == category
+            ? _value.category
+            : category // ignore: cast_nullable_to_non_nullable
                   as String,
         qty: null == qty
             ? _value.qty
@@ -147,6 +158,7 @@ class __$$BillItemImplCopyWithImpl<$Res>
 class _$BillItemImpl implements _BillItem {
   const _$BillItemImpl({
     required this.name,
+    this.category = '',
     required this.qty,
     required this.price,
     this.note = '',
@@ -158,6 +170,9 @@ class _$BillItemImpl implements _BillItem {
   @override
   final String name;
   @override
+  @JsonKey()
+  final String category;
+  @override
   final int qty;
   @override
   final double price;
@@ -167,7 +182,7 @@ class _$BillItemImpl implements _BillItem {
 
   @override
   String toString() {
-    return 'BillItem(name: $name, qty: $qty, price: $price, note: $note)';
+    return 'BillItem(name: $name, category: $category, qty: $qty, price: $price, note: $note)';
   }
 
   @override
@@ -176,6 +191,8 @@ class _$BillItemImpl implements _BillItem {
         (other.runtimeType == runtimeType &&
             other is _$BillItemImpl &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
             (identical(other.qty, qty) || other.qty == qty) &&
             (identical(other.price, price) || other.price == price) &&
             (identical(other.note, note) || other.note == note));
@@ -183,7 +200,8 @@ class _$BillItemImpl implements _BillItem {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, name, qty, price, note);
+  int get hashCode =>
+      Object.hash(runtimeType, name, category, qty, price, note);
 
   /// Create a copy of BillItem
   /// with the given fields replaced by the non-null parameter values.
@@ -202,6 +220,7 @@ class _$BillItemImpl implements _BillItem {
 abstract class _BillItem implements BillItem {
   const factory _BillItem({
     required final String name,
+    final String category,
     required final int qty,
     required final double price,
     final String note,
@@ -212,6 +231,8 @@ abstract class _BillItem implements BillItem {
 
   @override
   String get name;
+  @override
+  String get category;
   @override
   int get qty;
   @override

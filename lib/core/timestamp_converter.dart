@@ -8,12 +8,11 @@ class TimestampConverter implements JsonConverter<DateTime, dynamic> {
   DateTime fromJson(dynamic json) {
     if (json is Timestamp) return json.toDate();
     if (json is String) return DateTime.parse(json);
-    if (json is int) return DateTime.fromMillisecondsSinceEpoch(json);
-    return DateTime.now();
+    return DateTime.now(); // Fallback
   }
 
   @override
-  dynamic toJson(DateTime date) => date.toIso8601String();
+  dynamic toJson(DateTime date) => Timestamp.fromDate(date);
 }
 
 class OptionalTimestampConverter implements JsonConverter<DateTime?, dynamic> {
@@ -24,10 +23,9 @@ class OptionalTimestampConverter implements JsonConverter<DateTime?, dynamic> {
     if (json == null) return null;
     if (json is Timestamp) return json.toDate();
     if (json is String) return DateTime.parse(json);
-    if (json is int) return DateTime.fromMillisecondsSinceEpoch(json);
-    return null;
+    return null; // Fallback
   }
 
   @override
-  dynamic toJson(DateTime? date) => date?.toIso8601String();
+  dynamic toJson(DateTime? date) => date == null ? null : Timestamp.fromDate(date);
 }

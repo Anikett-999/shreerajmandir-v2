@@ -21,6 +21,7 @@ class BillingService {
   CollectionReference get _kotCollection => _branchRef.collection('kots');
   CollectionReference get _orderCollection => _branchRef.collection('orders');
   CollectionReference get _tableCollection => _branchRef.collection('tables');
+  DocumentReference get _counterDoc => _branchRef.collection('counters').doc('global');
 
   List<BillItem> _aggregateKOTItems(List<KOTModel> kots) {
     Map<String, BillItem> aggregatedMap = {};
@@ -36,6 +37,7 @@ class BillingService {
           } else {
             aggregatedMap[item.name] = BillItem(
               name: item.name,
+              category: item.category,
               qty: item.qty,
               price: item.price,
               note: item.note,
@@ -102,8 +104,30 @@ class BillingService {
       double discountAmount = (subtotal * discountPercent) / 100;
       double total = (subtotal - discountAmount) + extraCharges;
 
-      // 4. Create Bill Document
-      final billId = const Uuid().v4();
+      // 4. Fetch/Calculate Bill ID with Daily Reset (Start from 1001)
+      final now = DateTime.now();
+      final String todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+      
+      final counterSnap = await transaction.get(_counterDoc);
+      int billNumber = 1001;
+      
+      if (counterSnap.exists) {
+        final counterData = counterSnap.data() as Map<String, dynamic>;
+        final String lastReset = counterData['lastBillResetDate'] ?? '';
+        
+        if (lastReset == todayStr) {
+          billNumber = (counterData['billCounter'] ?? 1000) + 1;
+        }
+      }
+
+      // Update counters (Global)
+      transaction.set(_counterDoc, {
+        'billCounter': billNumber,
+        'lastBillResetDate': todayStr,
+      }, SetOptions(merge: true));
+
+      final String billId = "INV-${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${billNumber.toString().substring(1)}";
+      
       final bill = BillModel(
         billId: billId,
         orderId: orderId,

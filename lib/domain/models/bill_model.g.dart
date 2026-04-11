@@ -9,6 +9,7 @@ part of 'bill_model.dart';
 _$BillItemImpl _$$BillItemImplFromJson(Map<String, dynamic> json) =>
     _$BillItemImpl(
       name: json['name'] as String,
+      category: json['category'] as String? ?? '',
       qty: (json['qty'] as num).toInt(),
       price: (json['price'] as num).toDouble(),
       note: json['note'] as String? ?? '',
@@ -17,6 +18,7 @@ _$BillItemImpl _$$BillItemImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$BillItemImplToJson(_$BillItemImpl instance) =>
     <String, dynamic>{
       'name': instance.name,
+      'category': instance.category,
       'qty': instance.qty,
       'price': instance.price,
       'note': instance.note,

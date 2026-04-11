@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/timestamp_converter.dart';
 
 part 'bill_model.freezed.dart';
@@ -8,6 +9,7 @@ part 'bill_model.g.dart';
 class BillItem with _$BillItem {
   const factory BillItem({
     required String name,
+    @Default('') String category,
     required int qty,
     required double price,
     @Default('') String note,
