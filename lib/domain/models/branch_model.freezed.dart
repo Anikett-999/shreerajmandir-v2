@@ -184,11 +184,11 @@ class __$$BranchModelImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$BranchModelImpl implements _BranchModel {
   const _$BranchModelImpl({
-    required this.branchId,
-    required this.branchName,
-    required this.location,
-    required this.address,
-    required this.phone,
+    this.branchId = '',
+    this.branchName = '',
+    this.location = '',
+    this.address = '',
+    this.phone = '',
     this.isActive = true,
   });
 
@@ -196,14 +196,19 @@ class _$BranchModelImpl implements _BranchModel {
       _$$BranchModelImplFromJson(json);
 
   @override
+  @JsonKey()
   final String branchId;
   @override
+  @JsonKey()
   final String branchName;
   @override
+  @JsonKey()
   final String location;
   @override
+  @JsonKey()
   final String address;
   @override
+  @JsonKey()
   final String phone;
   @override
   @JsonKey()
@@ -259,11 +264,11 @@ class _$BranchModelImpl implements _BranchModel {
 
 abstract class _BranchModel implements BranchModel {
   const factory _BranchModel({
-    required final String branchId,
-    required final String branchName,
-    required final String location,
-    required final String address,
-    required final String phone,
+    final String branchId,
+    final String branchName,
+    final String location,
+    final String address,
+    final String phone,
     final bool isActive,
   }) = _$BranchModelImpl;
 

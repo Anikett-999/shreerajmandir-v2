@@ -7,6 +7,7 @@ import '../../../services/billing_service.dart';
 import '../../../services/print_service.dart';
 import '../../providers/printer_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/active_branch_provider.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
   final TableModel table;
@@ -38,7 +39,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   }
 
   Future<void> _loadPreview() async {
-    final billingService = BillingService();
+    final branchId = ref.read(activeBranchIdProvider);
+    final billingService = BillingService(branchId: branchId ?? 'branch_001');
     final preview = await billingService.previewBill(widget.table.activeOrderId!);
     setState(() => _billPreview = preview);
   }
@@ -54,7 +56,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   Future<void> _handleGenerateBill() async {
     setState(() => _isLoading = true);
     try {
-      final billingService = BillingService();
+      final branchId = ref.read(activeBranchIdProvider);
+      final billingService = BillingService(branchId: branchId ?? 'branch_001');
       final config = ref.read(printerConfigProvider);
       final printService = ref.read(printServiceProvider);
       final currentUser = ref.read(authServiceProvider).currentUser;

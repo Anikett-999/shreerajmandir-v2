@@ -6,12 +6,15 @@ import '../../../services/table_service.dart';
 import '../../widgets/table_card.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/global/profile_menu.dart';
-
-
 import '../../../services/seed_data_service.dart';
+import '../../providers/active_branch_provider.dart';
+import '../admin/admin_dashboard_screen.dart';
 
 // Provider for TableService
-final tableServiceProvider = Provider((ref) => TableService());
+final tableServiceProvider = Provider((ref) {
+  final branchId = ref.watch(activeBranchIdProvider);
+  return TableService(branchId: branchId ?? 'branch_001');
+});
 
 // StreamProvider for Tables
 final tablesStreamProvider = StreamProvider<List<TableModel>>((ref) {
@@ -19,14 +22,29 @@ final tablesStreamProvider = StreamProvider<List<TableModel>>((ref) {
   return service.watchTables();
 });
 
-class HomeScreen extends ConsumerStatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeRole = ref.watch(activeUserRoleProvider);
+
+    if (activeRole == 'admin') {
+      return AdminDashboardScreen();
+    }
+
+    return const OperationalHomeScreen();
+  }
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class OperationalHomeScreen extends ConsumerStatefulWidget {
+  const OperationalHomeScreen({super.key});
+
+  @override
+  ConsumerState<OperationalHomeScreen> createState() => _OperationalHomeScreenState();
+}
+
+class _OperationalHomeScreenState extends ConsumerState<OperationalHomeScreen> {
   String _selectedFilter = 'All';
   String _searchQuery = '';
 
@@ -38,11 +56,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: Image.asset('assets/branding/splash_logo.png', height: 40),
         centerTitle: true,
-        actions: const [
+        actions: [
           const ProfileMenu(),
         ],
       ),
-      drawer: AppDrawer(),
+      drawer: const AppDrawer(),
 
       body: Column(
         children: [

@@ -5,7 +5,9 @@ import '../domain/models/item.dart';
 class MenuService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String businessId = 'rajmandir_main';
-  final String branchId = 'branch_001';
+  final String branchId;
+
+  MenuService({required this.branchId});
 
   CollectionReference get _branchDoc => _firestore
       .collection('businesses')

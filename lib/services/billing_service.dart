@@ -7,7 +7,9 @@ import 'package:uuid/uuid.dart';
 class BillingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String businessId = 'rajmandir_main';
-  final String branchId = 'branch_001';
+  final String branchId;
+
+  BillingService({required this.branchId});
 
   DocumentReference get _branchRef => _firestore
       .collection('businesses')

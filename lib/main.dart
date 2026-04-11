@@ -10,6 +10,7 @@ import 'presentation/screens/shared/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/providers/printer_provider.dart';
 import 'presentation/providers/theme_provider.dart';
+import 'presentation/widgets/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,8 +35,6 @@ class ShreeRajmandirPOSApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authStateProvider);
-
     final themeMode = ref.watch(themeProvider);
 
     return MaterialApp(
@@ -44,11 +43,7 @@ class ShreeRajmandirPOSApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: authState.when(
-        data: (user) => user == null ? const LoginScreen() : const HomeScreen(),
-        loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-        error: (e, s) => Scaffold(body: Center(child: Text('❌ Auth Error: $e'))),
-      ),
+      home: const AuthWrapper(),
     );
   }
 }

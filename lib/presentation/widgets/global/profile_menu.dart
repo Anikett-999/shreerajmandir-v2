@@ -94,6 +94,7 @@ class ProfileMenu extends ConsumerWidget {
             case 'logout':
               final confirm = await _showLogoutDialog(context);
               if (confirm == true) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
                 await ref.read(authServiceProvider).logout();
               }
               break;

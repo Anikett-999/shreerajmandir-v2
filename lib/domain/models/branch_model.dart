@@ -6,11 +6,11 @@ part 'branch_model.g.dart';
 @freezed
 class BranchModel with _$BranchModel {
   const factory BranchModel({
-    required String branchId,
-    required String branchName,
-    required String location,
-    required String address,
-    required String phone,
+    @Default('') String branchId,
+    @Default('') String branchName,
+    @Default('') String location,
+    @Default('') String address,
+    @Default('') String phone,
     @Default(true) bool isActive,
   }) = _BranchModel;
 

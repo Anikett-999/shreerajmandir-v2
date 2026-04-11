@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/app_theme.dart';
 import '../../widgets/app_drawer.dart';
+import 'users/user_management_screen.dart';
+import 'branches/branch_management_screen.dart';
 import '../../widgets/global/profile_menu.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
@@ -11,13 +13,20 @@ class AdminDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('ADMIN DASHBOARD', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2, color: AppTheme.maroon)),
         centerTitle: true,
-        actions: const [
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.white,
+        shadowColor: Colors.black.withOpacity(0.1),
+        scrolledUnderElevation: 4,
+        iconTheme: const IconThemeData(color: AppTheme.maroon),
+        actions: [
           const ProfileMenu(),
+          const SizedBox(width: 8),
         ],
       ),
-      drawer: AppDrawer(),
+      drawer: const AppDrawer(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -110,10 +119,10 @@ class AdminDashboardScreen extends ConsumerWidget {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
+      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 1,
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.1,
+      childAspectRatio: MediaQuery.of(context).size.width > 600 ? 1.1 : 2.5,
       children: [
         _buildAdminCard(
           context,
@@ -121,41 +130,23 @@ class AdminDashboardScreen extends ConsumerWidget {
           'Staff & Roles',
           Icons.people_outline,
           Colors.blue,
+          () => Navigator.push(context, MaterialPageRoute(builder: (context) => UserManagementScreen())),
         ),
         _buildAdminCard(
           context,
-          'Menu Manager',
-          'Items & Categories',
-          Icons.restaurant_menu,
+          'My Branches',
+          'Manage Locations',
+          Icons.storefront_outlined,
           Colors.orange,
-        ),
-        _buildAdminCard(
-          context,
-          'Reports',
-          'Sales & Performance',
-          Icons.bar_chart,
-          Colors.purple,
+          () => Navigator.push(context, MaterialPageRoute(builder: (context) => BranchManagementScreen())),
         ),
         _buildAdminCard(
           context,
           'Live Monitor',
-          'KOT & Orders',
+          'KOT & Active Orders',
           Icons.monitor_heart_outlined,
           Colors.red,
-        ),
-        _buildAdminCard(
-          context,
-          'Data Backup',
-          'Sync & Export',
-          Icons.cloud_upload_outlined,
-          Colors.teal,
-        ),
-        _buildAdminCard(
-          context,
-          'Settings',
-          'System Config',
-          Icons.settings_outlined,
-          Colors.grey,
+          () => Navigator.pushNamed(context, '/admin/monitor'),
         ),
       ],
     );
@@ -167,6 +158,7 @@ class AdminDashboardScreen extends ConsumerWidget {
     String subtitle,
     IconData icon,
     Color color,
+    VoidCallback onTap,
   ) {
     return Material(
       color: Colors.white,
@@ -174,11 +166,7 @@ class AdminDashboardScreen extends ConsumerWidget {
       elevation: 2,
       shadowColor: Colors.black12,
       child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Navigation to $title coming soon!')),
-          );
-        },
+        onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(16.0),

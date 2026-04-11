@@ -8,11 +8,11 @@ part of 'branch_model.dart';
 
 _$BranchModelImpl _$$BranchModelImplFromJson(Map<String, dynamic> json) =>
     _$BranchModelImpl(
-      branchId: json['branchId'] as String,
-      branchName: json['branchName'] as String,
-      location: json['location'] as String,
-      address: json['address'] as String,
-      phone: json['phone'] as String,
+      branchId: json['branchId'] as String? ?? '',
+      branchName: json['branchName'] as String? ?? '',
+      location: json['location'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
       isActive: json['isActive'] as bool? ?? true,
     );
 

@@ -6,9 +6,9 @@ import 'package:uuid/uuid.dart';
 class KOTService {
   final FirebaseFirestore _firestore;
   final String businessId = 'rajmandir_main';
-  final String branchId = 'branch_001';
+  final String branchId;
 
-  KOTService({FirebaseFirestore? firestore}) 
+  KOTService({FirebaseFirestore? firestore, required this.branchId}) 
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
   DocumentReference get _branchRef => _firestore

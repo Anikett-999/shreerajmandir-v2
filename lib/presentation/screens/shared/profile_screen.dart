@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/active_branch_provider.dart';
+import '../../providers/branch_provider.dart';
 import '../../widgets/global/base_widgets.dart';
 import '../../../core/app_theme.dart';
 import '../../../services/auth_service.dart';
+import '../../../domain/models/user_model.dart';
+import '../../../domain/models/branch_model.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -12,6 +16,9 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authService = ref.watch(authServiceProvider);
+    final userModelAsync = ref.watch(userModelProvider);
+    final activeBranchId = ref.watch(activeBranchIdProvider);
+    final branchAsync = ref.watch(branchProvider);
     
     return Scaffold(
       backgroundColor: AppTheme.cream,
@@ -29,18 +36,8 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: FutureBuilder(
-        future: authService.getCurrentUserData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const LoadingIndicator(message: 'Loading your profile...');
-          }
-          
-          if (snapshot.hasError) {
-            return ErrorStateWidget(error: snapshot.error.toString());
-          }
-
-          final user = snapshot.data;
+      body: userModelAsync.when(
+        data: (user) {
           if (user == null) {
             return const EmptyStateWidget(
               title: 'Profile Missing', 
@@ -117,19 +114,6 @@ class ProfileScreen extends ConsumerWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 8,
-                        children: user.roles.map((role) => Chip(
-                          label: Text(
-                            role.toString().split('.').last.toUpperCase(),
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                          backgroundColor: AppTheme.maroon,
-                          padding: EdgeInsets.zero,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        )).toList(),
-                      ),
                     ],
                   ),
                 ),
@@ -139,6 +123,19 @@ class ProfileScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const Text(
+                        'BUSINESS BRANCH',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.maroon,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildBranchSection(context, ref, user, branchAsync, activeBranchId),
+
+                      const SizedBox(height: 32),
                       const Text(
                         'ACCOUNT INFORMATION',
                         style: TextStyle(
@@ -151,7 +148,7 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       _buildInfoCard([
                         _buildInfoRow(context, Icons.badge_outlined, 'Employee ID', user.userId.substring(0, 8).toUpperCase()),
-                        _buildInfoRow(context, Icons.calendar_today_outlined, 'Status', 'Active Member'),
+                        _buildInfoRow(context, Icons.calendar_today_outlined, 'Account Status', user.isActive ? 'Active Member' : 'Suspended'),
                       ]),
                       
                       const SizedBox(height: 32),
@@ -191,6 +188,8 @@ class ProfileScreen extends ConsumerWidget {
             ),
           );
         },
+        loading: () => const LoadingIndicator(message: 'Loading your profile...'),
+        error: (err, _) => ErrorStateWidget(error: err.toString()),
       ),
     );
   }
@@ -207,6 +206,58 @@ class ProfileScreen extends ConsumerWidget {
       child: Column(children: children),
     );
   }
+
+  Widget _buildBranchSection(BuildContext context, WidgetRef ref, UserModel user, AsyncValue<BranchModel> branchAsync, String? activeBranchId) {
+    // Admin can always switch branches. Non-admin can switch if assigned to more than 1 branch.
+    final canSwitch = user.isAdmin || user.branchIds.length > 1;
+
+    return _buildInfoCard([
+      ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.maroon.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.storefront_outlined, color: AppTheme.maroon),
+        ),
+        title: branchAsync.when(
+          data: (branch) => Text(branch.branchName, style: const TextStyle(fontWeight: FontWeight.bold)),
+          loading: () => const Text('Loading...', style: TextStyle(fontWeight: FontWeight.bold)),
+          error: (_, __) => Text(activeBranchId ?? 'Select Branch', style: const TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        subtitle: Text(
+          user.role.toUpperCase(),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+        ),
+        trailing: canSwitch
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.maroon.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.swap_horiz, color: AppTheme.maroon, size: 18),
+                  SizedBox(width: 4),
+                  Text('Switch', style: TextStyle(color: AppTheme.maroon, fontSize: 12, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            )
+          : null,
+        onTap: canSwitch
+          ? () {
+              ref.read(activeBranchIdProvider.notifier).state = null;
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            }
+          : null,
+      ),
+    ]);
+  }
+
 
   Widget _buildActionCard(List<Widget> children) {
     return Container(

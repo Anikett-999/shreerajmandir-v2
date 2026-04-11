@@ -15,13 +15,20 @@ import 'package:shreerajmandir_pos/services/kot_service.dart';
 import 'package:shreerajmandir_pos/services/print_service.dart';
 import 'package:shreerajmandir_pos/presentation/providers/auth_provider.dart';
 import 'package:shreerajmandir_pos/presentation/providers/printer_provider.dart';
+import 'package:shreerajmandir_pos/presentation/providers/active_branch_provider.dart';
 import 'package:shreerajmandir_pos/presentation/widgets/global/profile_menu.dart';
 import 'package:shreerajmandir_pos/presentation/widgets/global/base_widgets.dart'; // Added for LoadingIndicator
 import 'package:uuid/uuid.dart';
 
 // --- State Providers ---
-final menuServiceProvider = Provider((ref) => MenuService());
-final kotServiceProvider = Provider((ref) => KOTService());
+final menuServiceProvider = Provider((ref) {
+  final branchId = ref.watch(activeBranchIdProvider);
+  return MenuService(branchId: branchId ?? 'branch_001');
+});
+final kotServiceProvider = Provider((ref) {
+  final branchId = ref.watch(activeBranchIdProvider);
+  return KOTService(branchId: branchId ?? 'branch_001');
+});
 
 final categoriesProvider = StreamProvider<List<Category>>((ref) {
   return ref.watch(menuServiceProvider).watchCategories();

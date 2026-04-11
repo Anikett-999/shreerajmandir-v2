@@ -5,8 +5,12 @@ import 'package:shreerajmandir_pos/services/kot_service.dart';
 import 'package:shreerajmandir_pos/domain/models/kot_model.dart';
 import 'package:shreerajmandir_pos/core/app_theme.dart';
 import '../../widgets/global/profile_menu.dart';
+import 'package:shreerajmandir_pos/presentation/providers/active_branch_provider.dart';
 
-final kotServiceProvider = Provider<KOTService>((ref) => KOTService());
+final kotServiceProvider = Provider<KOTService>((ref) {
+  final branchId = ref.watch(activeBranchIdProvider);
+  return KOTService(branchId: branchId ?? 'branch_001');
+});
 
 final liveKOTsProvider = StreamProvider<List<KOTModel>>((ref) {
   return ref.watch(kotServiceProvider).watchLiveKOTs();

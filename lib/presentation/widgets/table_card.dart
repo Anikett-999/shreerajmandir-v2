@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:shreerajmandir_pos/core/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shreerajmandir_pos/domain/models/table_model.dart';
 import 'package:shreerajmandir_pos/services/table_service.dart';
 import 'package:shreerajmandir_pos/presentation/screens/waiter/order_screen.dart';
 import 'package:shreerajmandir_pos/presentation/screens/admin/billing_screen.dart';
 
-class TableCard extends StatelessWidget {
+import 'package:shreerajmandir_pos/presentation/providers/active_branch_provider.dart';
+
+class TableCard extends ConsumerWidget {
   final TableModel table;
 
   const TableCard({super.key, required this.table});
@@ -24,7 +27,7 @@ class TableCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final statusColor = _getStatusColor();
 
     return Stack(
@@ -37,7 +40,7 @@ class TableCard extends StatelessWidget {
             );
           },
           onLongPress: () {
-            _showQuickActions(context);
+            _showQuickActions(context, ref);
           },
           child: Card(
             elevation: 1,
@@ -150,7 +153,7 @@ class TableCard extends StatelessWidget {
     );
   }
 
-  void _showQuickActions(BuildContext context) {
+  void _showQuickActions(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -191,7 +194,8 @@ class TableCard extends StatelessWidget {
                 title: const Text('Clear Table'),
                 onTap: () async {
                   Navigator.pop(context);
-                  final service = TableService();
+                  final branchId = ref.read(activeBranchIdProvider);
+                  final service = TableService(branchId: branchId ?? 'branch_001');
                   await service.clearTable(table.tableId);
                 },
               ),
