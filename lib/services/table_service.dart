@@ -74,6 +74,30 @@ class TableService {
     });
   }
 
+  // Update an existing table
+  Future<void> updateTable(String tableId, String name, int capacity) async {
+    await _tableCollection.doc(tableId).update({
+      'name': name,
+      'capacity': capacity,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Delete a table (Admin only)
+  Future<void> deleteTable(String tableId) async {
+    final docRef = _tableCollection.doc(tableId);
+    final snapshot = await docRef.get();
+
+    if (!snapshot.exists) throw Exception('Table does not exist');
+
+    final data = snapshot.data() as Map<String, dynamic>;
+    if (data['status'] != 'available') {
+      throw Exception('Cannot delete table while it is ${data['status']}');
+    }
+
+    await docRef.delete();
+  }
+
   // Clear table after successful billing
   Future<void> clearTable(String tableId) async {
     await _tableCollection.doc(tableId).update({

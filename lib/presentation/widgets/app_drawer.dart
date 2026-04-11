@@ -13,6 +13,7 @@ import '../providers/branch_provider.dart';
 import '../providers/active_branch_provider.dart';
 import '../screens/admin/users/user_management_screen.dart';
 import '../screens/admin/branches/branch_management_screen.dart';
+import '../screens/admin/tables/table_management_screen.dart';
 
 // We rely on the authServiceProvider from auth_provider.dart via the build method's ref
 
@@ -160,6 +161,14 @@ class AppDrawer extends ConsumerWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(builder: (context) => const BranchManagementScreen()));
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.table_restaurant_outlined, color: AppTheme.maroon),
+                    title: const Text('Table Management', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const TableManagementScreen()));
                     },
                   ),
                   ListTile(

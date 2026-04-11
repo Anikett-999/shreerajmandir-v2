@@ -10,17 +10,7 @@ import '../../../services/seed_data_service.dart';
 import '../../providers/active_branch_provider.dart';
 import '../admin/admin_dashboard_screen.dart';
 
-// Provider for TableService
-final tableServiceProvider = Provider((ref) {
-  final branchId = ref.watch(activeBranchIdProvider);
-  return TableService(branchId: branchId ?? 'branch_001');
-});
-
-// StreamProvider for Tables
-final tablesStreamProvider = StreamProvider<List<TableModel>>((ref) {
-  final service = ref.watch(tableServiceProvider);
-  return service.watchTables();
-});
+import '../../providers/table_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
