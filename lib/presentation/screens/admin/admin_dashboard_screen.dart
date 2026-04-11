@@ -5,6 +5,7 @@ import '../../widgets/app_drawer.dart';
 import 'users/user_management_screen.dart';
 import 'branches/branch_management_screen.dart';
 import '../../widgets/global/profile_menu.dart';
+import '../shared/home_screen.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -139,6 +140,17 @@ class AdminDashboardScreen extends ConsumerWidget {
           Icons.storefront_outlined,
           Colors.orange,
           () => Navigator.push(context, MaterialPageRoute(builder: (context) => BranchManagementScreen())),
+        ),
+        _buildAdminCard(
+          context,
+          'Billing & Checkout',
+          'Settle Tables',
+          Icons.point_of_sale_outlined,
+          AppTheme.maroon,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const OperationalHomeScreen()),
+          ),
         ),
         _buildAdminCard(
           context,

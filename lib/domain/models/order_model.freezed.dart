@@ -25,7 +25,9 @@ mixin _$OrderModel {
   String get tableId => throw _privateConstructorUsedError;
   String get status => throw _privateConstructorUsedError; // active | closed
   List<String> get kotIds => throw _privateConstructorUsedError;
+  @OptionalTimestampConverter()
   DateTime? get createdAt => throw _privateConstructorUsedError;
+  @OptionalTimestampConverter()
   DateTime? get closedAt => throw _privateConstructorUsedError;
 
   /// Serializes this OrderModel to a JSON map.
@@ -50,8 +52,8 @@ abstract class $OrderModelCopyWith<$Res> {
     String tableId,
     String status,
     List<String> kotIds,
-    DateTime? createdAt,
-    DateTime? closedAt,
+    @OptionalTimestampConverter() DateTime? createdAt,
+    @OptionalTimestampConverter() DateTime? closedAt,
   });
 }
 
@@ -123,8 +125,8 @@ abstract class _$$OrderModelImplCopyWith<$Res>
     String tableId,
     String status,
     List<String> kotIds,
-    DateTime? createdAt,
-    DateTime? closedAt,
+    @OptionalTimestampConverter() DateTime? createdAt,
+    @OptionalTimestampConverter() DateTime? closedAt,
   });
 }
 
@@ -188,8 +190,8 @@ class _$OrderModelImpl implements _OrderModel {
     required this.tableId,
     this.status = 'active',
     final List<String> kotIds = const [],
-    this.createdAt,
-    this.closedAt,
+    @OptionalTimestampConverter() this.createdAt,
+    @OptionalTimestampConverter() this.closedAt,
   }) : _kotIds = kotIds;
 
   factory _$OrderModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -214,8 +216,10 @@ class _$OrderModelImpl implements _OrderModel {
   }
 
   @override
+  @OptionalTimestampConverter()
   final DateTime? createdAt;
   @override
+  @OptionalTimestampConverter()
   final DateTime? closedAt;
 
   @override
@@ -270,8 +274,8 @@ abstract class _OrderModel implements OrderModel {
     required final String tableId,
     final String status,
     final List<String> kotIds,
-    final DateTime? createdAt,
-    final DateTime? closedAt,
+    @OptionalTimestampConverter() final DateTime? createdAt,
+    @OptionalTimestampConverter() final DateTime? closedAt,
   }) = _$OrderModelImpl;
 
   factory _OrderModel.fromJson(Map<String, dynamic> json) =
@@ -286,8 +290,10 @@ abstract class _OrderModel implements OrderModel {
   @override
   List<String> get kotIds;
   @override
+  @OptionalTimestampConverter()
   DateTime? get createdAt;
   @override
+  @OptionalTimestampConverter()
   DateTime? get closedAt;
 
   /// Create a copy of OrderModel

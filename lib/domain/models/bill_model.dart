@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../core/timestamp_converter.dart';
 
 part 'bill_model.freezed.dart';
 part 'bill_model.g.dart';
@@ -43,8 +44,8 @@ class BillModel with _$BillModel {
     @Default(1) int printCount,
     @Default(false) bool isSuspicious,
     required String createdBy,
-    required DateTime createdAt,
-    DateTime? printedAt,
+    @TimestampConverter() required DateTime createdAt,
+    @OptionalTimestampConverter() DateTime? printedAt,
     String? lastPrintedBy,
   }) = _BillModel;
 

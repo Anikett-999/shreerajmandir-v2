@@ -22,31 +22,47 @@ class BillingService {
   CollectionReference get _orderCollection => _branchRef.collection('orders');
   CollectionReference get _tableCollection => _branchRef.collection('tables');
 
+  List<BillItem> _aggregateKOTItems(List<KOTModel> kots) {
+    Map<String, BillItem> aggregatedMap = {};
+
+    for (var kot in kots) {
+      for (var item in kot.items) {
+        if (item.status != 'rejected') {
+          if (aggregatedMap.containsKey(item.name)) {
+            final existing = aggregatedMap[item.name]!;
+            aggregatedMap[item.name] = existing.copyWith(
+              qty: existing.qty + item.qty,
+            );
+          } else {
+            aggregatedMap[item.name] = BillItem(
+              name: item.name,
+              qty: item.qty,
+              price: item.price,
+              note: item.note,
+            );
+          }
+        }
+      }
+    }
+
+    return aggregatedMap.values.toList();
+  }
+
   // Preview Bill (Aggregates all KOTs for an order)
   Future<Map<String, dynamic>> previewBill(String orderId) async {
     final kotSnapshots = await _kotCollection.where('orderId', isEqualTo: orderId).get();
     final kots = kotSnapshots.docs.map((doc) => KOTModel.fromJson(doc.data() as Map<String, dynamic>)).toList();
 
-    List<BillItem> billItems = [];
+    final billItems = _aggregateKOTItems(kots);
     double subtotal = 0.0;
-
-    for (var kot in kots) {
-      for (var item in kot.items) {
-        if (item.status != 'rejected') {
-          billItems.add(BillItem(
-            name: item.name,
-            qty: item.qty,
-            price: item.price,
-            note: item.note,
-          ));
-          subtotal += (item.price * item.qty);
-        }
-      }
+    for (var item in billItems) {
+      subtotal += (item.price * item.qty);
     }
 
     return {
       'items': billItems,
       'subtotal': subtotal,
+      'kots': kots, // Added for the KOT history panel
     };
   }
 
@@ -76,21 +92,10 @@ class BillingService {
       final kotSnapshots = await _kotCollection.where('orderId', isEqualTo: orderId).get();
       final kots = kotSnapshots.docs.map((doc) => KOTModel.fromJson(doc.data() as Map<String, dynamic>)).toList();
 
-      List<BillItem> billItems = [];
+      final billItems = _aggregateKOTItems(kots);
       double subtotal = 0.0;
-
-      for (var kot in kots) {
-        for (var item in kot.items) {
-          if (item.status != 'rejected') {
-            billItems.add(BillItem(
-              name: item.name,
-              qty: item.qty,
-              price: item.price,
-              note: item.note,
-            ));
-            subtotal += (item.price * item.qty);
-          }
-        }
+      for (var item in billItems) {
+        subtotal += (item.price * item.qty);
       }
 
       // 3. Apply calculations
@@ -149,3 +154,4 @@ class BillingService {
     });
   }
 }
+

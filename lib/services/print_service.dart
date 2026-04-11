@@ -97,6 +97,7 @@ class PrintService {
     );
     List<int> bytes = [];
 
+    // Reset & Init
     bytes += [0x1B, 0x40]; 
     bytes += [0x1D, 0x4C, 0x00, 0x00]; 
 
@@ -104,32 +105,38 @@ class PrintService {
     final String sep = '-' * maxChars;
     final String dsep = '=' * maxChars;
 
-    // Helper for Bill rows
-    String formatBillRow(String c1, String c2, String c3) {
-      int w1 = 34; 
-      int w2 = 4;  
-      int w3 = 6;  
-      
-      String s1 = c1.padRight(w1).substring(0, w1);
-      String s2 = c2.padLeft(w2).substring(0, w2);
-      String s3 = c3.padLeft(w3).substring(0, w3);
-      
-      return "$s1  $s2  $s3"; 
+    // Helper for Bill rows ( Professional 3-column layout)
+    String formatBillRow(String name, String qty, String amt) {
+      if (paperSize == PrinterPaperSize.mm80) {
+        // [Item: 32] + [Qty: 6] + [Amt: 10] = 48
+        String s1 = name.padRight(32).substring(0, 32);
+        String s2 = qty.padLeft(6).substring(0, 6);
+        String s3 = amt.padLeft(10).substring(0, 10);
+        return s1 + s2 + s3;
+      } else {
+        // [Item: 18] + [Qty: 5] + [Amt: 9] = 32
+        String s1 = name.padRight(18).substring(0, 18);
+        String s2 = qty.padLeft(5).substring(0, 5);
+        String s3 = amt.padLeft(9).substring(0, 9);
+        return s1 + s2 + s3;
+      }
     }
 
-    // 1. Branding Header
-    bytes += generator.text(dsep);
+    // 1. Branding Header (Premium Centered)
     bytes += generator.text('SHREE RAJMANDIR', 
         styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-    bytes += generator.text('QUALITY ICE CREAM & SNACKS', styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('QUALITY ICE CREAM & SNACKS', styles: const PosStyles(align: PosAlign.center, bold: true));
     bytes += generator.feed(1);
 
-    // 2. Metadata
-    String timeAndBy = "${DateFormat('hh:mm a').format(bill.createdAt)}    by:${bill.userName.toLowerCase()}";
-    String tableInfo = 'TABLE: ${bill.tableName.toUpperCase()}';
+    // 2. Transaction Info
+    bytes += generator.text(dsep);
+    bytes += generator.text('TABLE: ${bill.tableName.toUpperCase()}', styles: const PosStyles(bold: true, align: PosAlign.center));
+    bytes += generator.text(dsep);
     
-    bytes += generator.text('Bill ID: ${bill.billId.substring(0, 8).toUpperCase()}'.padRight(maxChars - 10) + DateFormat('dd/MM/yy').format(bill.createdAt).padLeft(10));
-    bytes += generator.text(tableInfo.padRight(maxChars - timeAndBy.length) + timeAndBy);
+    final dateStr = DateFormat('dd/MM/yy').format(bill.createdAt);
+    final timeStr = DateFormat('hh:mm a').format(bill.createdAt);
+    bytes += generator.text('Bill ID: ${bill.billId.substring(0, 8).toUpperCase()}'.padRight(maxChars - dateStr.length) + dateStr);
+    bytes += generator.text('Time:   $timeStr'.padRight(maxChars - bill.userName.length) + bill.userName.toLowerCase());
     
     bytes += generator.text(sep);
     bytes += generator.text(formatBillRow('ITEMS', 'QTY', 'AMOUNT'), styles: const PosStyles(bold: true));
@@ -138,35 +145,45 @@ class PrintService {
     // 3. Items List
     for (var item in bill.items) {
       bytes += generator.text(formatBillRow(item.name, '${item.qty}', (item.price * item.qty).toStringAsFixed(0)));
-      bytes += generator.text(sep);
-    }
-
-    // 4. Totals Logic
-    String formatTotalLine(String label, String value) {
-      return label.padRight(maxChars - value.length) + value;
-    }
-
-    bytes += generator.text(formatTotalLine('Subtotal', bill.subtotal.toStringAsFixed(2)));
-
-    if (bill.discountAmount > 0) {
-      bytes += generator.text(formatTotalLine('Discount (${bill.discountPercent}%)', '-${bill.discountAmount.toStringAsFixed(2)}'));
-    }
-
-    if (bill.extraCharges > 0) {
-      bytes += generator.text(formatTotalLine('Extra Charges', '+${bill.extraCharges.toStringAsFixed(2)}'));
     }
 
     bytes += generator.text(sep);
-    bytes += generator.text('TOTAL: ₹${bill.total.toStringAsFixed(2)}', 
-        styles: const PosStyles(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+
+    // 4. Totals Logic
+    void printTotalLine(String label, String value, {bool isLarge = false}) {
+      if (isLarge) {
+         bytes += generator.text(label.padRight(maxChars - value.length) + value, 
+            styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+      } else {
+         bytes += generator.text(label.padRight(maxChars - value.length) + value);
+      }
+    }
+
+    printTotalLine('Subtotal', 'Rs. ${bill.subtotal.toStringAsFixed(2)}');
+
+    if (bill.discountAmount > 0) {
+      printTotalLine('Discount (${bill.discountPercent}%)', '-Rs. ${bill.discountAmount.toStringAsFixed(2)}');
+    }
+
+    if (bill.extraCharges > 0) {
+      printTotalLine('Extra Charges', '+Rs. ${bill.extraCharges.toStringAsFixed(2)}');
+    }
+
+    bytes += generator.text(sep);
+    
+    // Total Amount (Double Height)
+    final String totalStr = 'Rs.${bill.total.toStringAsFixed(2)}';
+    bytes += generator.text('GRAND TOTAL'.padRight(maxChars - totalStr.length) + totalStr, 
+        styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+    
     bytes += generator.text(dsep);
     
     // 5. Footer
     bytes += generator.feed(1);
-    bytes += generator.text('Visit Again!', styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.text('THANK YOU', styles: const PosStyles(align: PosAlign.center, bold: true));
+    bytes += generator.text('THANK YOU FOR VISITING!', styles: const PosStyles(align: PosAlign.center, bold: true));
+    bytes += generator.text('HAVE A GREAT DAY', styles: const PosStyles(align: PosAlign.center));
     bytes += generator.text(dsep);
-    bytes += generator.feed(2);
+    bytes += generator.feed(3); 
     bytes += generator.cut();
     
     return bytes;
@@ -174,13 +191,25 @@ class PrintService {
 
   // Master Print Function
   Future<bool> printReceipt(List<int> bytes, PrinterConfig config) async {
+    print('-----------------------------------------');
+    print('🚀 STARTING PRINT JOB');
+    print('📡 Protocol: ${config.connectionType.name}');
+    print('📍 Address: ${config.address}');
+    
     if (config.connectionType == PrinterConnectionType.rawbt && Platform.isAndroid) {
       try {
+        print('📱 Invoking RawBT Intent...');
         await sendToRawBT(bytes);
-        return true; // Sent to external app successfully
+        return true; 
       } catch (e) {
+        print('❌ RawBT Error: $e');
         return false;
       }
+    }
+
+    if (config.address == null || config.address!.isEmpty) {
+      print('⚠️ ERROR: Printer address is NOT CONFIGURED.');
+      return false;
     }
 
     // Direct Printing via flutter_pos_printer_platform
@@ -214,45 +243,47 @@ class PrintService {
     }
 
     try {
-      print('🖨️ Connecting to ${config.connectionType.name} at ${config.address}...');
+      print('🔌 Attempting Connection to ${config.connectionType.name} at ${config.address}...');
       
-      // Use a timeout for connection
       final connected = await PrinterManager.instance.connect(
         type: type,
         model: model,
-      ).timeout(const Duration(seconds: 5), onTimeout: () {
-        print('⏳ Connection Timeout');
+      ).timeout(const Duration(seconds: 7), onTimeout: () {
+        print('⏳ CONNECTION TIMEOUT (7s)');
         return false;
       });
 
       if (!connected) {
-        print('❌ Failed to connect to printer');
+        print('❌ CONNECTION FAILED: PrinterManager returned false');
         return false;
       }
 
-      // Give Bluetooth printers a moment to initialize after connection
+      print('✅ CONNECTED! Preparing to send data...');
+      
       if (type == PrinterType.bluetooth) {
-        print('📡 Bluetooth connected, waiting for initialization...');
-        await Future.delayed(const Duration(milliseconds: 1000));
+        print('📡 Initializing Bluetooth delay (1.5s)...');
+        await Future.delayed(const Duration(milliseconds: 1500));
       }
 
-      print('✉️ Sending ${bytes.length} bytes to printer...');
+      print('📤 Sending ${bytes.length} bytes...');
       final sent = await PrinterManager.instance.send(type: type, bytes: bytes);
       
       if (!sent) {
-        print('❌ Failed to send bytes to printer');
+        print('❌ DATA SEND FAILED');
         return false;
       }
       
-      // Short delay for some printers to finish processing before disconnect
-      await Future.delayed(const Duration(milliseconds: 500));
+      print('🎉 Bytes sent successfully! Waiting for spooling (0.8s)...');
+      await Future.delayed(const Duration(milliseconds: 800));
       
       print('🔌 Disconnecting...');
       await PrinterManager.instance.disconnect(type: type);
-      print('✅ Print Job Completed.');
+      print('🏁 PRINT JOB COMPLETED SUCCESSFULLY');
+      print('-----------------------------------------');
       return true;
-    } catch (e) {
-      print('❌ Native Print Error: $e');
+    } catch (e, stack) {
+      print('🛑 CRITICAL PRINT ERROR: $e');
+      print('Stacktrace: $stack');
       return false;
     }
   }
@@ -263,14 +294,22 @@ class PrintService {
       final String base64Data = base64.encode(bytes);
       final String url = 'rawbt:base64,$base64Data';
       
+      print('📦 Byte length: ${bytes.length}, B64 length: ${base64Data.length}');
+      
       final Uri uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
+      final bool canLaunch = await canLaunchUrl(uri);
+      
+      print('🔍 RawBT canLaunch: $canLaunch');
+      
+      if (canLaunch) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        print('🚀 RawBT launch command sent successfully');
       } else {
-        throw Exception('Could not launch RawBT app. Is it installed?');
+        print('❌ ERROR: System says it cannot launch "rawbt:" scheme. Is RawBT installed?');
+        throw Exception('Could not launch RawBT app. Please ensure it is installed from Play Store.');
       }
     } catch (e) {
-      print('❌ Print Error: $e');
+      print('❌ sendToRawBT Error: $e');
       rethrow;
     }
   }

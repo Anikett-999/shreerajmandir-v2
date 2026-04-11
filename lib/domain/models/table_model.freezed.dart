@@ -31,6 +31,7 @@ mixin _$TableModel {
   int get itemCount => throw _privateConstructorUsedError;
   int get kotCount => throw _privateConstructorUsedError;
   int get unprintedKotCount => throw _privateConstructorUsedError;
+  @OptionalTimestampConverter()
   DateTime? get updatedAt => throw _privateConstructorUsedError;
 
   /// Serializes this TableModel to a JSON map.
@@ -60,7 +61,7 @@ abstract class $TableModelCopyWith<$Res> {
     int itemCount,
     int kotCount,
     int unprintedKotCount,
-    DateTime? updatedAt,
+    @OptionalTimestampConverter() DateTime? updatedAt,
   });
 }
 
@@ -157,7 +158,7 @@ abstract class _$$TableModelImplCopyWith<$Res>
     int itemCount,
     int kotCount,
     int unprintedKotCount,
-    DateTime? updatedAt,
+    @OptionalTimestampConverter() DateTime? updatedAt,
   });
 }
 
@@ -246,7 +247,7 @@ class _$TableModelImpl implements _TableModel {
     this.itemCount = 0,
     this.kotCount = 0,
     this.unprintedKotCount = 0,
-    this.updatedAt,
+    @OptionalTimestampConverter() this.updatedAt,
   });
 
   factory _$TableModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -277,6 +278,7 @@ class _$TableModelImpl implements _TableModel {
   @JsonKey()
   final int unprintedKotCount;
   @override
+  @OptionalTimestampConverter()
   final DateTime? updatedAt;
 
   @override
@@ -349,7 +351,7 @@ abstract class _TableModel implements TableModel {
     final int itemCount,
     final int kotCount,
     final int unprintedKotCount,
-    final DateTime? updatedAt,
+    @OptionalTimestampConverter() final DateTime? updatedAt,
   }) = _$TableModelImpl;
 
   factory _TableModel.fromJson(Map<String, dynamic> json) =
@@ -374,6 +376,7 @@ abstract class _TableModel implements TableModel {
   @override
   int get unprintedKotCount;
   @override
+  @OptionalTimestampConverter()
   DateTime? get updatedAt;
 
   /// Create a copy of TableModel

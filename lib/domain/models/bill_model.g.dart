@@ -52,31 +52,30 @@ _$BillModelImpl _$$BillModelImplFromJson(Map<String, dynamic> json) =>
       printCount: (json['printCount'] as num?)?.toInt() ?? 1,
       isSuspicious: json['isSuspicious'] as bool? ?? false,
       createdBy: json['createdBy'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      printedAt: json['printedAt'] == null
-          ? null
-          : DateTime.parse(json['printedAt'] as String),
+      createdAt: const TimestampConverter().fromJson(json['createdAt']),
+      printedAt: const OptionalTimestampConverter().fromJson(json['printedAt']),
       lastPrintedBy: json['lastPrintedBy'] as String?,
     );
 
-Map<String, dynamic> _$$BillModelImplToJson(_$BillModelImpl instance) =>
-    <String, dynamic>{
-      'billId': instance.billId,
-      'orderId': instance.orderId,
-      'tableId': instance.tableId,
-      'tableName': instance.tableName,
-      'userName': instance.userName,
-      'items': instance.items.map((e) => e.toJson()).toList(),
-      'subtotal': instance.subtotal,
-      'discountPercent': instance.discountPercent,
-      'discountAmount': instance.discountAmount,
-      'extraCharges': instance.extraCharges,
-      'total': instance.total,
-      'payments': instance.payments.map((e) => e.toJson()).toList(),
-      'printCount': instance.printCount,
-      'isSuspicious': instance.isSuspicious,
-      'createdBy': instance.createdBy,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'printedAt': instance.printedAt?.toIso8601String(),
-      'lastPrintedBy': instance.lastPrintedBy,
-    };
+Map<String, dynamic> _$$BillModelImplToJson(
+  _$BillModelImpl instance,
+) => <String, dynamic>{
+  'billId': instance.billId,
+  'orderId': instance.orderId,
+  'tableId': instance.tableId,
+  'tableName': instance.tableName,
+  'userName': instance.userName,
+  'items': instance.items.map((e) => e.toJson()).toList(),
+  'subtotal': instance.subtotal,
+  'discountPercent': instance.discountPercent,
+  'discountAmount': instance.discountAmount,
+  'extraCharges': instance.extraCharges,
+  'total': instance.total,
+  'payments': instance.payments.map((e) => e.toJson()).toList(),
+  'printCount': instance.printCount,
+  'isSuspicious': instance.isSuspicious,
+  'createdBy': instance.createdBy,
+  'createdAt': const TimestampConverter().toJson(instance.createdAt),
+  'printedAt': const OptionalTimestampConverter().toJson(instance.printedAt),
+  'lastPrintedBy': instance.lastPrintedBy,
+};

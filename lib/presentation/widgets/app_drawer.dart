@@ -162,6 +162,25 @@ class AppDrawer extends ConsumerWidget {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => const BranchManagementScreen()));
                     },
                   ),
+                  ListTile(
+                    leading: const Icon(Icons.point_of_sale_outlined, color: AppTheme.maroon),
+                    title: const Text('Billing & Checkout', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const OperationalHomeScreen()));
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.print, color: AppTheme.maroon),
+                    title: const Text('Printer Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()),
+                      );
+                    },
+                  ),
                 ],
 
                 // Shared Links

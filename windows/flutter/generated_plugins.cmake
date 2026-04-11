@@ -7,6 +7,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   flutter_pos_printer_platform_image_3
+  printing
+  share_plus
   url_launcher_windows
 )
 

@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../core/timestamp_converter.dart';
 
 part 'table_model.freezed.dart';
 part 'table_model.g.dart';
@@ -15,7 +16,7 @@ class TableModel with _$TableModel {
     @Default(0) int itemCount,
     @Default(0) int kotCount,
     @Default(0) int unprintedKotCount,
-    DateTime? updatedAt,
+    @OptionalTimestampConverter() DateTime? updatedAt,
   }) = _TableModel;
 
   factory TableModel.fromJson(Map<String, dynamic> json) => _$TableModelFromJson(json);

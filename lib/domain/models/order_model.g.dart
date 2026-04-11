@@ -16,20 +16,17 @@ _$OrderModelImpl _$$OrderModelImplFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           const [],
-      createdAt: json['createdAt'] == null
-          ? null
-          : DateTime.parse(json['createdAt'] as String),
-      closedAt: json['closedAt'] == null
-          ? null
-          : DateTime.parse(json['closedAt'] as String),
+      createdAt: const OptionalTimestampConverter().fromJson(json['createdAt']),
+      closedAt: const OptionalTimestampConverter().fromJson(json['closedAt']),
     );
 
-Map<String, dynamic> _$$OrderModelImplToJson(_$OrderModelImpl instance) =>
-    <String, dynamic>{
-      'orderId': instance.orderId,
-      'tableId': instance.tableId,
-      'status': instance.status,
-      'kotIds': instance.kotIds,
-      'createdAt': instance.createdAt?.toIso8601String(),
-      'closedAt': instance.closedAt?.toIso8601String(),
-    };
+Map<String, dynamic> _$$OrderModelImplToJson(
+  _$OrderModelImpl instance,
+) => <String, dynamic>{
+  'orderId': instance.orderId,
+  'tableId': instance.tableId,
+  'status': instance.status,
+  'kotIds': instance.kotIds,
+  'createdAt': const OptionalTimestampConverter().toJson(instance.createdAt),
+  'closedAt': const OptionalTimestampConverter().toJson(instance.closedAt),
+};

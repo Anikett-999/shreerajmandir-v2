@@ -412,7 +412,9 @@ mixin _$BillModel {
   int get printCount => throw _privateConstructorUsedError;
   bool get isSuspicious => throw _privateConstructorUsedError;
   String get createdBy => throw _privateConstructorUsedError;
+  @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
+  @OptionalTimestampConverter()
   DateTime? get printedAt => throw _privateConstructorUsedError;
   String? get lastPrintedBy => throw _privateConstructorUsedError;
 
@@ -447,8 +449,8 @@ abstract class $BillModelCopyWith<$Res> {
     int printCount,
     bool isSuspicious,
     String createdBy,
-    DateTime createdAt,
-    DateTime? printedAt,
+    @TimestampConverter() DateTime createdAt,
+    @OptionalTimestampConverter() DateTime? printedAt,
     String? lastPrintedBy,
   });
 }
@@ -592,8 +594,8 @@ abstract class _$$BillModelImplCopyWith<$Res>
     int printCount,
     bool isSuspicious,
     String createdBy,
-    DateTime createdAt,
-    DateTime? printedAt,
+    @TimestampConverter() DateTime createdAt,
+    @OptionalTimestampConverter() DateTime? printedAt,
     String? lastPrintedBy,
   });
 }
@@ -729,8 +731,8 @@ class _$BillModelImpl implements _BillModel {
     this.printCount = 1,
     this.isSuspicious = false,
     required this.createdBy,
-    required this.createdAt,
-    this.printedAt,
+    @TimestampConverter() required this.createdAt,
+    @OptionalTimestampConverter() this.printedAt,
     this.lastPrintedBy,
   }) : _items = items,
        _payments = payments;
@@ -786,8 +788,10 @@ class _$BillModelImpl implements _BillModel {
   @override
   final String createdBy;
   @override
+  @TimestampConverter()
   final DateTime createdAt;
   @override
+  @OptionalTimestampConverter()
   final DateTime? printedAt;
   @override
   final String? lastPrintedBy;
@@ -889,8 +893,8 @@ abstract class _BillModel implements BillModel {
     final int printCount,
     final bool isSuspicious,
     required final String createdBy,
-    required final DateTime createdAt,
-    final DateTime? printedAt,
+    @TimestampConverter() required final DateTime createdAt,
+    @OptionalTimestampConverter() final DateTime? printedAt,
     final String? lastPrintedBy,
   }) = _$BillModelImpl;
 
@@ -928,8 +932,10 @@ abstract class _BillModel implements BillModel {
   @override
   String get createdBy;
   @override
+  @TimestampConverter()
   DateTime get createdAt;
   @override
+  @OptionalTimestampConverter()
   DateTime? get printedAt;
   @override
   String? get lastPrintedBy;
