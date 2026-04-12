@@ -239,8 +239,8 @@ class __$$TableModelImplCopyWithImpl<$Res>
 class _$TableModelImpl implements _TableModel {
   const _$TableModelImpl({
     required this.tableId,
-    required this.name,
-    required this.capacity,
+    this.name = 'Unknown',
+    this.capacity = 1,
     this.status = 'available',
     this.activeOrderId,
     this.totalAmount = 0.0,
@@ -256,8 +256,10 @@ class _$TableModelImpl implements _TableModel {
   @override
   final String tableId;
   @override
+  @JsonKey()
   final String name;
   @override
+  @JsonKey()
   final int capacity;
   @override
   @JsonKey()
@@ -343,8 +345,8 @@ class _$TableModelImpl implements _TableModel {
 abstract class _TableModel implements TableModel {
   const factory _TableModel({
     required final String tableId,
-    required final String name,
-    required final int capacity,
+    final String name,
+    final int capacity,
     final String status,
     final String? activeOrderId,
     final double totalAmount,

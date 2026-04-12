@@ -8,23 +8,32 @@ import '../domain/models/product_insights.dart';
 
 class AnalyticsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static const String _businessId = 'rajmandir_main';
+
+  DocumentReference _getBranchRef(String branchId) {
+    return _firestore
+        .collection('businesses')
+        .doc(_businessId)
+        .collection('branches')
+        .doc(branchId);
+  }
 
   Stream<DashboardStats> watchDashboardStats(String branchId) {
     // Start of current day
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
+    final branchRef = _getBranchRef(branchId);
 
-    final billsStream = _firestore
+    final billsStream = branchRef
         .collection('bills')
         .where('createdAt', isGreaterThanOrEqualTo: startOfDay)
         .snapshots();
 
-    final tablesStream = _firestore
+    final tablesStream = branchRef
         .collection('tables')
-        .where('branchId', isEqualTo: branchId)
         .snapshots();
     
-    final kotsStream = _firestore
+    final kotsStream = branchRef
         .collection('kots')
         .where('createdAt', isGreaterThanOrEqualTo: startOfDay)
         .snapshots();
@@ -34,9 +43,31 @@ class AnalyticsService {
       tablesStream,
       kotsStream,
       (billsSnap, tablesSnap, kotsSnap) {
-        final bills = billsSnap.docs.map((doc) => BillModel.fromJson(doc.data())).toList();
-        final tables = tablesSnap.docs.map((doc) => TableModel.fromJson(doc.data())).toList();
-        final kots = kotsSnap.docs.map((doc) => KOTModel.fromJson(doc.data())).toList();
+        final bills = billsSnap.docs.map((doc) {
+          final data = doc.data();
+          data['billId'] = data['billId'] ?? doc.id;
+          data['orderId'] = data['orderId'] ?? 'N/A';
+          // Ensure dates are string for the model's converter if needed, 
+          // though TimestampConverter should handle it.
+          return BillModel.fromJson(data);
+        }).toList();
+
+        final tables = tablesSnap.docs.map((doc) {
+          final data = doc.data();
+          data['tableId'] = data['tableId'] ?? doc.id;
+          // Fix for some firestore versions/environments where native Timestamps crash json_serializable
+          if (data['updatedAt'] is Timestamp) {
+            data['updatedAt'] = (data['updatedAt'] as Timestamp).toDate().toIso8601String();
+          }
+          return TableModel.fromJson(data);
+        }).toList();
+
+        final kots = kotsSnap.docs.map((doc) {
+          final data = doc.data();
+          data['kotId'] = data['kotId'] ?? doc.id;
+          data['orderId'] = data['orderId'] ?? 'N/A';
+          return KOTModel.fromJson(data);
+        }).toList();
 
         // 1. Revenue Calculations
         double totalRevenue = 0;
@@ -126,13 +157,19 @@ class AnalyticsService {
   Stream<ProductInsights> watchProductInsights(String branchId) {
     final now = DateTime.now();
     final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+    final branchRef = _getBranchRef(branchId);
 
-    return _firestore
+    return branchRef
         .collection('bills')
         .where('createdAt', isGreaterThanOrEqualTo: thirtyDaysAgo)
         .snapshots()
         .map((billsSnap) {
-      final bills = billsSnap.docs.map((doc) => BillModel.fromJson(doc.data())).toList();
+      final bills = billsSnap.docs.map((doc) {
+        final data = doc.data();
+        data['billId'] = data['billId'] ?? doc.id;
+        data['orderId'] = data['orderId'] ?? 'N/A';
+        return BillModel.fromJson(data);
+      }).toList();
 
       Map<String, TopProduct> itemMap = {};
       Map<String, TopCategory> categoryMap = {};
@@ -192,15 +229,21 @@ class AnalyticsService {
   Stream<DashboardStats> watchReportForRange(String branchId, DateTime start, DateTime end) {
     // We adjust end to include the entire day
     final rangeEnd = DateTime(end.year, end.month, end.day, 23, 59, 59);
+    final branchRef = _getBranchRef(branchId);
 
-    final billsStream = _firestore
+    final billsStream = branchRef
         .collection('bills')
         .where('createdAt', isGreaterThanOrEqualTo: start)
         .where('createdAt', isLessThanOrEqualTo: rangeEnd)
         .snapshots();
 
     return billsStream.map((billsSnap) {
-      final bills = billsSnap.docs.map((doc) => BillModel.fromJson(doc.data())).toList();
+      final bills = billsSnap.docs.map((doc) {
+        final data = doc.data();
+        data['billId'] = data['billId'] ?? doc.id;
+        data['orderId'] = data['orderId'] ?? 'N/A';
+        return BillModel.fromJson(data);
+      }).toList();
 
       double totalRevenue = 0;
       double grossSales = 0;
@@ -268,4 +311,6 @@ class AnalyticsService {
       );
     });
   }
+
 }
+

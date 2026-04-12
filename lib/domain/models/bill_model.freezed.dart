@@ -159,8 +159,8 @@ class _$BillItemImpl implements _BillItem {
   const _$BillItemImpl({
     required this.name,
     this.category = '',
-    required this.qty,
-    required this.price,
+    this.qty = 1,
+    this.price = 0.0,
     this.note = '',
   });
 
@@ -173,8 +173,10 @@ class _$BillItemImpl implements _BillItem {
   @JsonKey()
   final String category;
   @override
+  @JsonKey()
   final int qty;
   @override
+  @JsonKey()
   final double price;
   @override
   @JsonKey()
@@ -221,8 +223,8 @@ abstract class _BillItem implements BillItem {
   const factory _BillItem({
     required final String name,
     final String category,
-    required final int qty,
-    required final double price,
+    final int qty,
+    final double price,
     final String note,
   }) = _$BillItemImpl;
 
@@ -348,15 +350,17 @@ class __$$PaymentImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$PaymentImpl implements _Payment {
-  const _$PaymentImpl({required this.mode, required this.amount});
+  const _$PaymentImpl({this.mode = 'cash', this.amount = 0.0});
 
   factory _$PaymentImpl.fromJson(Map<String, dynamic> json) =>
       _$$PaymentImplFromJson(json);
 
   @override
+  @JsonKey()
   final String mode;
   // cash | upi | card
   @override
+  @JsonKey()
   final double amount;
 
   @override
@@ -392,10 +396,8 @@ class _$PaymentImpl implements _Payment {
 }
 
 abstract class _Payment implements Payment {
-  const factory _Payment({
-    required final String mode,
-    required final double amount,
-  }) = _$PaymentImpl;
+  const factory _Payment({final String mode, final double amount}) =
+      _$PaymentImpl;
 
   factory _Payment.fromJson(Map<String, dynamic> json) = _$PaymentImpl.fromJson;
 
@@ -738,20 +740,20 @@ class __$$BillModelImplCopyWithImpl<$Res>
 class _$BillModelImpl implements _BillModel {
   const _$BillModelImpl({
     required this.billId,
-    required this.orderId,
-    required this.tableId,
-    required this.tableName,
-    required this.userName,
-    required final List<BillItem> items,
-    required this.subtotal,
+    this.orderId = '',
+    this.tableId = '',
+    this.tableName = '',
+    this.userName = '',
+    final List<BillItem> items = const [],
+    this.subtotal = 0.0,
     this.discountPercent = 0.0,
     this.discountAmount = 0.0,
     this.extraCharges = 0.0,
-    required this.total,
-    required final List<Payment> payments,
+    this.total = 0.0,
+    final List<Payment> payments = const [],
     this.printCount = 1,
     this.isSuspicious = false,
-    required this.createdBy,
+    this.createdBy = '',
     @TimestampConverter() required this.createdAt,
     @OptionalTimestampConverter() this.printedAt,
     this.lastPrintedBy,
@@ -764,15 +766,20 @@ class _$BillModelImpl implements _BillModel {
   @override
   final String billId;
   @override
+  @JsonKey()
   final String orderId;
   @override
+  @JsonKey()
   final String tableId;
   @override
+  @JsonKey()
   final String tableName;
   @override
+  @JsonKey()
   final String userName;
   final List<BillItem> _items;
   @override
+  @JsonKey()
   List<BillItem> get items {
     if (_items is EqualUnmodifiableListView) return _items;
     // ignore: implicit_dynamic_type
@@ -780,6 +787,7 @@ class _$BillModelImpl implements _BillModel {
   }
 
   @override
+  @JsonKey()
   final double subtotal;
   @override
   @JsonKey()
@@ -791,9 +799,11 @@ class _$BillModelImpl implements _BillModel {
   @JsonKey()
   final double extraCharges;
   @override
+  @JsonKey()
   final double total;
   final List<Payment> _payments;
   @override
+  @JsonKey()
   List<Payment> get payments {
     if (_payments is EqualUnmodifiableListView) return _payments;
     // ignore: implicit_dynamic_type
@@ -807,6 +817,7 @@ class _$BillModelImpl implements _BillModel {
   @JsonKey()
   final bool isSuspicious;
   @override
+  @JsonKey()
   final String createdBy;
   @override
   @TimestampConverter()
@@ -900,20 +911,20 @@ class _$BillModelImpl implements _BillModel {
 abstract class _BillModel implements BillModel {
   const factory _BillModel({
     required final String billId,
-    required final String orderId,
-    required final String tableId,
-    required final String tableName,
-    required final String userName,
-    required final List<BillItem> items,
-    required final double subtotal,
+    final String orderId,
+    final String tableId,
+    final String tableName,
+    final String userName,
+    final List<BillItem> items,
+    final double subtotal,
     final double discountPercent,
     final double discountAmount,
     final double extraCharges,
-    required final double total,
-    required final List<Payment> payments,
+    final double total,
+    final List<Payment> payments,
     final int printCount,
     final bool isSuspicious,
-    required final String createdBy,
+    final String createdBy,
     @TimestampConverter() required final DateTime createdAt,
     @OptionalTimestampConverter() final DateTime? printedAt,
     final String? lastPrintedBy,
