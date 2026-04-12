@@ -37,6 +37,7 @@ class ProductInsightsCard extends ConsumerWidget {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -79,8 +80,9 @@ class ProductInsightsCard extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           if (topItems.isEmpty)
-            const Expanded(
-              child: Center(
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
                 child: Text('No sales data for past 30 days', 
                   style: TextStyle(color: Colors.grey, fontSize: 12)),
               ),
@@ -92,7 +94,7 @@ class ProductInsightsCard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             ...topItems.map((item) => _buildItemRow(item, topItems.first.quantity)),
-            const Spacer(),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

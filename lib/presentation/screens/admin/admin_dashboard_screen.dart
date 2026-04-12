@@ -124,10 +124,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           const SizedBox(height: 24),
           
           // New: Product Insights Overview (30 Days)
-          const SizedBox(
-            height: 220,
-            child: ProductInsightsCard(),
-          ),
+          const ProductInsightsCard(),
           
           const SizedBox(height: 24),
           

@@ -91,28 +91,30 @@ class ReportConfirmationDialog extends StatelessWidget {
 
   Widget _buildRow(String label, String value, {Color? color, bool isBold = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Text(
+            label, 
+            style: const TextStyle(fontSize: 13, color: Colors.black54),
+          ),
+          const SizedBox(width: 16),
           Flexible(
             child: Text(
-              label, 
-              style: const TextStyle(fontSize: 13, color: Colors.black54),
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                color: color ?? Colors.black87,
+              ),
               overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              color: color ?? Colors.black87,
             ),
           ),
         ],
       ),
     );
   }
+
 }

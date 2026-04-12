@@ -19,93 +19,105 @@ class KpiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16), // Slightly reduced from 20 for mobile
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20), // Slightly tighter radius
-        border: Border.all(color: Colors.grey.withOpacity(0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.06),
-            offset: const Offset(0, 8),
-            blurRadius: 16,
-            spreadRadius: -4,
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Background "Richness" - subtle icon watermark
-          Positioned(
-            right: -10,
-            bottom: -10,
-            child: Icon(
-              icon,
-              size: 64,
-              color: color.withOpacity(0.03),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(icon, color: color, size: 20),
-                  ),
-                  if (trend != null)
-                    Flexible(child: _buildTrendIndicator()),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        value,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                          height: 1.1,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      title.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.grey[400],
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+        final bool isCompact = width < 150;
+        final bool showTrend = trend != null && width > 120;
+
+        return Container(
+          padding: EdgeInsets.all(width * 0.1 > 16 ? 16 : width * 0.1),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.grey.withOpacity(0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.06),
+                offset: const Offset(0, 8),
+                blurRadius: 16,
+                spreadRadius: -4,
               ),
             ],
           ),
-        ],
-      ),
+          child: Stack(
+            children: [
+              // Subtle background icon
+              Positioned(
+                right: -10,
+                bottom: -10,
+                child: Icon(
+                  icon,
+                  size: width * 0.4,
+                  color: color.withOpacity(0.03),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(icon, color: color, size: isCompact ? 16 : 20),
+                      ),
+                      if (showTrend)
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: _buildTrendIndicator(isCompact),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          value,
+                          style: TextStyle(
+                            fontSize: isCompact ? 18 : 24,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                            height: 1.1,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        title.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: isCompact ? 8 : 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.grey[400],
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildTrendIndicator() {
+  Widget _buildTrendIndicator(bool isCompact) {
     final isPositive = trend! > 0;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -119,14 +131,14 @@ class KpiCard extends StatelessWidget {
           Icon(
             isPositive ? Icons.trending_up : Icons.trending_down,
             color: isPositive ? Colors.green : Colors.red,
-            size: 10,
+            size: isCompact ? 8 : 10,
           ),
           const SizedBox(width: 2),
           Text(
-            '${trend!.abs().toStringAsFixed(1)}%',
+            '${trend!.abs().toStringAsFixed(0)}%',
             style: TextStyle(
               color: isPositive ? Colors.green : Colors.red,
-              fontSize: 10,
+              fontSize: isCompact ? 8 : 10,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -135,3 +147,4 @@ class KpiCard extends StatelessWidget {
     );
   }
 }
+

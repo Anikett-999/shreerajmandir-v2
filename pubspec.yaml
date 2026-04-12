@@ -76,6 +76,21 @@ dev_dependencies:
   riverpod_generator: ^2.4.4
   json_serializable: ^6.9.3
   fake_cloud_firestore: ^3.1.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/branding/app_icon.png"
+  min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: "assets/branding/splash_logo_centered.png"
+  android: true
+  ios: true
+  fullscreen: true
 
 dependency_overrides:
   rxdart: ^0.28.0

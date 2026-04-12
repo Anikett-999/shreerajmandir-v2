@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'core/app_theme.dart';
 import 'firebase_options.dart';
 import 'presentation/providers/auth_provider.dart';
@@ -13,7 +14,9 @@ import 'presentation/providers/theme_provider.dart';
 import 'presentation/widgets/auth_wrapper.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -28,6 +31,9 @@ void main() async {
       child: const ShreeRajmandirPOSApp(),
     ),
   );
+
+  // Remove the splash screen once the app is loaded
+  FlutterNativeSplash.remove();
 }
 
 class ShreeRajmandirPOSApp extends ConsumerWidget {
