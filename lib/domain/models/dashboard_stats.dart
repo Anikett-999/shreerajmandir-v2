@@ -7,6 +7,8 @@ part 'dashboard_stats.g.dart';
 class DashboardStats with _$DashboardStats {
   const factory DashboardStats({
     @Default(0.0) double totalRevenue,
+    @Default(0.0) double grossSales,
+    @Default(0.0) double totalDiscounts,
     @Default(0) int totalOrders,
     @Default(0.0) double avgOrderValue,
     @Default(0.0) double revenueTrend,

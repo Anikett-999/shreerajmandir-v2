@@ -9,6 +9,8 @@ part of 'dashboard_stats.dart';
 _$DashboardStatsImpl _$$DashboardStatsImplFromJson(Map<String, dynamic> json) =>
     _$DashboardStatsImpl(
       totalRevenue: (json['totalRevenue'] as num?)?.toDouble() ?? 0.0,
+      grossSales: (json['grossSales'] as num?)?.toDouble() ?? 0.0,
+      totalDiscounts: (json['totalDiscounts'] as num?)?.toDouble() ?? 0.0,
       totalOrders: (json['totalOrders'] as num?)?.toInt() ?? 0,
       avgOrderValue: (json['avgOrderValue'] as num?)?.toDouble() ?? 0.0,
       revenueTrend: (json['revenueTrend'] as num?)?.toDouble() ?? 0.0,
@@ -41,6 +43,8 @@ Map<String, dynamic> _$$DashboardStatsImplToJson(
   _$DashboardStatsImpl instance,
 ) => <String, dynamic>{
   'totalRevenue': instance.totalRevenue,
+  'grossSales': instance.grossSales,
+  'totalDiscounts': instance.totalDiscounts,
   'totalOrders': instance.totalOrders,
   'avgOrderValue': instance.avgOrderValue,
   'revenueTrend': instance.revenueTrend,

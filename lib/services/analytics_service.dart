@@ -40,12 +40,16 @@ class AnalyticsService {
 
         // 1. Revenue Calculations
         double totalRevenue = 0;
+        double grossSales = 0;
+        double totalDiscounts = 0;
         Map<String, double> payments = {'cash': 0.0, 'upi': 0.0, 'card': 0.0};
         Map<int, double> hourlyRevenue = {};
         Map<String, TopProduct> productMap = {};
 
         for (final bill in bills) {
           totalRevenue += bill.total;
+          grossSales += bill.subtotal + bill.extraCharges;
+          totalDiscounts += bill.discountAmount;
           
           // Payment Split
           for (final p in bill.payments) {
@@ -102,6 +106,8 @@ class AnalyticsService {
 
         return DashboardStats(
           totalRevenue: totalRevenue,
+          grossSales: grossSales,
+          totalDiscounts: totalDiscounts,
           totalOrders: bills.length,
           avgOrderValue: bills.isEmpty ? 0 : totalRevenue / bills.length,
           revenueTrend: 0.0,
@@ -179,6 +185,86 @@ class AnalyticsService {
         topCategories: sortedCats,
         totalQuantity: totalQty,
         totalRevenue: totalRev,
+      );
+    });
+  }
+
+  Stream<DashboardStats> watchReportForRange(String branchId, DateTime start, DateTime end) {
+    // We adjust end to include the entire day
+    final rangeEnd = DateTime(end.year, end.month, end.day, 23, 59, 59);
+
+    final billsStream = _firestore
+        .collection('bills')
+        .where('createdAt', isGreaterThanOrEqualTo: start)
+        .where('createdAt', isLessThanOrEqualTo: rangeEnd)
+        .snapshots();
+
+    return billsStream.map((billsSnap) {
+      final bills = billsSnap.docs.map((doc) => BillModel.fromJson(doc.data())).toList();
+
+      double totalRevenue = 0;
+      double grossSales = 0;
+      double totalDiscounts = 0;
+      Map<String, double> payments = {'cash': 0.0, 'upi': 0.0, 'card': 0.0};
+      Map<int, double> hourlyRevenue = {};
+      Map<String, TopProduct> productMap = {};
+
+      for (final bill in bills) {
+        totalRevenue += bill.total;
+        grossSales += bill.subtotal + bill.extraCharges;
+        totalDiscounts += bill.discountAmount;
+        
+        // Payment Split
+        for (final p in bill.payments) {
+          final mode = p.mode.toLowerCase();
+          payments[mode] = (payments[mode] ?? 0.0) + p.amount;
+        }
+
+        // Hourly Trend
+        final hour = bill.createdAt.hour;
+        hourlyRevenue[hour] = (hourlyRevenue[hour] ?? 0.0) + bill.total;
+
+        // Product Performance
+        for (final item in bill.items) {
+          final existing = productMap[item.name];
+          if (existing != null) {
+            productMap[item.name] = existing.copyWith(
+              quantity: existing.quantity + item.qty,
+              revenue: existing.revenue + (item.qty * item.price),
+            );
+          } else {
+            productMap[item.name] = TopProduct(
+              name: item.name,
+              quantity: item.qty,
+              revenue: item.qty * item.price,
+            );
+          }
+        }
+      }
+
+      // Format hourly sales for chart
+      final List<HourlySales> salesTrend = List.generate(24, (dayHour) {
+        return HourlySales(hour: dayHour, revenue: hourlyRevenue[dayHour] ?? 0.0);
+      });
+
+      // Sort Top Products
+      final topProducts = productMap.values.toList()
+        ..sort((a, b) => b.revenue.compareTo(a.revenue));
+
+      return DashboardStats(
+        totalRevenue: totalRevenue,
+        grossSales: grossSales,
+        totalDiscounts: totalDiscounts,
+        totalOrders: bills.length,
+        avgOrderValue: bills.isEmpty ? 0 : totalRevenue / bills.length,
+        revenueTrend: 0.0,
+        ordersTrend: 0.0,
+        hourlySales: salesTrend,
+        paymentSplit: payments,
+        activeTables: 0,
+        pendingKots: 0,
+        topProducts: topProducts.take(15).toList(),
+        suspiciousBills: [],
       );
     });
   }

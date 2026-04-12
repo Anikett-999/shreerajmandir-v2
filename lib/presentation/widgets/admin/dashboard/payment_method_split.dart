@@ -26,26 +26,30 @@ class PaymentMethodSplit extends StatelessWidget {
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.5),
           ),
           const SizedBox(height: 24),
-          Expanded(
-            child: Row(
-              children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 450;
+              final content = [
                 Expanded(
-                  flex: 2,
-                  child: PieChart(
-                    PieChartData(
-                      sectionsSpace: 4,
-                      centerSpaceRadius: 40,
-                      sections: [
-                        _buildSection('cash', split['cash'] ?? 0, Colors.green, total),
-                        _buildSection('upi', split['upi'] ?? 0, Colors.blue, total),
-                        _buildSection('card', split['card'] ?? 0, Colors.amber, total),
-                      ],
+                  flex: isNarrow ? 0 : 2,
+                  child: SizedBox(
+                    height: isNarrow ? 200 : null,
+                    child: PieChart(
+                      PieChartData(
+                        sectionsSpace: 4,
+                        centerSpaceRadius: isNarrow ? 30 : 40,
+                        sections: [
+                          _buildSection('cash', split['cash'] ?? 0, Colors.green, total),
+                          _buildSection('upi', split['upi'] ?? 0, Colors.blue, total),
+                          _buildSection('card', split['card'] ?? 0, Colors.amber, total),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 24),
+                SizedBox(width: isNarrow ? 0 : 24, height: isNarrow ? 24 : 0),
                 Expanded(
-                  flex: 3,
+                  flex: isNarrow ? 0 : 3,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -57,8 +61,12 @@ class PaymentMethodSplit extends StatelessWidget {
                     ],
                   ),
                 ),
-              ],
-            ),
+              ];
+
+              return isNarrow 
+                ? Column(children: content) 
+                : Row(children: content);
+            },
           ),
         ],
       ),

@@ -22,6 +22,8 @@ DashboardStats _$DashboardStatsFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$DashboardStats {
   double get totalRevenue => throw _privateConstructorUsedError;
+  double get grossSales => throw _privateConstructorUsedError;
+  double get totalDiscounts => throw _privateConstructorUsedError;
   int get totalOrders => throw _privateConstructorUsedError;
   double get avgOrderValue => throw _privateConstructorUsedError;
   double get revenueTrend => throw _privateConstructorUsedError;
@@ -53,6 +55,8 @@ abstract class $DashboardStatsCopyWith<$Res> {
   @useResult
   $Res call({
     double totalRevenue,
+    double grossSales,
+    double totalDiscounts,
     int totalOrders,
     double avgOrderValue,
     double revenueTrend,
@@ -82,6 +86,8 @@ class _$DashboardStatsCopyWithImpl<$Res, $Val extends DashboardStats>
   @override
   $Res call({
     Object? totalRevenue = null,
+    Object? grossSales = null,
+    Object? totalDiscounts = null,
     Object? totalOrders = null,
     Object? avgOrderValue = null,
     Object? revenueTrend = null,
@@ -98,6 +104,14 @@ class _$DashboardStatsCopyWithImpl<$Res, $Val extends DashboardStats>
             totalRevenue: null == totalRevenue
                 ? _value.totalRevenue
                 : totalRevenue // ignore: cast_nullable_to_non_nullable
+                      as double,
+            grossSales: null == grossSales
+                ? _value.grossSales
+                : grossSales // ignore: cast_nullable_to_non_nullable
+                      as double,
+            totalDiscounts: null == totalDiscounts
+                ? _value.totalDiscounts
+                : totalDiscounts // ignore: cast_nullable_to_non_nullable
                       as double,
             totalOrders: null == totalOrders
                 ? _value.totalOrders
@@ -156,6 +170,8 @@ abstract class _$$DashboardStatsImplCopyWith<$Res>
   @useResult
   $Res call({
     double totalRevenue,
+    double grossSales,
+    double totalDiscounts,
     int totalOrders,
     double avgOrderValue,
     double revenueTrend,
@@ -184,6 +200,8 @@ class __$$DashboardStatsImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? totalRevenue = null,
+    Object? grossSales = null,
+    Object? totalDiscounts = null,
     Object? totalOrders = null,
     Object? avgOrderValue = null,
     Object? revenueTrend = null,
@@ -200,6 +218,14 @@ class __$$DashboardStatsImplCopyWithImpl<$Res>
         totalRevenue: null == totalRevenue
             ? _value.totalRevenue
             : totalRevenue // ignore: cast_nullable_to_non_nullable
+                  as double,
+        grossSales: null == grossSales
+            ? _value.grossSales
+            : grossSales // ignore: cast_nullable_to_non_nullable
+                  as double,
+        totalDiscounts: null == totalDiscounts
+            ? _value.totalDiscounts
+            : totalDiscounts // ignore: cast_nullable_to_non_nullable
                   as double,
         totalOrders: null == totalOrders
             ? _value.totalOrders
@@ -251,6 +277,8 @@ class __$$DashboardStatsImplCopyWithImpl<$Res>
 class _$DashboardStatsImpl implements _DashboardStats {
   const _$DashboardStatsImpl({
     this.totalRevenue = 0.0,
+    this.grossSales = 0.0,
+    this.totalDiscounts = 0.0,
     this.totalOrders = 0,
     this.avgOrderValue = 0.0,
     this.revenueTrend = 0.0,
@@ -272,6 +300,12 @@ class _$DashboardStatsImpl implements _DashboardStats {
   @override
   @JsonKey()
   final double totalRevenue;
+  @override
+  @JsonKey()
+  final double grossSales;
+  @override
+  @JsonKey()
+  final double totalDiscounts;
   @override
   @JsonKey()
   final int totalOrders;
@@ -328,7 +362,7 @@ class _$DashboardStatsImpl implements _DashboardStats {
 
   @override
   String toString() {
-    return 'DashboardStats(totalRevenue: $totalRevenue, totalOrders: $totalOrders, avgOrderValue: $avgOrderValue, revenueTrend: $revenueTrend, ordersTrend: $ordersTrend, hourlySales: $hourlySales, paymentSplit: $paymentSplit, activeTables: $activeTables, pendingKots: $pendingKots, topProducts: $topProducts, suspiciousBills: $suspiciousBills)';
+    return 'DashboardStats(totalRevenue: $totalRevenue, grossSales: $grossSales, totalDiscounts: $totalDiscounts, totalOrders: $totalOrders, avgOrderValue: $avgOrderValue, revenueTrend: $revenueTrend, ordersTrend: $ordersTrend, hourlySales: $hourlySales, paymentSplit: $paymentSplit, activeTables: $activeTables, pendingKots: $pendingKots, topProducts: $topProducts, suspiciousBills: $suspiciousBills)';
   }
 
   @override
@@ -338,6 +372,10 @@ class _$DashboardStatsImpl implements _DashboardStats {
             other is _$DashboardStatsImpl &&
             (identical(other.totalRevenue, totalRevenue) ||
                 other.totalRevenue == totalRevenue) &&
+            (identical(other.grossSales, grossSales) ||
+                other.grossSales == grossSales) &&
+            (identical(other.totalDiscounts, totalDiscounts) ||
+                other.totalDiscounts == totalDiscounts) &&
             (identical(other.totalOrders, totalOrders) ||
                 other.totalOrders == totalOrders) &&
             (identical(other.avgOrderValue, avgOrderValue) ||
@@ -373,6 +411,8 @@ class _$DashboardStatsImpl implements _DashboardStats {
   int get hashCode => Object.hash(
     runtimeType,
     totalRevenue,
+    grossSales,
+    totalDiscounts,
     totalOrders,
     avgOrderValue,
     revenueTrend,
@@ -405,6 +445,8 @@ class _$DashboardStatsImpl implements _DashboardStats {
 abstract class _DashboardStats implements DashboardStats {
   const factory _DashboardStats({
     final double totalRevenue,
+    final double grossSales,
+    final double totalDiscounts,
     final int totalOrders,
     final double avgOrderValue,
     final double revenueTrend,
@@ -422,6 +464,10 @@ abstract class _DashboardStats implements DashboardStats {
 
   @override
   double get totalRevenue;
+  @override
+  double get grossSales;
+  @override
+  double get totalDiscounts;
   @override
   int get totalOrders;
   @override
