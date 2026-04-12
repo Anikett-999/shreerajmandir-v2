@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../domain/models/table_model.dart';
 
 class TableService {
@@ -19,13 +20,18 @@ class TableService {
   Stream<List<TableModel>> watchTables() {
     return _tableCollection.snapshots().map((snapshot) {
       final tables = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        // Fix: Convert Firestore Timestamp to ISO string for Freezed DateTime parsing
-        if (data['updatedAt'] is Timestamp) {
-          data['updatedAt'] = (data['updatedAt'] as Timestamp).toDate().toIso8601String();
+        try {
+          final data = doc.data() as Map<String, dynamic>;
+          // Fix: Convert Firestore Timestamp to ISO string for Freezed DateTime parsing
+          if (data['updatedAt'] is Timestamp) {
+            data['updatedAt'] = (data['updatedAt'] as Timestamp).toDate().toIso8601String();
+          }
+          return TableModel.fromJson(data);
+        } catch (e) {
+          debugPrint('Error parsing TableModel for doc ${doc.id}: $e');
+          return null;
         }
-        return TableModel.fromJson(data);
-      }).toList();
+      }).whereType<TableModel>().toList();
 
       // Implement natural sorting (1, 2, 3... instead of 1, 10, 2)
       tables.sort((a, b) {

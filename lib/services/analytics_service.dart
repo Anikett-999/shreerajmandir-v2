@@ -4,6 +4,7 @@ import '../domain/models/bill_model.dart';
 import '../domain/models/kot_model.dart';
 import '../domain/models/table_model.dart';
 import '../domain/models/dashboard_stats.dart';
+import '../domain/models/product_insights.dart';
 
 class AnalyticsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -114,5 +115,71 @@ class AnalyticsService {
         );
       },
     );
+  }
+
+  Stream<ProductInsights> watchProductInsights(String branchId) {
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+
+    return _firestore
+        .collection('bills')
+        .where('createdAt', isGreaterThanOrEqualTo: thirtyDaysAgo)
+        .snapshots()
+        .map((billsSnap) {
+      final bills = billsSnap.docs.map((doc) => BillModel.fromJson(doc.data())).toList();
+
+      Map<String, TopProduct> itemMap = {};
+      Map<String, TopCategory> categoryMap = {};
+      int totalQty = 0;
+      double totalRev = 0;
+
+      for (final bill in bills) {
+        for (final item in bill.items) {
+          totalQty += item.qty;
+          totalRev += (item.qty * item.price);
+
+          // Items
+          final existingItem = itemMap[item.name];
+          if (existingItem != null) {
+            itemMap[item.name] = existingItem.copyWith(
+              quantity: existingItem.quantity + item.qty,
+              revenue: existingItem.revenue + (item.qty * item.price),
+            );
+          } else {
+            itemMap[item.name] = TopProduct(
+              name: item.name,
+              quantity: item.qty,
+              revenue: item.qty * item.price,
+            );
+          }
+
+          // Categories
+          final catName = item.category.isEmpty ? 'Uncategorized' : item.category;
+          final existingCat = categoryMap[catName];
+          if (existingCat != null) {
+            categoryMap[catName] = existingCat.copyWith(
+              quantity: existingCat.quantity + item.qty,
+              revenue: existingCat.revenue + (item.qty * item.price),
+            );
+          } else {
+            categoryMap[catName] = TopCategory(
+              name: catName,
+              quantity: item.qty,
+              revenue: item.qty * item.price,
+            );
+          }
+        }
+      }
+
+      final sortedItems = itemMap.values.toList()..sort((a, b) => b.quantity.compareTo(a.quantity));
+      final sortedCats = categoryMap.values.toList()..sort((a, b) => b.quantity.compareTo(a.quantity));
+
+      return ProductInsights(
+        topItems: sortedItems,
+        topCategories: sortedCats,
+        totalQuantity: totalQty,
+        totalRevenue: totalRev,
+      );
+    });
   }
 }

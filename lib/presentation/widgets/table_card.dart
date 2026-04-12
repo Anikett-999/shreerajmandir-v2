@@ -161,17 +161,18 @@ class TableCard extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.receipt_long, color: AppTheme.maroon),
-                title: const Text('Generate Bill'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => BillingScreen(table: table)),
-                  );
-                },
-              ),
+              if (table.activeOrderId != null)
+                ListTile(
+                  leading: const Icon(Icons.receipt_long, color: AppTheme.maroon),
+                  title: const Text('Generate Bill'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => BillingScreen(table: table)),
+                    );
+                  },
+                ),
               if (table.activeOrderId != null && (table.unprintedKotCount ?? 0) > 0)
                 ListTile(
                   leading: const Icon(Icons.print, color: Colors.orange),

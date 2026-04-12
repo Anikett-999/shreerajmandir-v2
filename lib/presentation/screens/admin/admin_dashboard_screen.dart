@@ -11,6 +11,7 @@ import '../../widgets/admin/dashboard/payment_method_split.dart';
 import '../../widgets/admin/dashboard/live_operations_monitor.dart';
 import '../../widgets/admin/dashboard/management_list.dart';
 import '../../widgets/admin/dashboard/suspicious_activity_list.dart';
+import '../../widgets/admin/dashboard/product_insights_card.dart';
 import 'users/user_management_screen.dart';
 import 'branches/branch_management_screen.dart';
 import '../shared/home_screen.dart';
@@ -117,6 +118,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 color: Colors.green,
               ),
             ],
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // New: Product Insights Overview (30 Days)
+          const SizedBox(
+            height: 220,
+            child: ProductInsightsCard(),
           ),
           
           const SizedBox(height: 24),

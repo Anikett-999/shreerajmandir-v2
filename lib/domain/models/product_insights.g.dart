@@ -6,59 +6,38 @@ part of 'product_insights.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+_$TopCategoryImpl _$$TopCategoryImplFromJson(Map<String, dynamic> json) =>
+    _$TopCategoryImpl(
+      name: json['name'] as String,
+      quantity: (json['quantity'] as num).toInt(),
+      revenue: (json['revenue'] as num).toDouble(),
+    );
+
+Map<String, dynamic> _$$TopCategoryImplToJson(_$TopCategoryImpl instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'quantity': instance.quantity,
+      'revenue': instance.revenue,
+    };
+
 _$ProductInsightsImpl _$$ProductInsightsImplFromJson(
   Map<String, dynamic> json,
 ) => _$ProductInsightsImpl(
-  topSellers:
-      (json['topSellers'] as List<dynamic>?)
-          ?.map((e) => TopProduct.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-      const [],
-  leastSellers:
-      (json['leastSellers'] as List<dynamic>?)
-          ?.map((e) => TopProduct.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-      const [],
-  categoryPerformance:
-      (json['categoryPerformance'] as List<dynamic>?)
-          ?.map((e) => CategoryPerformance.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-      const [],
-  startDate: DateTime.parse(json['startDate'] as String),
-  endDate: DateTime.parse(json['endDate'] as String),
+  topItems: (json['topItems'] as List<dynamic>)
+      .map((e) => TopProduct.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  topCategories: (json['topCategories'] as List<dynamic>)
+      .map((e) => TopCategory.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  totalQuantity: (json['totalQuantity'] as num?)?.toInt() ?? 0,
   totalRevenue: (json['totalRevenue'] as num?)?.toDouble() ?? 0.0,
-  totalItemsSold: (json['totalItemsSold'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$$ProductInsightsImplToJson(
   _$ProductInsightsImpl instance,
 ) => <String, dynamic>{
-  'topSellers': instance.topSellers.map((e) => e.toJson()).toList(),
-  'leastSellers': instance.leastSellers.map((e) => e.toJson()).toList(),
-  'categoryPerformance': instance.categoryPerformance
-      .map((e) => e.toJson())
-      .toList(),
-  'startDate': instance.startDate.toIso8601String(),
-  'endDate': instance.endDate.toIso8601String(),
+  'topItems': instance.topItems.map((e) => e.toJson()).toList(),
+  'topCategories': instance.topCategories.map((e) => e.toJson()).toList(),
+  'totalQuantity': instance.totalQuantity,
   'totalRevenue': instance.totalRevenue,
-  'totalItemsSold': instance.totalItemsSold,
-};
-
-_$CategoryPerformanceImpl _$$CategoryPerformanceImplFromJson(
-  Map<String, dynamic> json,
-) => _$CategoryPerformanceImpl(
-  categoryName: json['categoryName'] as String,
-  revenue: (json['revenue'] as num).toDouble(),
-  quantity: (json['quantity'] as num).toInt(),
-  contributionPercentage:
-      (json['contributionPercentage'] as num?)?.toDouble() ?? 0.0,
-);
-
-Map<String, dynamic> _$$CategoryPerformanceImplToJson(
-  _$CategoryPerformanceImpl instance,
-) => <String, dynamic>{
-  'categoryName': instance.categoryName,
-  'revenue': instance.revenue,
-  'quantity': instance.quantity,
-  'contributionPercentage': instance.contributionPercentage,
 };

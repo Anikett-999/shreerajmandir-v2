@@ -44,6 +44,15 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   }
 
   Future<void> _loadPreview() async {
+    if (widget.table.activeOrderId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No active order found for this table')),
+        );
+        Navigator.pop(context);
+      }
+      return;
+    }
     final branchId = ref.read(activeBranchIdProvider);
     final billingService = BillingService(branchId: branchId ?? 'branch_001');
     final preview = await billingService.previewBill(widget.table.activeOrderId!);
@@ -84,6 +93,10 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       final printService = ref.read(printServiceProvider);
       final currentUser = ref.read(authServiceProvider).currentUser;
       final cleanUserName = currentUser?.displayName ?? currentUser?.email?.split('@')[0] ?? 'Admin';
+
+      if (widget.table.activeOrderId == null) {
+        throw Exception('Cannot generate bill: Missing Order ID');
+      }
 
       final bill = await billingService.generateBill(
         orderId: widget.table.activeOrderId!,

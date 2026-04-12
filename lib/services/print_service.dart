@@ -126,7 +126,7 @@ class PrintService {
     bytes += generator.text(dsep);
     bytes += generator.text('SHREE RAJMANDIR', 
         styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-    bytes += generator.text('QUALITY ICE CREAM & SNACKS', styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('     QUALITY ICE CREAM ', styles: const PosStyles(align: PosAlign.center));
     bytes += generator.feed(1);
 
     // 2. Metadata (Professional Layout)
