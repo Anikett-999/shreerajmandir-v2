@@ -7,13 +7,13 @@ import '../screens/shared/profile_screen.dart';
 import '../screens/shared/settings_screen.dart';
 import '../screens/shared/printer_settings_screen.dart';
 import '../screens/shared/kot_screen.dart';
-import '../screens/admin/admin_dashboard_screen.dart';
 import './global/confirmation_dialog.dart';
 import '../providers/branch_provider.dart';
 import '../providers/active_branch_provider.dart';
 import '../screens/admin/users/user_management_screen.dart';
 import '../screens/admin/branches/branch_management_screen.dart';
 import '../screens/admin/tables/table_management_screen.dart';
+import '../screens/admin/menu/menu_management_screen.dart';
 
 // We rely on the authServiceProvider from auth_provider.dart via the build method's ref
 
@@ -128,6 +128,17 @@ class AppDrawer extends ConsumerWidget {
                     },
                   ),
                   ListTile(
+                    leading: const Icon(Icons.restaurant_menu, color: AppTheme.maroon),
+                    title: const Text('Menu Availability', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const MenuManagementScreen()),
+                      );
+                    },
+                  ),
+                  ListTile(
                     leading: const Icon(Icons.print, color: AppTheme.maroon),
                     title: const Text('Printer Settings', style: TextStyle(fontWeight: FontWeight.bold)),
                     onTap: () {
@@ -177,6 +188,14 @@ class AppDrawer extends ConsumerWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(builder: (context) => const OperationalHomeScreen()));
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.restaurant_menu, color: AppTheme.maroon),
+                    title: const Text('Menu Management', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const MenuManagementScreen()));
                     },
                   ),
                   ListTile(

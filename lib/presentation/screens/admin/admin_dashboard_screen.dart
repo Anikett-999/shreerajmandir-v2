@@ -15,6 +15,7 @@ import '../../widgets/admin/dashboard/product_insights_card.dart';
 import 'users/user_management_screen.dart';
 import 'branches/branch_management_screen.dart';
 import '../shared/home_screen.dart';
+import 'menu/menu_management_screen.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -204,9 +205,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 subtitle: 'Items, Prices & KOT configurations',
                 icon: Icons.restaurant_menu_rounded,
                 color: Colors.orange,
-                onTap: () {
-                  // TODO: Add Menu Editor navigation
-                },
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MenuManagementScreen())),
               ),
             ],
           ),
