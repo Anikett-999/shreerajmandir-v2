@@ -11,7 +11,8 @@ _$DashboardStatsImpl _$$DashboardStatsImplFromJson(Map<String, dynamic> json) =>
       totalRevenue: (json['totalRevenue'] as num?)?.toDouble() ?? 0.0,
       totalOrders: (json['totalOrders'] as num?)?.toInt() ?? 0,
       avgOrderValue: (json['avgOrderValue'] as num?)?.toDouble() ?? 0.0,
-      growthRate: (json['growthRate'] as num?)?.toDouble() ?? 0.0,
+      revenueTrend: (json['revenueTrend'] as num?)?.toDouble() ?? 0.0,
+      ordersTrend: (json['ordersTrend'] as num?)?.toDouble() ?? 0.0,
       hourlySales:
           (json['hourlySales'] as List<dynamic>?)
               ?.map((e) => HourlySales.fromJson(e as Map<String, dynamic>))
@@ -42,7 +43,8 @@ Map<String, dynamic> _$$DashboardStatsImplToJson(
   'totalRevenue': instance.totalRevenue,
   'totalOrders': instance.totalOrders,
   'avgOrderValue': instance.avgOrderValue,
-  'growthRate': instance.growthRate,
+  'revenueTrend': instance.revenueTrend,
+  'ordersTrend': instance.ordersTrend,
   'hourlySales': instance.hourlySales.map((e) => e.toJson()).toList(),
   'paymentSplit': instance.paymentSplit,
   'activeTables': instance.activeTables,

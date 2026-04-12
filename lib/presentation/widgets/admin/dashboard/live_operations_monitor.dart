@@ -13,29 +13,58 @@ class LiveOperationsMonitor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    return Column(
       children: [
-        Expanded(
-          child: _buildOperationCard(
+        if (isMobile) ...[
+          _buildOperationCard(
             context,
             'ACTIVE TABLES',
             activeTables.toString(),
             'Dining Area occupancy',
             Icons.table_restaurant,
             Colors.blue,
+            true,
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildOperationCard(
+          const SizedBox(height: 12),
+          _buildOperationCard(
             context,
             'PENDING KOTS',
             pendingKots.toString(),
             'Orders in preparation',
             Icons.outdoor_grill,
             Colors.orange,
+            true,
           ),
-        ),
+        ] else
+          Row(
+            children: [
+              Expanded(
+                child: _buildOperationCard(
+                  context,
+                  'ACTIVE TABLES',
+                  activeTables.toString(),
+                  'Dining Area occupancy',
+                  Icons.table_restaurant,
+                  Colors.blue,
+                  false,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildOperationCard(
+                  context,
+                  'PENDING KOTS',
+                  pendingKots.toString(),
+                  'Orders in preparation',
+                  Icons.outdoor_grill,
+                  Colors.orange,
+                  false,
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -47,23 +76,35 @@ class LiveOperationsMonitor extends StatelessWidget {
     String subtitle,
     IconData icon,
     Color color,
+    bool isMobile,
   ) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : 20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withOpacity(0.04),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.1)),
+        border: Border.all(color: color.withOpacity(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.02),
+            offset: const Offset(0, 4),
+            blurRadius: 10,
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(isMobile ? 10 : 12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              gradient: LinearGradient(
+                colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: isMobile ? 22 : 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -73,16 +114,16 @@ class LiveOperationsMonitor extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.5,
-                    color: color.withOpacity(0.7),
+                    color: color.withOpacity(0.8),
                   ),
                 ),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 24,
+                  style: TextStyle(
+                    fontSize: isMobile ? 22 : 24,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -1,
                   ),
@@ -90,14 +131,15 @@ class LiveOperationsMonitor extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10,
                     color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+          Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey[400]),
         ],
       ),
     );

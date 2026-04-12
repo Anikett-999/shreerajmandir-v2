@@ -24,7 +24,8 @@ mixin _$DashboardStats {
   double get totalRevenue => throw _privateConstructorUsedError;
   int get totalOrders => throw _privateConstructorUsedError;
   double get avgOrderValue => throw _privateConstructorUsedError;
-  double get growthRate => throw _privateConstructorUsedError;
+  double get revenueTrend => throw _privateConstructorUsedError;
+  double get ordersTrend => throw _privateConstructorUsedError;
   List<HourlySales> get hourlySales => throw _privateConstructorUsedError;
   Map<String, double> get paymentSplit => throw _privateConstructorUsedError;
   int get activeTables => throw _privateConstructorUsedError;
@@ -54,7 +55,8 @@ abstract class $DashboardStatsCopyWith<$Res> {
     double totalRevenue,
     int totalOrders,
     double avgOrderValue,
-    double growthRate,
+    double revenueTrend,
+    double ordersTrend,
     List<HourlySales> hourlySales,
     Map<String, double> paymentSplit,
     int activeTables,
@@ -82,7 +84,8 @@ class _$DashboardStatsCopyWithImpl<$Res, $Val extends DashboardStats>
     Object? totalRevenue = null,
     Object? totalOrders = null,
     Object? avgOrderValue = null,
-    Object? growthRate = null,
+    Object? revenueTrend = null,
+    Object? ordersTrend = null,
     Object? hourlySales = null,
     Object? paymentSplit = null,
     Object? activeTables = null,
@@ -104,9 +107,13 @@ class _$DashboardStatsCopyWithImpl<$Res, $Val extends DashboardStats>
                 ? _value.avgOrderValue
                 : avgOrderValue // ignore: cast_nullable_to_non_nullable
                       as double,
-            growthRate: null == growthRate
-                ? _value.growthRate
-                : growthRate // ignore: cast_nullable_to_non_nullable
+            revenueTrend: null == revenueTrend
+                ? _value.revenueTrend
+                : revenueTrend // ignore: cast_nullable_to_non_nullable
+                      as double,
+            ordersTrend: null == ordersTrend
+                ? _value.ordersTrend
+                : ordersTrend // ignore: cast_nullable_to_non_nullable
                       as double,
             hourlySales: null == hourlySales
                 ? _value.hourlySales
@@ -151,7 +158,8 @@ abstract class _$$DashboardStatsImplCopyWith<$Res>
     double totalRevenue,
     int totalOrders,
     double avgOrderValue,
-    double growthRate,
+    double revenueTrend,
+    double ordersTrend,
     List<HourlySales> hourlySales,
     Map<String, double> paymentSplit,
     int activeTables,
@@ -178,7 +186,8 @@ class __$$DashboardStatsImplCopyWithImpl<$Res>
     Object? totalRevenue = null,
     Object? totalOrders = null,
     Object? avgOrderValue = null,
-    Object? growthRate = null,
+    Object? revenueTrend = null,
+    Object? ordersTrend = null,
     Object? hourlySales = null,
     Object? paymentSplit = null,
     Object? activeTables = null,
@@ -200,9 +209,13 @@ class __$$DashboardStatsImplCopyWithImpl<$Res>
             ? _value.avgOrderValue
             : avgOrderValue // ignore: cast_nullable_to_non_nullable
                   as double,
-        growthRate: null == growthRate
-            ? _value.growthRate
-            : growthRate // ignore: cast_nullable_to_non_nullable
+        revenueTrend: null == revenueTrend
+            ? _value.revenueTrend
+            : revenueTrend // ignore: cast_nullable_to_non_nullable
+                  as double,
+        ordersTrend: null == ordersTrend
+            ? _value.ordersTrend
+            : ordersTrend // ignore: cast_nullable_to_non_nullable
                   as double,
         hourlySales: null == hourlySales
             ? _value._hourlySales
@@ -240,7 +253,8 @@ class _$DashboardStatsImpl implements _DashboardStats {
     this.totalRevenue = 0.0,
     this.totalOrders = 0,
     this.avgOrderValue = 0.0,
-    this.growthRate = 0.0,
+    this.revenueTrend = 0.0,
+    this.ordersTrend = 0.0,
     final List<HourlySales> hourlySales = const [],
     final Map<String, double> paymentSplit = const {},
     this.activeTables = 0,
@@ -266,7 +280,10 @@ class _$DashboardStatsImpl implements _DashboardStats {
   final double avgOrderValue;
   @override
   @JsonKey()
-  final double growthRate;
+  final double revenueTrend;
+  @override
+  @JsonKey()
+  final double ordersTrend;
   final List<HourlySales> _hourlySales;
   @override
   @JsonKey()
@@ -311,7 +328,7 @@ class _$DashboardStatsImpl implements _DashboardStats {
 
   @override
   String toString() {
-    return 'DashboardStats(totalRevenue: $totalRevenue, totalOrders: $totalOrders, avgOrderValue: $avgOrderValue, growthRate: $growthRate, hourlySales: $hourlySales, paymentSplit: $paymentSplit, activeTables: $activeTables, pendingKots: $pendingKots, topProducts: $topProducts, suspiciousBills: $suspiciousBills)';
+    return 'DashboardStats(totalRevenue: $totalRevenue, totalOrders: $totalOrders, avgOrderValue: $avgOrderValue, revenueTrend: $revenueTrend, ordersTrend: $ordersTrend, hourlySales: $hourlySales, paymentSplit: $paymentSplit, activeTables: $activeTables, pendingKots: $pendingKots, topProducts: $topProducts, suspiciousBills: $suspiciousBills)';
   }
 
   @override
@@ -325,8 +342,10 @@ class _$DashboardStatsImpl implements _DashboardStats {
                 other.totalOrders == totalOrders) &&
             (identical(other.avgOrderValue, avgOrderValue) ||
                 other.avgOrderValue == avgOrderValue) &&
-            (identical(other.growthRate, growthRate) ||
-                other.growthRate == growthRate) &&
+            (identical(other.revenueTrend, revenueTrend) ||
+                other.revenueTrend == revenueTrend) &&
+            (identical(other.ordersTrend, ordersTrend) ||
+                other.ordersTrend == ordersTrend) &&
             const DeepCollectionEquality().equals(
               other._hourlySales,
               _hourlySales,
@@ -356,7 +375,8 @@ class _$DashboardStatsImpl implements _DashboardStats {
     totalRevenue,
     totalOrders,
     avgOrderValue,
-    growthRate,
+    revenueTrend,
+    ordersTrend,
     const DeepCollectionEquality().hash(_hourlySales),
     const DeepCollectionEquality().hash(_paymentSplit),
     activeTables,
@@ -387,7 +407,8 @@ abstract class _DashboardStats implements DashboardStats {
     final double totalRevenue,
     final int totalOrders,
     final double avgOrderValue,
-    final double growthRate,
+    final double revenueTrend,
+    final double ordersTrend,
     final List<HourlySales> hourlySales,
     final Map<String, double> paymentSplit,
     final int activeTables,
@@ -406,7 +427,9 @@ abstract class _DashboardStats implements DashboardStats {
   @override
   double get avgOrderValue;
   @override
-  double get growthRate;
+  double get revenueTrend;
+  @override
+  double get ordersTrend;
   @override
   List<HourlySales> get hourlySales;
   @override

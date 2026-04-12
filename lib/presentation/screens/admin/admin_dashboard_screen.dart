@@ -9,24 +9,31 @@ import '../../widgets/admin/dashboard/kpi_card.dart';
 import '../../widgets/admin/dashboard/revenue_trend_chart.dart';
 import '../../widgets/admin/dashboard/payment_method_split.dart';
 import '../../widgets/admin/dashboard/live_operations_monitor.dart';
-import '../../widgets/admin/dashboard/management_bento_grid.dart';
+import '../../widgets/admin/dashboard/management_list.dart';
 import '../../widgets/admin/dashboard/suspicious_activity_list.dart';
 import 'users/user_management_screen.dart';
 import 'branches/branch_management_screen.dart';
 import '../shared/home_screen.dart';
 
-class AdminDashboardScreen extends ConsumerWidget {
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
+  @override
+  Widget build(BuildContext context) {
     final statsAsync = ref.watch(dashboardStatsProvider);
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF0F2F5), // Slightly cleaner background
       appBar: AppBar(
         title: const Text('COMMAND CENTER',
-            style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, color: AppTheme.maroon, fontSize: 16)),
+            style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2.0, color: AppTheme.maroon, fontSize: 14)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -37,92 +44,100 @@ class AdminDashboardScreen extends ConsumerWidget {
         ],
       ),
       drawer: const AppDrawer(),
-      body: statsAsync.when(
-        data: (stats) => _buildDashboardBody(context, stats),
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
-        error: (err, stack) => Center(child: Text('Error loading dashboard: $err')),
+      body: Stack(
+        children: [
+          // Background Enrichment: Subtle Gradient Mesh
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFFF0F2F5),
+                    const Color(0xFFF8FAFB),
+                    Colors.white.withOpacity(0.5),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          statsAsync.when(
+            data: (stats) => _buildDashboardBody(context, stats, isMobile),
+            loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
+            error: (err, stack) => Center(child: Text('Error loading dashboard: $err')),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDashboardBody(BuildContext context, dynamic stats) {
+  Widget _buildDashboardBody(BuildContext context, dynamic stats, bool isMobile) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
-          const SizedBox(height: 32),
+          _buildHeader(isMobile),
+          const SizedBox(height: 24),
           
-          // KPI Row
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth > 900;
-              return GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: isDesktop ? 4 : 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: isDesktop ? 1.5 : 1.1,
-                children: [
-                  KpiCard(
-                    title: 'Total Revenue',
-                    value: '₹${NumberFormat('#,##,###').format(stats.totalRevenue)}',
-                    icon: Icons.account_balance_wallet_outlined,
-                    color: AppTheme.maroon,
-                  ),
-                  KpiCard(
-                    title: 'Total Bills',
-                    value: stats.totalOrders.toString(),
-                    icon: Icons.receipt_long_outlined,
-                    color: Colors.blue,
-                  ),
-                  KpiCard(
-                    title: 'Avg Order',
-                    value: '₹${stats.avgOrderValue.toStringAsFixed(0)}',
-                    icon: Icons.analytics_outlined,
-                    color: Colors.orange,
-                  ),
-                  KpiCard(
-                    title: 'Active Tables',
-                    value: stats.activeTables.toString(),
-                    icon: Icons.restaurant_outlined,
-                    color: Colors.green,
-                  ),
-                ],
-              );
-            },
+          // KPI Grid - Optimized for mobile
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: isMobile ? 2 : 4,
+            crossAxisSpacing: isMobile ? 12 : 16,
+            mainAxisSpacing: isMobile ? 12 : 16,
+            childAspectRatio: isMobile ? 1.05 : 1.3,
+            children: [
+              KpiCard(
+                title: 'Total Revenue',
+                value: '₹${NumberFormat('#,##,###').format(stats.totalRevenue)}',
+                icon: Icons.account_balance_wallet_outlined,
+                color: AppTheme.maroon,
+                trend: stats.revenueTrend == 0 ? null : stats.revenueTrend,
+              ),
+              KpiCard(
+                title: 'Total Bills',
+                value: stats.totalOrders.toString(),
+                icon: Icons.receipt_long_outlined,
+                color: Colors.blue,
+                trend: stats.ordersTrend == 0 ? null : stats.ordersTrend,
+              ),
+              KpiCard(
+                title: 'Avg Order',
+                value: '₹${stats.avgOrderValue.toStringAsFixed(0)}',
+                icon: Icons.analytics_outlined,
+                color: Colors.orange,
+              ),
+              KpiCard(
+                title: 'Active Tables',
+                value: stats.activeTables.toString(),
+                icon: Icons.restaurant_outlined,
+                color: Colors.green,
+              ),
+            ],
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           
           // Analytics Row
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth > 1100;
-              return Column(
-                children: [
-                  if (isDesktop)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 2, child: RevenueTrendChart(salesData: stats.hourlySales)),
-                        const SizedBox(width: 24),
-                        Expanded(flex: 1, child: SizedBox(height: 380, child: PaymentMethodSplit(split: stats.paymentSplit))),
-                      ],
-                    )
-                  else ...[
-                    RevenueTrendChart(salesData: stats.hourlySales),
-                    const SizedBox(height: 24),
-                    SizedBox(height: 300, child: PaymentMethodSplit(split: stats.paymentSplit)),
-                  ],
-                ],
-              );
-            },
-          ),
+          if (!isMobile)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 2, child: RevenueTrendChart(salesData: stats.hourlySales)),
+                const SizedBox(width: 24),
+                Expanded(flex: 1, child: SizedBox(height: 380, child: PaymentMethodSplit(split: stats.paymentSplit))),
+              ],
+            )
+          else ...[
+            RevenueTrendChart(salesData: stats.hourlySales),
+            const SizedBox(height: 16),
+            SizedBox(height: 300, child: PaymentMethodSplit(split: stats.paymentSplit)),
+          ],
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           
           // Operations Monitor
           LiveOperationsMonitor(
@@ -132,39 +147,52 @@ class AdminDashboardScreen extends ConsumerWidget {
           
           const SizedBox(height: 32),
           
-          const Text(
-            'SYSTEM MANAGEMENT',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.5),
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: AppTheme.maroon,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'SYSTEM MANAGEMENT',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 1.5),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
-          // Bento Navigation Grid
-          ManagementBentoGrid(
+          // NEW Management List (Replacing Bento Grid)
+          ManagementList(
             items: [
-              BentoItem(
+              ManagementItem(
                 title: 'Staff Control',
-                subtitle: 'Manage roles & access',
+                subtitle: 'Manage roles, access & permissions',
                 icon: Icons.people_alt_outlined,
                 color: Colors.indigo,
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UserManagementScreen())),
               ),
-              BentoItem(
+              ManagementItem(
                 title: 'Branch Settings',
-                subtitle: 'Location & tax config',
+                subtitle: 'Location, tax config & branding',
                 icon: Icons.store_mall_directory_outlined,
                 color: Colors.teal,
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BranchManagementScreen())),
               ),
-              BentoItem(
+              ManagementItem(
                 title: 'Terminal POS',
-                subtitle: 'Operational billing',
+                subtitle: 'Go to operational billing interface',
                 icon: Icons.point_of_sale_rounded,
                 color: AppTheme.maroon,
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const OperationalHomeScreen())),
               ),
-              BentoItem(
+              ManagementItem(
                 title: 'Menu Editor',
-                subtitle: 'Items, Prices & KOT',
+                subtitle: 'Items, Prices & KOT configurations',
                 icon: Icons.restaurant_menu_rounded,
                 color: Colors.orange,
                 onTap: () {
@@ -178,13 +206,46 @@ class AdminDashboardScreen extends ConsumerWidget {
           
           // Security / Suspicious Activity
           SuspiciousActivityList(bills: stats.suspiciousBills),
+          const SizedBox(height: 48), // Bottom padding for content
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isMobile) {
     final now = DateTime.now();
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'RAJ MANDIR',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.maroon, letterSpacing: 3),
+              ),
+              Text(
+                DateFormat('MMM dd, yyyy').format(now),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Intelligence\nDashboard',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1,
+              color: Colors.black,
+              height: 1.1,
+            ),
+          ),
+        ],
+      );
+    }
+    
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

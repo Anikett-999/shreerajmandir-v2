@@ -103,7 +103,8 @@ class AnalyticsService {
           totalRevenue: totalRevenue,
           totalOrders: bills.length,
           avgOrderValue: bills.isEmpty ? 0 : totalRevenue / bills.length,
-          growthRate: 15.2, // Placeholder for trend calculation
+          revenueTrend: 0.0,
+          ordersTrend: 0.0,
           hourlySales: salesTrend,
           paymentSplit: payments,
           activeTables: activeTables,
