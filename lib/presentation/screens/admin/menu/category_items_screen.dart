@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../domain/models/category.dart';
 import '../../../../core/app_theme.dart';
-import '../../../widgets/app_drawer.dart';
-import 'widgets/category_list_view.dart';
+import 'widgets/item_list_view.dart';
 
-class MenuManagementScreen extends ConsumerStatefulWidget {
-  const MenuManagementScreen({super.key});
+class CategoryItemsScreen extends ConsumerStatefulWidget {
+  final Category category;
+
+  const CategoryItemsScreen({super.key, required this.category});
 
   @override
-  ConsumerState<MenuManagementScreen> createState() => _MenuManagementScreenState();
+  ConsumerState<CategoryItemsScreen> createState() => _CategoryItemsScreenState();
 }
 
-class _MenuManagementScreenState extends ConsumerState<MenuManagementScreen> {
+class _CategoryItemsScreenState extends ConsumerState<CategoryItemsScreen> {
   String _searchQuery = '';
 
   @override
@@ -19,12 +21,11 @@ class _MenuManagementScreenState extends ConsumerState<MenuManagementScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Menu', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(widget.category.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: AppTheme.maroon,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      drawer: const AppDrawer(),
       body: Column(
         children: [
           // Search Bar & Add Button Section
@@ -38,7 +39,7 @@ class _MenuManagementScreenState extends ConsumerState<MenuManagementScreen> {
                     onChanged: (value) => setState(() => _searchQuery = value),
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Search categories...',
+                      hintText: 'Search items...',
                       hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
                       prefixIcon: const Icon(Icons.search, color: Colors.white70),
                       filled: true,
@@ -59,8 +60,8 @@ class _MenuManagementScreenState extends ConsumerState<MenuManagementScreen> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.add, color: Colors.white),
-                    onPressed: () => CategoryListViewLogic.showCategoryDialog(context, ref),
-                    tooltip: 'Add Category',
+                    onPressed: () => ItemListViewLogic.showItemDialog(context, ref, widget.category.categoryId),
+                    tooltip: 'Add Item',
                   ),
                 ),
               ],
@@ -68,7 +69,7 @@ class _MenuManagementScreenState extends ConsumerState<MenuManagementScreen> {
           ),
           
           Expanded(
-            child: CategoryListView(searchQuery: _searchQuery),
+            child: ItemListView(searchQuery: _searchQuery),
           ),
         ],
       ),
