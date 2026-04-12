@@ -46,14 +46,14 @@ dependencies:
   google_fonts: ^6.2.1
   flutter_svg: ^2.0.10+1
   shimmer: ^3.0.0
-
-  # Utilities
+  fl_chart: ^0.70.2
+  rxdart: ^0.28.0
+  async: ^2.11.0
+  collection: ^1.18.0
   intl: ^0.19.0
   uuid: ^4.5.1
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
-
-  # Hardware & Document
   esc_pos_utils_plus: ^2.0.4
   url_launcher: ^6.3.2
   shared_preferences: ^2.5.5

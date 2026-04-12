@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/app_theme.dart';
+import '../../providers/dashboard_provider.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/global/profile_menu.dart';
+import '../../widgets/admin/dashboard/kpi_card.dart';
+import '../../widgets/admin/dashboard/revenue_trend_chart.dart';
+import '../../widgets/admin/dashboard/payment_method_split.dart';
+import '../../widgets/admin/dashboard/live_operations_monitor.dart';
+import '../../widgets/admin/dashboard/management_bento_grid.dart';
+import '../../widgets/admin/dashboard/suspicious_activity_list.dart';
 import 'users/user_management_screen.dart';
 import 'branches/branch_management_screen.dart';
-import '../../widgets/global/profile_menu.dart';
 import '../shared/home_screen.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
@@ -12,203 +20,217 @@ class AdminDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(dashboardStatsProvider);
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('ADMIN DASHBOARD', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2, color: AppTheme.maroon)),
+        title: const Text('COMMAND CENTER',
+            style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, color: AppTheme.maroon, fontSize: 16)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.white,
-        shadowColor: Colors.black.withOpacity(0.1),
-        scrolledUnderElevation: 4,
-        iconTheme: const IconThemeData(color: AppTheme.maroon),
         actions: [
           const ProfileMenu(),
           const SizedBox(width: 8),
         ],
       ),
       drawer: const AppDrawer(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
+      body: statsAsync.when(
+        data: (stats) => _buildDashboardBody(context, stats),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
+        error: (err, stack) => Center(child: Text('Error loading dashboard: $err')),
+      ),
+    );
+  }
+
+  Widget _buildDashboardBody(BuildContext context, dynamic stats) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(),
+          const SizedBox(height: 32),
+          
+          // KPI Row
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth > 900;
+              return GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: isDesktop ? 4 : 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: isDesktop ? 1.5 : 1.1,
+                children: [
+                  KpiCard(
+                    title: 'Total Revenue',
+                    value: '₹${NumberFormat('#,##,###').format(stats.totalRevenue)}',
+                    icon: Icons.account_balance_wallet_outlined,
+                    color: AppTheme.maroon,
+                  ),
+                  KpiCard(
+                    title: 'Total Bills',
+                    value: stats.totalOrders.toString(),
+                    icon: Icons.receipt_long_outlined,
+                    color: Colors.blue,
+                  ),
+                  KpiCard(
+                    title: 'Avg Order',
+                    value: '₹${stats.avgOrderValue.toStringAsFixed(0)}',
+                    icon: Icons.analytics_outlined,
+                    color: Colors.orange,
+                  ),
+                  KpiCard(
+                    title: 'Active Tables',
+                    value: stats.activeTables.toString(),
+                    icon: Icons.restaurant_outlined,
+                    color: Colors.green,
+                  ),
+                ],
+              );
+            },
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Analytics Row
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth > 1100;
+              return Column(
+                children: [
+                  if (isDesktop)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 2, child: RevenueTrendChart(salesData: stats.hourlySales)),
+                        const SizedBox(width: 24),
+                        Expanded(flex: 1, child: SizedBox(height: 380, child: PaymentMethodSplit(split: stats.paymentSplit))),
+                      ],
+                    )
+                  else ...[
+                    RevenueTrendChart(salesData: stats.hourlySales),
+                    const SizedBox(height: 24),
+                    SizedBox(height: 300, child: PaymentMethodSplit(split: stats.paymentSplit)),
+                  ],
+                ],
+              );
+            },
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Operations Monitor
+          LiveOperationsMonitor(
+            activeTables: stats.activeTables,
+            pendingKots: stats.pendingKots,
+          ),
+          
+          const SizedBox(height: 32),
+          
+          const Text(
+            'SYSTEM MANAGEMENT',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.5),
+          ),
+          const SizedBox(height: 16),
+          
+          // Bento Navigation Grid
+          ManagementBentoGrid(
+            items: [
+              BentoItem(
+                title: 'Staff Control',
+                subtitle: 'Manage roles & access',
+                icon: Icons.people_alt_outlined,
+                color: Colors.indigo,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UserManagementScreen())),
+              ),
+              BentoItem(
+                title: 'Branch Settings',
+                subtitle: 'Location & tax config',
+                icon: Icons.store_mall_directory_outlined,
+                color: Colors.teal,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BranchManagementScreen())),
+              ),
+              BentoItem(
+                title: 'Terminal POS',
+                subtitle: 'Operational billing',
+                icon: Icons.point_of_sale_rounded,
+                color: AppTheme.maroon,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const OperationalHomeScreen())),
+              ),
+              BentoItem(
+                title: 'Menu Editor',
+                subtitle: 'Items, Prices & KOT',
+                icon: Icons.restaurant_menu_rounded,
+                color: Colors.orange,
+                onTap: () {
+                  // TODO: Add Menu Editor navigation
+                },
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Security / Suspicious Activity
+          SuspiciousActivityList(bills: stats.suspiciousBills),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    final now = DateTime.now();
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildWelcomeHeader(),
-            const SizedBox(height: 30),
-            _buildStatsOverview(),
-            const SizedBox(height: 30),
             const Text(
-              'Management',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+              'RAJ MANDIR',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: AppTheme.maroon,
+                letterSpacing: 4,
+              ),
             ),
-            const SizedBox(height: 16),
-            _buildAdminGrid(context),
+            const SizedBox(height: 4),
+            Text(
+              'Intelligence Dashboard',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -1,
+                color: Colors.grey[900],
+              ),
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Welcome, Administrator',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            color: AppTheme.maroon,
-            letterSpacing: -1,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.withOpacity(0.1)),
           ),
-        ),
-        const Text(
-          'Manage your POS system and view business insights.',
-          style: TextStyle(color: Colors.grey, fontSize: 16),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsOverview() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.maroon, AppTheme.maroon.withOpacity(0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.maroon.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem('Today\'s Sales', '₹ 12,450', Icons.trending_up),
-          _buildStatItem('Orders', '48', Icons.shopping_bag),
-          _buildStatItem('Active Tables', '6', Icons.restaurant),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white70, size: 24),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAdminGrid(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 1,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: MediaQuery.of(context).size.width > 600 ? 1.1 : 2.5,
-      children: [
-        _buildAdminCard(
-          context,
-          'User Management',
-          'Staff & Roles',
-          Icons.people_outline,
-          Colors.blue,
-          () => Navigator.push(context, MaterialPageRoute(builder: (context) => UserManagementScreen())),
-        ),
-        _buildAdminCard(
-          context,
-          'My Branches',
-          'Manage Locations',
-          Icons.storefront_outlined,
-          Colors.orange,
-          () => Navigator.push(context, MaterialPageRoute(builder: (context) => BranchManagementScreen())),
-        ),
-        _buildAdminCard(
-          context,
-          'Billing & Checkout',
-          'Settle Tables',
-          Icons.point_of_sale_outlined,
-          AppTheme.maroon,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const OperationalHomeScreen()),
-          ),
-        ),
-        _buildAdminCard(
-          context,
-          'Live Monitor',
-          'KOT & Active Orders',
-          Icons.monitor_heart_outlined,
-          Colors.red,
-          () => Navigator.pushNamed(context, '/admin/monitor'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAdminCard(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      elevation: 2,
-      shadowColor: Colors.black12,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(height: 12),
+              const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
               Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                DateFormat('EEEE, MMM dd').format(now),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 }
