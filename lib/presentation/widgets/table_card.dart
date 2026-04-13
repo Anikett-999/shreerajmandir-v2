@@ -114,8 +114,8 @@ class TableCard extends ConsumerWidget {
           ),
         ),
         
-        // Unprinted KOT Indicator
-        if ((table.unprintedKotCount ?? 0) > 0)
+        // Unprinted KOT Indicator (Only show if table is not available)
+        if (table.status != 'available' && (table.unprintedKotCount ?? 0) > 0)
           Positioned(
             top: 2,
             right: 2,

@@ -173,6 +173,7 @@ class BillingService {
         'totalAmount': 0.0,
         'itemCount': 0,
         'kotCount': 0,
+        'unprintedKotCount': 0,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
