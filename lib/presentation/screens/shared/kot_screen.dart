@@ -6,6 +6,7 @@ import 'package:shreerajmandir_pos/domain/models/kot_model.dart';
 import 'package:shreerajmandir_pos/core/app_theme.dart';
 import '../../widgets/global/profile_menu.dart';
 import 'package:shreerajmandir_pos/presentation/providers/active_branch_provider.dart';
+import '../../widgets/global/editorial_background.dart';
 
 final kotServiceProvider = Provider<KOTService>((ref) {
   final branchId = ref.watch(activeBranchIdProvider);
@@ -24,52 +25,55 @@ class KOTScreen extends ConsumerWidget {
     final liveKOTs = ref.watch(liveKOTsProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.cream,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('LIVE KOT MONITOR', 
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
+        surfaceTintColor: Colors.white,
         foregroundColor: AppTheme.maroon,
         actions: [
           const ProfileMenu(),
         ],
       ),
-      body: liveKOTs.when(
-        data: (kots) {
-          if (kots.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.restaurant_menu, size: 80, color: AppTheme.maroon),
-                  SizedBox(height: 16),
-                  Text('Kitchen is Quiet', 
-                    style: TextStyle(fontSize: 22, color: AppTheme.maroon, fontWeight: FontWeight.bold)),
-                  Text('No active KOTs to display', 
-                    style: TextStyle(color: Colors.grey)),
-                ],
-              ),
-            );
-          }
+      body: EditorialBackground(
+        child: liveKOTs.when(
+          data: (kots) {
+            if (kots.isEmpty) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.restaurant_menu, size: 80, color: AppTheme.maroon),
+                    SizedBox(height: 16),
+                    Text('Kitchen is Quiet', 
+                      style: TextStyle(fontSize: 22, color: AppTheme.maroon, fontWeight: FontWeight.bold)),
+                    Text('No active KOTs to display', 
+                      style: TextStyle(color: Colors.grey)),
+                  ],
+                ),
+              );
+            }
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(20),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 450,
-              mainAxisSpacing: 20,
-              crossAxisSpacing: 20,
-              mainAxisExtent: 480,
-            ),
-            itemCount: kots.length,
-            itemBuilder: (context, index) {
-              return _KOTCard(kot: kots[index]);
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
-        error: (e, s) => Center(child: Text('Error: $e')),
+            return GridView.builder(
+              padding: const EdgeInsets.all(20),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 450,
+                mainAxisSpacing: 20,
+                crossAxisSpacing: 20,
+                mainAxisExtent: 480,
+              ),
+              itemCount: kots.length,
+              itemBuilder: (context, index) {
+                return _KOTCard(kot: kots[index]);
+              },
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
+          error: (e, s) => Center(child: Text('Error: $e')),
+        ),
       ),
     );
   }

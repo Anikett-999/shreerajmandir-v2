@@ -5,6 +5,7 @@ import '../../../../domain/models/branch_model.dart';
 import '../../../../services/branch_service.dart';
 import '../../../providers/branch_provider.dart';
 import '../../../widgets/global/base_widgets.dart';
+import '../../../widgets/global/editorial_background.dart';
 
 class BranchManagementScreen extends ConsumerWidget {
   const BranchManagementScreen({super.key});
@@ -14,7 +15,7 @@ class BranchManagementScreen extends ConsumerWidget {
     final branchesAsync = ref.watch(allBranchesProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.cream,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('MY BRANCHES', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2, color: AppTheme.maroon)),
         centerTitle: true,
@@ -32,27 +33,29 @@ class BranchManagementScreen extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: branchesAsync.when(
-        data: (branches) {
-          if (branches.isEmpty) {
-            return EmptyStateWidget(
-              title: 'No Branches Configured',
-              message: 'Database initialization might be incomplete.',
-              icon: Icons.store_mall_directory_outlined,
-            );
-          }
+      body: EditorialBackground(
+        child: branchesAsync.when(
+          data: (branches) {
+            if (branches.isEmpty) {
+              return EmptyStateWidget(
+                title: 'No Branches Configured',
+                message: 'Database initialization might be incomplete.',
+                icon: Icons.store_mall_directory_outlined,
+              );
+            }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: branches.length,
-            itemBuilder: (context, index) {
-              final branch = branches[index];
-              return _BranchListItem(branch: branch);
-            },
-          );
-        },
-        loading: () => LoadingIndicator(message: 'Loading branches...'),
-        error: (err, _) => ErrorStateWidget(error: err.toString()),
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: branches.length,
+              itemBuilder: (context, index) {
+                final branch = branches[index];
+                return _BranchListItem(branch: branch);
+              },
+            );
+          },
+          loading: () => LoadingIndicator(message: 'Loading branches...'),
+          error: (err, _) => ErrorStateWidget(error: err.toString()),
+        ),
       ),
     );
   }

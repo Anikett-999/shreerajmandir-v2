@@ -9,6 +9,7 @@ import '../../../domain/models/printer_config.dart';
 import '../../../services/print_service.dart';
 import '../../widgets/global/confirmation_dialog.dart';
 import '../../../core/app_theme.dart';
+import '../../widgets/global/editorial_background.dart';
 
 class PrinterSettingsScreen extends ConsumerStatefulWidget {
   const PrinterSettingsScreen({super.key});
@@ -228,17 +229,19 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
     final config = ref.watch(printerConfigProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.cream,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('HARDWARE SETTINGS', 
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2)),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        surfaceTintColor: Colors.white,
         foregroundColor: AppTheme.maroon,
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+      body: EditorialBackground(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           _buildSectionHeader('Connection Protocol'),
           _buildConnectionTypesGrid(config),
@@ -282,6 +285,7 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
           const SizedBox(height: 48),
         ],
       ),
+    ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(

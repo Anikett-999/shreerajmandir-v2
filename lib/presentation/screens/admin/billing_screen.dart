@@ -13,6 +13,7 @@ import '../../providers/printer_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/active_branch_provider.dart';
 import '../../widgets/admin/bill_aggregated_list.dart';
+import '../../widgets/global/editorial_background.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
   final TableModel table;
@@ -198,9 +199,14 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final List<KOTModel> kots = _billPreviewData!['kots'];
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text('Billing/Checkout - ${widget.table.name}', 
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        foregroundColor: AppTheme.maroon,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -209,7 +215,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           ),
         ],
       ),
-      body: LayoutBuilder(
+      body: EditorialBackground(
+        child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 900) {
             // Desktop/Tablet 3-Panel Layout
@@ -295,8 +302,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           }
         },
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMobileActionButtons() {
     return Row(

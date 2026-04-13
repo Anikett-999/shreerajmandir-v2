@@ -9,6 +9,7 @@ import '../../../services/auth_service.dart';
 import '../../../domain/models/user_model.dart';
 import '../../../domain/models/branch_model.dart';
 import 'settings_screen.dart';
+import '../../widgets/global/editorial_background.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -21,12 +22,13 @@ class ProfileScreen extends ConsumerWidget {
     final branchAsync = ref.watch(branchProvider);
     
     return Scaffold(
-      backgroundColor: AppTheme.cream,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('MY PROFILE', 
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2)),
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         foregroundColor: AppTheme.maroon,
         centerTitle: true,
         actions: [
@@ -36,160 +38,162 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: userModelAsync.when(
-        data: (user) {
-          if (user == null) {
-            return const EmptyStateWidget(
-              title: 'Profile Missing', 
-              message: 'We couldn\'t find your profile details.',
-              icon: Icons.person_off_rounded,
-            );
-          }
+      body: EditorialBackground(
+        child: userModelAsync.when(
+          data: (user) {
+            if (user == null) {
+              return const EmptyStateWidget(
+                title: 'Profile Missing', 
+                message: 'We couldn\'t find your profile details.',
+                icon: Icons.person_off_rounded,
+              );
+            }
 
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                // Header Profile Section
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(32),
-                      bottomRight: Radius.circular(32),
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                children: [
+                  // Header Profile Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(32),
+                        bottomRight: Radius.circular(32),
+                      ),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
+                      ],
                     ),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Stack(
-                        children: [
-                          Hero(
-                            tag: 'profile-avatar',
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppTheme.maroon.withOpacity(0.2), width: 2),
-                              ),
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: AppTheme.maroon.withOpacity(0.05),
-                                child: const Icon(Icons.person_rounded, size: 60, color: AppTheme.maroon),
+                    child: Column(
+                      children: [
+                        Stack(
+                          children: [
+                            Hero(
+                              tag: 'profile-avatar',
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppTheme.maroon.withOpacity(0.2), width: 2),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: AppTheme.maroon.withOpacity(0.05),
+                                  child: const Icon(Icons.person_rounded, size: 60, color: AppTheme.maroon),
+                                ),
                               ),
                             ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: AppTheme.successGreen,
-                                shape: BoxShape.circle,
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(
+                                  color: AppTheme.successGreen,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.check, size: 14, color: Colors.white),
                               ),
-                              child: const Icon(Icons.check, size: 14, color: Colors.white),
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          user.name,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black87,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        user.name,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.black87,
                         ),
-                      ),
-                      Text(
-                        user.email,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
+                        Text(
+                          user.email,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
 
-                Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'BUSINESS BRANCH',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.maroon,
-                          letterSpacing: 1.5,
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'BUSINESS BRANCH',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.maroon,
+                            letterSpacing: 1.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildBranchSection(context, ref, user, branchAsync, activeBranchId),
+                        const SizedBox(height: 16),
+                        _buildBranchSection(context, ref, user, branchAsync, activeBranchId),
 
-                      const SizedBox(height: 32),
-                      const Text(
-                        'ACCOUNT INFORMATION',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.maroon,
-                          letterSpacing: 1.5,
+                        const SizedBox(height: 32),
+                        const Text(
+                          'ACCOUNT INFORMATION',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.maroon,
+                            letterSpacing: 1.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInfoCard([
-                        _buildInfoRow(context, Icons.badge_outlined, 'Employee ID', user.userId.substring(0, 8).toUpperCase()),
-                        _buildInfoRow(context, Icons.calendar_today_outlined, 'Account Status', user.isActive ? 'Active Member' : 'Suspended'),
-                      ]),
-                      
-                      const SizedBox(height: 32),
-                      const Text(
-                        'DANGER ZONE',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.red,
-                          letterSpacing: 1.5,
+                        const SizedBox(height: 16),
+                        _buildInfoCard([
+                          _buildInfoRow(context, Icons.badge_outlined, 'Employee ID', user.userId.substring(0, 8).toUpperCase()),
+                          _buildInfoRow(context, Icons.calendar_today_outlined, 'Account Status', user.isActive ? 'Active Member' : 'Suspended'),
+                        ]),
+                        
+                        const SizedBox(height: 32),
+                        const Text(
+                          'DANGER ZONE',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.red,
+                            letterSpacing: 1.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildActionCard([
-                        _buildActionRow(
-                          context, 
-                          Icons.lock_reset_rounded, 
-                          'Reset Password', 
-                          'Securely change your account password',
-                          () => _showPasswordResetDialog(context, authService, user.email),
-                          color: Colors.blue.shade700,
-                        ),
-                        _buildActionRow(
-                          context, 
-                          Icons.delete_outline_rounded, 
-                          'Cleanup Request', 
-                          'Request permanent data removal',
-                          () => _showDeleteAccountDialog(context, ref, authService),
-                          color: Colors.red.shade700,
-                          isLast: true,
-                        ),
-                      ]),
-                    ],
+                        const SizedBox(height: 16),
+                        _buildActionCard([
+                          _buildActionRow(
+                            context, 
+                            Icons.lock_reset_rounded, 
+                            'Reset Password', 
+                            'Securely change your account password',
+                            () => _showPasswordResetDialog(context, authService, user.email),
+                            color: Colors.blue.shade700,
+                          ),
+                          _buildActionRow(
+                            context, 
+                            Icons.delete_outline_rounded, 
+                            'Cleanup Request', 
+                            'Request permanent data removal',
+                            () => _showDeleteAccountDialog(context, ref, authService),
+                            color: Colors.red.shade700,
+                            isLast: true,
+                          ),
+                        ]),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
-        loading: () => const LoadingIndicator(message: 'Loading your profile...'),
-        error: (err, _) => ErrorStateWidget(error: err.toString()),
+                ],
+              ),
+            );
+          },
+          loading: () => const LoadingIndicator(message: 'Loading your profile...'),
+          error: (err, _) => ErrorStateWidget(error: err.toString()),
+        ),
       ),
     );
   }

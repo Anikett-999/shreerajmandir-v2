@@ -5,6 +5,7 @@ import '../../../../domain/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/branch_provider.dart';
 import '../../../widgets/global/base_widgets.dart';
+import '../../../widgets/global/editorial_background.dart';
 
 class UserManagementScreen extends ConsumerWidget {
   const UserManagementScreen({super.key});
@@ -14,7 +15,7 @@ class UserManagementScreen extends ConsumerWidget {
     final usersAsync = ref.watch(allUsersProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.cream,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('USER MANAGEMENT', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2, color: AppTheme.maroon)),
         centerTitle: true,
@@ -39,27 +40,29 @@ class UserManagementScreen extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: usersAsync.when(
-        data: (users) {
-          if (users.isEmpty) {
-            return const EmptyStateWidget(
-              title: 'No Users Found',
-              message: 'There are no registered users in the system.',
-              icon: Icons.people_outline,
-            );
-          }
+      body: EditorialBackground(
+        child: usersAsync.when(
+          data: (users) {
+            if (users.isEmpty) {
+              return const EmptyStateWidget(
+                title: 'No Users Found',
+                message: 'There are no registered users in the system.',
+                icon: Icons.people_outline,
+              );
+            }
 
-          return ListView.builder(
-            padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 16),
-            itemCount: users.length,
-            itemBuilder: (context, index) {
-              final user = users[index];
-              return _UserListItem(user: user);
-            },
-          );
-        },
-        loading: () => const LoadingIndicator(message: 'Loading users...'),
-        error: (err, _) => ErrorStateWidget(error: err.toString()),
+            return ListView.builder(
+              padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 16),
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                final user = users[index];
+                return _UserListItem(user: user);
+              },
+            );
+          },
+          loading: () => const LoadingIndicator(message: 'Loading users...'),
+          error: (err, _) => ErrorStateWidget(error: err.toString()),
+        ),
       ),
     );
   }

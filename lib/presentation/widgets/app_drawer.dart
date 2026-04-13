@@ -102,10 +102,10 @@ class AppDrawer extends ConsumerWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                // Home/Dashboard Link - Context Sensitive
+                // Home link - Context Sensitive
                 ListTile(
-                  leading: Icon(isAdmin ? Icons.dashboard : Icons.table_bar, color: AppTheme.maroon),
-                  title: Text(isAdmin ? 'Admin Dashboard' : 'Table Status', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  leading: Icon(isAdmin ? Icons.home_rounded : Icons.table_bar, color: AppTheme.maroon),
+                  title: Text(isAdmin ? 'Home' : 'Table Status', style: const TextStyle(fontWeight: FontWeight.bold)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.pushReplacement(
@@ -168,57 +168,11 @@ class AppDrawer extends ConsumerWidget {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.analytics_outlined, color: AppTheme.maroon),
-                    title: const Text('Business Reports', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ReportManagementScreen()),
-                      );
-                    },
-                  ),
-                  ListTile(
                     leading: const Icon(Icons.store_mall_directory_outlined, color: AppTheme.maroon),
                     title: const Text('My Branches', style: TextStyle(fontWeight: FontWeight.bold)),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(builder: (context) => const BranchManagementScreen()));
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.table_restaurant_outlined, color: AppTheme.maroon),
-                    title: const Text('Table Management', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const TableManagementScreen()));
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.point_of_sale_outlined, color: AppTheme.maroon),
-                    title: const Text('Billing & Checkout', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const OperationalHomeScreen()));
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.restaurant_menu, color: AppTheme.maroon),
-                    title: const Text('Menu Management', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const MenuManagementScreen()));
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.print, color: AppTheme.maroon),
-                    title: const Text('Printer Settings', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()),
-                      );
                     },
                   ),
                 ],

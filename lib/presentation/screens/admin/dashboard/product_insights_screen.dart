@@ -4,6 +4,7 @@ import '../../../../core/app_theme.dart';
 import '../../../providers/dashboard_provider.dart';
 import '../../../../domain/models/product_insights.dart';
 import 'package:intl/intl.dart';
+import '../../../widgets/global/editorial_background.dart';
 
 class ProductInsightsScreen extends ConsumerStatefulWidget {
   const ProductInsightsScreen({super.key});
@@ -32,7 +33,7 @@ class _ProductInsightsScreenState extends ConsumerState<ProductInsightsScreen> w
     final insightsAsync = ref.watch(productInsightsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2F5),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('PRODUCT INSIGHTS', 
           style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1.5)),
@@ -40,11 +41,14 @@ class _ProductInsightsScreenState extends ConsumerState<ProductInsightsScreen> w
         backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.white,
+        foregroundColor: AppTheme.maroon,
       ),
-      body: insightsAsync.when(
-        data: (insights) => _buildBody(context, insights),
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+      body: EditorialBackground(
+        child: insightsAsync.when(
+          data: (insights) => _buildBody(context, insights),
+          loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
+          error: (err, stack) => Center(child: Text('Error: $err')),
+        ),
       ),
     );
   }

@@ -4,6 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/branch_provider.dart';
 import '../../../core/app_theme.dart';
+import 'printer_settings_screen.dart';
+import '../../widgets/global/editorial_background.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -32,18 +34,20 @@ class SettingsScreen extends ConsumerWidget {
     final branchAsync = ref.watch(branchProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.cream,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('APP SETTINGS', 
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2)),
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         foregroundColor: AppTheme.maroon,
         centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        physics: const BouncingScrollPhysics(),
+      body: EditorialBackground(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          physics: const BouncingScrollPhysics(),
         children: [
           _buildSectionHeader('APPEARANCE'),
           _buildAestheticCard([
@@ -69,6 +73,21 @@ class SettingsScreen extends ConsumerWidget {
             error: (e, s) => Center(child: Text('Failed to load branch data: $e', style: const TextStyle(color: Colors.red))),
           ),
           
+          _buildSectionHeader('HARDWARE & PRINTING'),
+          _buildAestheticCard([
+            _buildActionTile(
+              context,
+              icon: Icons.print_rounded,
+              title: 'Printer Settings',
+              subtitle: 'Configure thermal printers & KOTs',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PrinterSettingsScreen()),
+              ),
+              isLast: true,
+            ),
+          ]),
+
           _buildSectionHeader('SUPPORT & HELP'),
           _buildAestheticCard([
             _buildActionTile(
@@ -83,7 +102,7 @@ class SettingsScreen extends ConsumerWidget {
               icon: Icons.info_rounded,
               title: 'App Version',
               subtitle: '2.0.0 (Build 2024.10.01)',
-              onTap: () {}, // Added missing onTap
+              onTap: () {},
               trailing: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -112,7 +131,8 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 40),
         ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildSectionHeader(String title) {

@@ -11,9 +11,11 @@ import '../../../widgets/admin/dashboard/kpi_card.dart';
 import '../../../widgets/admin/dashboard/revenue_trend_chart.dart';
 import '../../../widgets/admin/dashboard/payment_method_split.dart';
 import './widgets/report_confirmation_dialog.dart';
+import '../../../widgets/global/editorial_background.dart';
 
 class ReportManagementScreen extends ConsumerStatefulWidget {
-  const ReportManagementScreen({super.key});
+  final bool useShell;
+  const ReportManagementScreen({super.key, this.useShell = false});
 
   @override
   ConsumerState<ReportManagementScreen> createState() => _ReportManagementScreenState();
@@ -138,12 +140,25 @@ class _ReportManagementScreenState extends ConsumerState<ReportManagementScreen>
     final range = ref.watch(reportDateRangeProvider);
     final isMobile = MediaQuery.of(context).size.width < 600;
 
+    Widget content = statsAsync.when(
+      data: (stats) => _buildReportBody(context, stats, range, isMobile),
+      loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
+      error: (err, stack) => Center(child: Text('Error: $err')),
+    );
+
+    if (widget.useShell) {
+      return content;
+    }
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('REPORTS & ANALYTICS', 
           style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1.5, color: AppTheme.maroon)),
         centerTitle: true,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
         actions: [
           statsAsync.maybeWhen(
             data: (stats) => IconButton(
@@ -156,11 +171,7 @@ class _ReportManagementScreenState extends ConsumerState<ReportManagementScreen>
           const SizedBox(width: 8),
         ],
       ),
-      body: statsAsync.when(
-        data: (stats) => _buildReportBody(context, stats, range, isMobile),
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
-        error: (err, stack) => Center(child: Text('Error: $err')),
-      ),
+      body: EditorialBackground(child: content),
     );
   }
 
@@ -170,7 +181,26 @@ class _ReportManagementScreenState extends ConsumerState<ReportManagementScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPeriodSelector(),
+          Row(
+            children: [
+              Expanded(child: _buildPeriodSelector()),
+              if (widget.useShell) ...[
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.download_rounded, color: AppTheme.maroon),
+                    onPressed: () => _handleDownloadReport(stats, range),
+                    tooltip: 'Download PDF Report',
+                  ),
+                ),
+              ],
+            ],
+          ),
           const SizedBox(height: 20),
           
           _buildDateInfo(range),

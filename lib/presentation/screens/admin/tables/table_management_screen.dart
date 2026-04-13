@@ -5,9 +5,11 @@ import '../../../../domain/models/table_model.dart';
 import '../../../providers/table_provider.dart';
 import '../../../widgets/global/base_widgets.dart';
 import '../../../widgets/global/confirmation_dialog.dart';
+import '../../../widgets/global/editorial_background.dart';
 
 class TableManagementScreen extends ConsumerStatefulWidget {
-  const TableManagementScreen({super.key});
+  final bool useShell;
+  const TableManagementScreen({super.key, this.useShell = false});
 
   @override
   ConsumerState<TableManagementScreen> createState() => _TableManagementScreenState();
@@ -27,8 +29,64 @@ class _TableManagementScreenState extends ConsumerState<TableManagementScreen> {
   Widget build(BuildContext context) {
     final tablesAsync = ref.watch(tablesStreamProvider);
 
+    Widget content = Column(
+      children: [
+        // Search Bar & Add Button row for Shell mode
+        if (widget.useShell)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Row(
+              children: [
+                Expanded(child: _buildSearchBar()),
+                const SizedBox(width: 12),
+                _buildAddTableButton(isShell: true),
+              ],
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: _buildSearchBar(),
+          ),
+        
+        Expanded(
+          child: tablesAsync.when(
+            data: (tables) {
+              final filteredTables = tables.where((t) => 
+                t.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+
+              if (filteredTables.isEmpty) {
+                return EmptyStateWidget(
+                  title: _searchQuery.isEmpty ? 'No Tables Ready' : 'No Tables Found',
+                  message: _searchQuery.isEmpty 
+                      ? 'Get started by adding your first table.' 
+                      : 'No tables match your search query.',
+                  icon: Icons.table_bar_outlined,
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                itemCount: filteredTables.length,
+                itemBuilder: (context, index) {
+                  final table = filteredTables[index];
+                  return _TableListItem(table: table);
+                },
+              );
+            },
+            loading: () => const LoadingIndicator(message: 'Loading tables...'),
+            error: (err, _) => ErrorStateWidget(error: err.toString()),
+          ),
+        ),
+      ],
+    );
+
+    if (widget.useShell) {
+      return content;
+    }
+
     return Scaffold(
-      backgroundColor: AppTheme.cream,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('TABLE MANAGEMENT', 
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2, color: AppTheme.maroon)),
@@ -40,141 +98,107 @@ class _TableManagementScreenState extends ConsumerState<TableManagementScreen> {
         scrolledUnderElevation: 4,
         iconTheme: const IconThemeData(color: AppTheme.maroon),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: const LinearGradient(
-                  colors: [AppTheme.maroon, Color(0xFF800000)], // Rich maroon gradient
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.maroon.withOpacity(0.35),
-                    blurRadius: 10,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 4),
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.2),
-                    blurRadius: 0,
-                    spreadRadius: 1,
-                    offset: const Offset(0, -1),
-                  ),
-                ],
-                border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _showAddTableSheet(context),
-                  borderRadius: BorderRadius.circular(12),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add_circle_outline, color: Colors.white, size: 18),
-                        SizedBox(width: 6),
-                        Text('ADD TABLE', 
-                          style: TextStyle(
-                            color: Colors.white, 
-                            fontWeight: FontWeight.w900, 
-                            fontSize: 12,
-                            letterSpacing: 0.8
-                          )),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          _buildAddTableButton(isShell: false),
+        ],
+      ),
+      body: EditorialBackground(child: content),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.maroon.withOpacity(0.08),
+            blurRadius: 15,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.maroon.withOpacity(0.08),
-                    blurRadius: 15,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 4),
-                  ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) => setState(() => _searchQuery = value),
+        decoration: InputDecoration(
+          hintText: 'Search tables...',
+          prefixIcon: const Icon(Icons.search, color: AppTheme.maroon),
+          suffixIcon: _searchQuery.isNotEmpty 
+            ? IconButton(
+                icon: const Icon(Icons.clear, color: AppTheme.maroon), 
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchQuery = '');
+                }) 
+            : null,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppTheme.maroon.withOpacity(0.1), width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppTheme.maroon.withOpacity(0.15), width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppTheme.maroon, width: 1.5),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddTableButton({required bool isShell}) {
+    return Padding(
+      padding: isShell ? EdgeInsets.zero : const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: const LinearGradient(
+            colors: [AppTheme.maroon, Color(0xFF800000)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.maroon.withOpacity(0.35),
+              blurRadius: 10,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _showAddTableSheet(context),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add_circle_outline, color: Colors.white, size: 18),
+                  if (!isShell) ...[
+                    const SizedBox(width: 6),
+                    const Text('ADD TABLE', 
+                      style: TextStyle(
+                        color: Colors.white, 
+                        fontWeight: FontWeight.w900, 
+                        fontSize: 12,
+                        letterSpacing: 0.8
+                      )),
+                  ],
                 ],
               ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) => setState(() => _searchQuery = value),
-                decoration: InputDecoration(
-                  hintText: 'Search tables...',
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.maroon),
-                  suffixIcon: _searchQuery.isNotEmpty 
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: AppTheme.maroon), 
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        }) 
-                    : null,
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppTheme.maroon.withOpacity(0.1), width: 1),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppTheme.maroon.withOpacity(0.15), width: 1),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.maroon, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                ),
-              ),
             ),
           ),
-          
-          Expanded(
-            child: tablesAsync.when(
-              data: (tables) {
-                final filteredTables = tables.where((t) => 
-                  t.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
-
-                if (filteredTables.isEmpty) {
-                  return EmptyStateWidget(
-                    title: _searchQuery.isEmpty ? 'No Tables Ready' : 'No Tables Found',
-                    message: _searchQuery.isEmpty 
-                        ? 'Get started by adding your first table.' 
-                        : 'No tables match your search query.',
-                    icon: Icons.table_bar_outlined,
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: filteredTables.length,
-                  itemBuilder: (context, index) {
-                    final table = filteredTables[index];
-                    return _TableListItem(table: table);
-                  },
-                );
-              },
-              loading: () => const LoadingIndicator(message: 'Loading tables...'),
-              error: (err, _) => ErrorStateWidget(error: err.toString()),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -18,6 +18,7 @@ import 'package:shreerajmandir_pos/presentation/providers/printer_provider.dart'
 import 'package:shreerajmandir_pos/presentation/providers/active_branch_provider.dart';
 import 'package:shreerajmandir_pos/presentation/widgets/global/profile_menu.dart';
 import 'package:shreerajmandir_pos/presentation/widgets/global/base_widgets.dart'; // Added for LoadingIndicator
+import 'package:shreerajmandir_pos/presentation/widgets/global/editorial_background.dart';
 import 'package:uuid/uuid.dart';
 
 // --- State Providers ---
@@ -330,13 +331,16 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
               Navigator.of(context).pop();
             }
           },
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text('Table $tableName',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: AppTheme.maroon)),
+          child: EditorialBackground(
+            child: Scaffold(
               backgroundColor: Colors.transparent,
-              elevation: 0,
+              appBar: AppBar(
+                title: Text('Table $tableName',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: AppTheme.maroon)),
+                backgroundColor: Colors.white,
+                elevation: 0,
+                surfaceTintColor: Colors.white,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new, color: AppTheme.maroon),
                 onPressed: () => _handleBack(context, ref),
@@ -369,7 +373,8 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                 }
               },
             ),
-            bottomNavigationBar: isDesktop ? null : _buildMobileCartBottomBar(),
+              bottomNavigationBar: isDesktop ? null : _buildMobileCartBottomBar(),
+            ),
           ),
         ),
         if (_isProcessing)

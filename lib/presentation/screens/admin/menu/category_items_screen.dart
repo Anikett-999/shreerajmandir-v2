@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../domain/models/category.dart';
 import '../../../../core/app_theme.dart';
 import 'widgets/item_list_view.dart';
+import '../../../widgets/global/editorial_background.dart';
 
 class CategoryItemsScreen extends ConsumerStatefulWidget {
   final Category category;
@@ -19,59 +20,62 @@ class _CategoryItemsScreenState extends ConsumerState<CategoryItemsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text(widget.category.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: AppTheme.maroon,
-        foregroundColor: Colors.white,
+        title: Text(widget.category.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon)),
+        backgroundColor: Colors.white,
+        foregroundColor: AppTheme.maroon,
         elevation: 0,
+        surfaceTintColor: Colors.white,
       ),
-      body: Column(
-        children: [
-          // Search Bar & Add Button Section
-          Container(
-            color: AppTheme.maroon,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    onChanged: (value) => setState(() => _searchQuery = value),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Search items...',
-                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                      prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+      body: EditorialBackground(
+        child: Column(
+          children: [
+            // Search Bar & Add Button Section
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      onChanged: (value) => setState(() => _searchQuery = value),
+                      style: const TextStyle(color: Colors.black87),
+                      decoration: InputDecoration(
+                        hintText: 'Search items...',
+                        hintStyle: TextStyle(color: Colors.grey.withOpacity(0.6)),
+                        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.maroon,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: () => ItemListViewLogic.showItemDialog(context, ref, widget.category.categoryId),
+                      tooltip: 'Add Item',
+                    ),
                   ),
-                  child: IconButton(
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    onPressed: () => ItemListViewLogic.showItemDialog(context, ref, widget.category.categoryId),
-                    tooltip: 'Add Item',
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          
-          Expanded(
-            child: ItemListView(searchQuery: _searchQuery),
-          ),
-        ],
+            
+            Expanded(
+              child: ItemListView(searchQuery: _searchQuery),
+            ),
+          ],
+        ),
       ),
     );
   }

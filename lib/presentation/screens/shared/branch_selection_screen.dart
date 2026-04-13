@@ -7,6 +7,8 @@ import '../../providers/branch_provider.dart';
 import '../../../domain/models/user_model.dart';
 import '../../../domain/models/branch_model.dart';
 
+import '../../widgets/global/editorial_background.dart';
+
 class BranchSelectionScreen extends ConsumerWidget {
   const BranchSelectionScreen({super.key});
 
@@ -16,46 +18,48 @@ class BranchSelectionScreen extends ConsumerWidget {
     final allBranchesAsync = ref.watch(allBranchesProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: SafeArea(
-        child: userModelAsync.when(
-          data: (user) {
-            if (user == null) return _buildNoAccess(ref);
+      backgroundColor: Colors.transparent,
+      body: EditorialBackground(
+        child: SafeArea(
+          child: userModelAsync.when(
+            data: (user) {
+              if (user == null) return _buildNoAccess(ref);
 
-            // Show first-time welcome dialog
-            if (user.lastLogin == null) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _showFirstLoginDialog(context);
-              });
-            }
+              // Show first-time welcome dialog
+              if (user.lastLogin == null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _showFirstLoginDialog(context);
+                });
+              }
 
-            // Admins see ALL branches from DB
-            if (user.isAdmin) {
+              // Admins see ALL branches from DB
+              if (user.isAdmin) {
+                return allBranchesAsync.when(
+                  data: (allBranches) {
+                    if (allBranches.isEmpty) return _buildNoAccess(ref);
+                    return _buildBranchList(context, ref, user, allBranches);
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(child: Text('Error loading branches: $e')),
+                );
+              }
+
+              // Non-admins: show only their assigned branches
               return allBranchesAsync.when(
                 data: (allBranches) {
-                  if (allBranches.isEmpty) return _buildNoAccess(ref);
-                  return _buildBranchList(context, ref, user, allBranches);
+                  final assignedBranches = allBranches
+                      .where((b) => user.branchIds.contains(b.branchId))
+                      .toList();
+                  if (assignedBranches.isEmpty) return _buildNoAccess(ref);
+                  return _buildBranchList(context, ref, user, assignedBranches);
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(child: Text('Error loading branches: $e')),
               );
-            }
-
-            // Non-admins: show only their assigned branches
-            return allBranchesAsync.when(
-              data: (allBranches) {
-                final assignedBranches = allBranches
-                    .where((b) => user.branchIds.contains(b.branchId))
-                    .toList();
-                if (assignedBranches.isEmpty) return _buildNoAccess(ref);
-                return _buildBranchList(context, ref, user, assignedBranches);
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading branches: $e')),
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('Error: $err')),
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+          ),
         ),
       ),
     );
