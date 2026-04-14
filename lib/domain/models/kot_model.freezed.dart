@@ -222,9 +222,9 @@ class _$KOTItemImpl implements _KOTItem {
     required this.uniqueId,
     required this.itemId,
     required this.name,
-    this.category = '',
-    this.qty = 1,
-    this.price = 0.0,
+    required this.category,
+    required this.qty,
+    required this.price,
     this.variant = '',
     this.note = '',
     this.status = 'placed',
@@ -240,13 +240,10 @@ class _$KOTItemImpl implements _KOTItem {
   @override
   final String name;
   @override
-  @JsonKey()
   final String category;
   @override
-  @JsonKey()
   final int qty;
   @override
-  @JsonKey()
   final double price;
   @override
   @JsonKey()
@@ -315,9 +312,9 @@ abstract class _KOTItem implements KOTItem {
     required final String uniqueId,
     required final String itemId,
     required final String name,
-    final String category,
-    final int qty,
-    final double price,
+    required final String category,
+    required final int qty,
+    required final double price,
     final String variant,
     final String note,
     final String status,
@@ -586,14 +583,14 @@ class __$$KOTModelImplCopyWithImpl<$Res>
 class _$KOTModelImpl implements _KOTModel {
   const _$KOTModelImpl({
     required this.kotId,
-    this.kotNumber = 0,
-    this.orderId = '',
-    this.tableId = '',
+    required this.kotNumber,
+    required this.orderId,
+    required this.tableId,
     this.tableName = '',
-    final List<KOTItem> items = const [],
+    required final List<KOTItem> items,
     this.totalAmount = 0.0,
     this.isPrinted = false,
-    this.createdBy = '',
+    required this.createdBy,
     this.userName = '',
     @TimestampConverter() required this.createdAt,
   }) : _items = items;
@@ -604,20 +601,16 @@ class _$KOTModelImpl implements _KOTModel {
   @override
   final String kotId;
   @override
-  @JsonKey()
   final int kotNumber;
   @override
-  @JsonKey()
   final String orderId;
   @override
-  @JsonKey()
   final String tableId;
   @override
   @JsonKey()
   final String tableName;
   final List<KOTItem> _items;
   @override
-  @JsonKey()
   List<KOTItem> get items {
     if (_items is EqualUnmodifiableListView) return _items;
     // ignore: implicit_dynamic_type
@@ -631,7 +624,6 @@ class _$KOTModelImpl implements _KOTModel {
   @JsonKey()
   final bool isPrinted;
   @override
-  @JsonKey()
   final String createdBy;
   @override
   @JsonKey()
@@ -704,14 +696,14 @@ class _$KOTModelImpl implements _KOTModel {
 abstract class _KOTModel implements KOTModel {
   const factory _KOTModel({
     required final String kotId,
-    final int kotNumber,
-    final String orderId,
-    final String tableId,
+    required final int kotNumber,
+    required final String orderId,
+    required final String tableId,
     final String tableName,
-    final List<KOTItem> items,
+    required final List<KOTItem> items,
     final double totalAmount,
     final bool isPrinted,
-    final String createdBy,
+    required final String createdBy,
     final String userName,
     @TimestampConverter() required final DateTime createdAt,
   }) = _$KOTModelImpl;

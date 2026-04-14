@@ -128,7 +128,9 @@ class PdfService {
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('Discount (${bill.discountPercent.toStringAsFixed(0)}%):',
+                    pw.Text(bill.discountType == 'flat'
+                        ? 'Discount (Flat):'
+                        : 'Discount (${bill.discountPercent.toStringAsFixed(0)}%):',
                         style: const pw.TextStyle(fontSize: 9)),
                     pw.Text('-Rs. ${bill.discountAmount.toStringAsFixed(2)}',
                         style: const pw.TextStyle(fontSize: 9)),

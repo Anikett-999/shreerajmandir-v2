@@ -9,8 +9,8 @@ part of 'table_model.dart';
 _$TableModelImpl _$$TableModelImplFromJson(Map<String, dynamic> json) =>
     _$TableModelImpl(
       tableId: json['tableId'] as String,
-      name: json['name'] as String? ?? 'Unknown',
-      capacity: (json['capacity'] as num?)?.toInt() ?? 1,
+      name: json['name'] as String,
+      capacity: (json['capacity'] as num).toInt(),
       status: json['status'] as String? ?? 'available',
       activeOrderId: json['activeOrderId'] as String?,
       totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,

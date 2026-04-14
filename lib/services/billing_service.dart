@@ -74,7 +74,8 @@ class BillingService {
     required String tableId,
     required String tableName,
     required String userName,
-    required double discountPercent,
+    required double discountValue,
+    String discountType = 'percent',
     required double extraCharges,
     required List<Payment> payments,
     required String userId,
@@ -100,9 +101,25 @@ class BillingService {
         subtotal += (item.price * item.qty);
       }
 
-      // 3. Apply calculations
-      double discountAmount = (subtotal * discountPercent) / 100;
+      // 3. Validate & Apply calculations
+      // Guard: reject negative inputs
+      if (discountValue < 0) throw Exception('Discount value cannot be negative');
+      if (extraCharges < 0) throw Exception('Extra charges cannot be negative');
+
+      double discountAmount;
+      double discountPercent;
+      if (discountType == 'flat') {
+        // Clamp flat discount: cannot exceed subtotal
+        discountAmount = discountValue.clamp(0, subtotal);
+        discountPercent = 0.0;
+      } else {
+        // Clamp percentage: 0-100%
+        discountPercent = discountValue.clamp(0, 100);
+        discountAmount = (subtotal * discountPercent) / 100;
+      }
       double total = (subtotal - discountAmount) + extraCharges;
+      // Final safety net: total must never be negative
+      if (total < 0) total = 0;
 
       // 4. Fetch/Calculate Bill ID with Daily Reset (Start from 1001)
       final now = DateTime.now();
@@ -138,6 +155,7 @@ class BillingService {
         subtotal: subtotal,
         discountPercent: discountPercent,
         discountAmount: discountAmount,
+        discountType: discountType,
         extraCharges: extraCharges,
         total: total,
         payments: payments,

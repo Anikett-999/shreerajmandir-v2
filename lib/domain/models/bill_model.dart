@@ -40,6 +40,7 @@ class BillModel with _$BillModel {
     required double subtotal,
     @Default(0.0) double discountPercent,
     @Default(0.0) double discountAmount,
+    @Default('percent') String discountType,
     @Default(0.0) double extraCharges,
     required double total,
     required List<Payment> payments,

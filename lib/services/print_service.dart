@@ -165,7 +165,10 @@ class PrintService {
     bytes += generator.text(formatTotalLine('Subtotal', 'Rs. ${bill.subtotal.toStringAsFixed(2)}'));
 
     if (bill.discountAmount > 0) {
-      bytes += generator.text(formatTotalLine('Discount (${bill.discountPercent.toStringAsFixed(0)}%)', '-Rs. ${bill.discountAmount.toStringAsFixed(2)}'));
+      final discountLabel = bill.discountType == 'flat'
+          ? 'Discount (Flat)'
+          : 'Discount (${bill.discountPercent.toStringAsFixed(0)}%)';
+      bytes += generator.text(formatTotalLine(discountLabel, '-Rs. ${bill.discountAmount.toStringAsFixed(2)}'));
     }
 
     if (bill.extraCharges > 0) {

@@ -27,6 +27,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   final _discountController = TextEditingController(text: '0');
   final _extraChargesController = TextEditingController(text: '0');
   String _selectedPaymentMode = 'Cash';
+  String _discountType = 'percent';
   bool _isLoading = false;
 
   Map<String, dynamic>? _billPreviewData;
@@ -63,9 +64,58 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   double get _total {
     if (_billPreviewData == null) return 0.0;
     double subtotal = _billPreviewData!['subtotal'];
-    double discount = double.tryParse(_discountController.text) ?? 0;
+    double discountValue = double.tryParse(_discountController.text) ?? 0;
     double extra = double.tryParse(_extraChargesController.text) ?? 0;
-    return (subtotal - (subtotal * discount / 100)) + extra;
+    if (discountValue < 0) discountValue = 0;
+    if (extra < 0) extra = 0;
+    double discountAmount = _discountType == 'flat'
+        ? discountValue.clamp(0, subtotal)
+        : (subtotal * discountValue.clamp(0, 100) / 100);
+    final result = (subtotal - discountAmount) + extra;
+    return result < 0 ? 0 : result;
+  }
+
+  /// Returns an error string if the discount input is invalid, null otherwise.
+  String? get _discountValidationError {
+    if (_billPreviewData == null) return null;
+    final subtotal = _billPreviewData!['subtotal'] as double;
+    final discountValue = double.tryParse(_discountController.text) ?? 0;
+    if (discountValue < 0) return 'Discount cannot be negative';
+    if (_discountType == 'percent') {
+      if (discountValue > 100) return 'Percentage cannot exceed 100%';
+      if (discountValue == 100) return 'This will make the bill ₹0 (100% off)';
+    } else {
+      if (discountValue > subtotal) {
+        return 'Discount ₹${discountValue.toStringAsFixed(0)} exceeds subtotal ₹${subtotal.toStringAsFixed(0)}';
+      }
+      if (discountValue == subtotal) return 'This will make the bill ₹0 (full discount)';
+    }
+    return null;
+  }
+
+  /// Returns an error string if extra charges input is invalid, null otherwise.
+  String? get _extraChargesValidationError {
+    final extra = double.tryParse(_extraChargesController.text) ?? 0;
+    if (extra < 0) return 'Extra charges cannot be negative';
+    return null;
+  }
+
+  /// True if discount exceeds subtotal (hard block) — percentage>100 or flat>subtotal.
+  bool get _hasBlockingError {
+    if (_billPreviewData == null) return false;
+    final subtotal = _billPreviewData!['subtotal'] as double;
+    final discountValue = double.tryParse(_discountController.text) ?? 0;
+    final extra = double.tryParse(_extraChargesController.text) ?? 0;
+    if (discountValue < 0 || extra < 0) return true;
+    if (_discountType == 'percent' && discountValue > 100) return true;
+    if (_discountType == 'flat' && discountValue > subtotal) return true;
+    return false;
+  }
+
+  /// Soft warning (e.g. 100% discount) — not blocking, just a heads-up.
+  bool get _isWarning {
+    final err = _discountValidationError;
+    return err != null && !_hasBlockingError;
   }
 
   Future<void> _handleShareDigitalBill(BillModel bill) async {
@@ -86,6 +136,16 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   }
 
   Future<void> _handleGenerateBill() async {
+    // ── Edge-case validation gate ──
+    if (_hasBlockingError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_discountValidationError ?? _extraChargesValidationError ?? 'Invalid input'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       final branchId = ref.read(activeBranchIdProvider);
@@ -104,7 +164,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         tableId: widget.table.tableId,
         tableName: widget.table.name,
         userName: cleanUserName,
-        discountPercent: double.tryParse(_discountController.text) ?? 0,
+        discountValue: double.tryParse(_discountController.text) ?? 0,
+        discountType: _discountType,
         extraCharges: double.tryParse(_extraChargesController.text) ?? 0,
         payments: [Payment(mode: _selectedPaymentMode, amount: _total)],
         userId: currentUser?.uid ?? 'admin',
@@ -287,7 +348,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                             children: [
                               const Text('Total Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                               Text('₹${_total.toStringAsFixed(2)}', 
-                                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.maroon)),
+                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _hasBlockingError ? Colors.red : AppTheme.maroon)),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -325,19 +386,19 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         Expanded(
           flex: 2,
           child: ElevatedButton(
-            onPressed: _isLoading ? null : _handleGenerateBill,
+            onPressed: (_isLoading || _hasBlockingError) ? null : _handleGenerateBill,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.statusOccupied,
+              backgroundColor: AppTheme.maroon,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 4,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 2,
             ),
             child: _isLoading 
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
               : const FittedBox(
                   child: Text('PRINT & SETTLE', 
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                 ),
           ),
         ),
@@ -350,78 +411,151 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-        ),
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-          left: 24, right: 24, top: 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text('Bill Adjustments', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _discountController,
-              decoration: const InputDecoration(labelText: 'Discount (%)', border: OutlineInputBorder(), prefixIcon: Icon(Icons.percent)),
-              keyboardType: TextInputType.number,
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _extraChargesController,
-              decoration: const InputDecoration(labelText: 'Extra Charges (₹)', border: OutlineInputBorder(), prefixIcon: Icon(Icons.add_circle_outline)),
-              keyboardType: TextInputType.number,
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 24),
-            const Text('PAYMENT MODE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
-            const SizedBox(height: 12),
-            Row(
-              children: ['Cash', 'UPI', 'Card'].map((mode) {
-                final isSelected = _selectedPaymentMode == mode;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            left: 24, right: 24, top: 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('Bill Adjustments', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              // Discount Type Toggle
+              Row(
+                children: [
+                  Expanded(
                     child: InkWell(
-                      onTap: () => setState(() => _selectedPaymentMode = mode),
+                      onTap: () {
+                        setModalState(() => _discountType = 'percent');
+                        setState(() {});
+                      },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppTheme.maroon : Colors.white,
-                          border: Border.all(color: isSelected ? AppTheme.maroon : Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
+                          color: _discountType == 'percent' ? AppTheme.maroon : Colors.white,
+                          border: Border.all(color: _discountType == 'percent' ? AppTheme.maroon : Colors.grey.shade300),
+                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
                         ),
-                        child: Text(
-                          mode,
-                          textAlign: TextAlign.center,
+                        child: Text('%  Percentage', textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: _discountType == 'percent' ? Colors.white : Colors.black,
+                            fontWeight: _discountType == 'percent' ? FontWeight.bold : FontWeight.normal,
+                          )),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        setModalState(() => _discountType = 'flat');
+                        setState(() {});
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _discountType == 'flat' ? AppTheme.maroon : Colors.white,
+                          border: Border.all(color: _discountType == 'flat' ? AppTheme.maroon : Colors.grey.shade300),
+                          borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                        ),
+                        child: Text('₹  Flat Amount', textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _discountType == 'flat' ? Colors.white : Colors.black,
+                            fontWeight: _discountType == 'flat' ? FontWeight.bold : FontWeight.normal,
+                          )),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _discountController,
+                decoration: InputDecoration(
+                  labelText: _discountType == 'flat' ? 'Discount (₹)' : 'Discount (%)',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: Icon(_discountType == 'flat' ? Icons.currency_rupee : Icons.percent),
+                  errorText: _discountValidationError,
+                  errorStyle: TextStyle(
+                    color: _hasBlockingError ? Colors.red : Colors.orange.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (_) {
+                  setModalState(() {});
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _extraChargesController,
+                decoration: InputDecoration(
+                  labelText: 'Extra Charges (₹)',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.add_circle_outline),
+                  errorText: _extraChargesValidationError,
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (_) {
+                  setModalState(() {});
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 24),
+              const Text('PAYMENT MODE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+              const SizedBox(height: 12),
+              Row(
+                children: ['Cash', 'UPI', 'Card'].map((mode) {
+                  final isSelected = _selectedPaymentMode == mode;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: InkWell(
+                        onTap: () {
+                          setModalState(() => _selectedPaymentMode = mode);
+                          setState(() {});
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppTheme.maroon : Colors.white,
+                            border: Border.all(color: isSelected ? AppTheme.maroon : Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            mode,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.maroon, 
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  );
+                }).toList(),
               ),
-              child: const Text('APPLY'),
-            ),
-          ],
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.maroon, 
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('APPLY'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -533,15 +667,65 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           _buildSummaryRow('Subtotal', '₹${subtotal.toStringAsFixed(2)}'),
           const SizedBox(height: 16),
           
+          // Discount Type Toggle
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _discountType = 'percent'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _discountType == 'percent' ? AppTheme.maroon : Colors.white,
+                      border: Border.all(color: _discountType == 'percent' ? AppTheme.maroon : Colors.grey.shade300),
+                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                    ),
+                    child: Text('%  Percentage', textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13,
+                        color: _discountType == 'percent' ? Colors.white : Colors.black,
+                        fontWeight: _discountType == 'percent' ? FontWeight.bold : FontWeight.normal,
+                      )),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _discountType = 'flat'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _discountType == 'flat' ? AppTheme.maroon : Colors.white,
+                      border: Border.all(color: _discountType == 'flat' ? AppTheme.maroon : Colors.grey.shade300),
+                      borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                    ),
+                    child: Text('₹  Flat', textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13,
+                        color: _discountType == 'flat' ? Colors.white : Colors.black,
+                        fontWeight: _discountType == 'flat' ? FontWeight.bold : FontWeight.normal,
+                      )),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           // Discount Input
           TextField(
             controller: _discountController,
             decoration: InputDecoration(
-              labelText: 'Discount (%)', 
+              labelText: _discountType == 'flat' ? 'Discount (₹)' : 'Discount (%)', 
               border: const OutlineInputBorder(), 
-              prefixIcon: const Icon(Icons.percent, color: Colors.blue),
+              prefixIcon: Icon(
+                _discountType == 'flat' ? Icons.currency_rupee : Icons.percent, 
+                color: _hasBlockingError ? Colors.red : Colors.blue,
+              ),
               filled: true,
-              fillColor: Colors.blue.withOpacity(0.05),
+              fillColor: _hasBlockingError ? Colors.red.withOpacity(0.05) : Colors.blue.withOpacity(0.05),
+              errorText: _discountValidationError,
+              errorStyle: TextStyle(
+                color: _hasBlockingError ? Colors.red : Colors.orange.shade700,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() {}),
@@ -557,6 +741,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               prefixIcon: const Icon(Icons.add_circle_outline, color: Colors.green),
               filled: true,
               fillColor: Colors.green.withOpacity(0.05),
+              errorText: _extraChargesValidationError,
             ),
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() {}),
@@ -615,7 +800,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               children: [
                 const Text('GRAND TOTAL', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.maroon)),
                 Text('₹${_total.toStringAsFixed(2)}', 
-                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppTheme.maroon)),
+                  style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: _hasBlockingError ? Colors.red : AppTheme.maroon)),
               ],
             ),
           ),
@@ -624,24 +809,24 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           
           // Primary Action
           SizedBox(
-            height: 64,
+            height: 48,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleGenerateBill,
+              onPressed: (_isLoading || _hasBlockingError) ? null : _handleGenerateBill,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.statusOccupied, 
+                backgroundColor: AppTheme.maroon, 
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 2,
               ),
               child: _isLoading 
-                  ? const CircularProgressIndicator(color: Colors.white)
+                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('PRINT & SETTLE', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text('Table will be cleared', style: TextStyle(fontSize: 10, fontWeight: FontWeight.normal, color: Colors.white70)),
+                          Text('PRINT & SETTLE', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          Text('Table will be cleared', style: TextStyle(fontSize: 9, fontWeight: FontWeight.normal, color: Colors.white70)),
                         ],
                       ),
                     ),
