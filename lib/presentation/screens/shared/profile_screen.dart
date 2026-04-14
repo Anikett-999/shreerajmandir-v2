@@ -156,6 +156,35 @@ class ProfileScreen extends ConsumerWidget {
                         
                         const SizedBox(height: 32),
                         const Text(
+                          'SESSION MANAGEMENT',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.maroon,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildActionCard([
+                          _buildActionRow(
+                            context, 
+                            Icons.logout_rounded, 
+                            'Sign Out', 
+                            'End your current active session',
+                            () async {
+                              final confirm = await _showLogoutDialog(context);
+                              if (confirm == true) {
+                                Navigator.of(context).popUntil((route) => route.isFirst);
+                                await ref.read(authServiceProvider).logout();
+                              }
+                            },
+                            color: AppTheme.maroon,
+                            isLast: true,
+                          ),
+                        ], isDanger: false),
+
+                        const SizedBox(height: 32),
+                        const Text(
                           'DANGER ZONE',
                           style: TextStyle(
                             fontSize: 12,
@@ -263,12 +292,15 @@ class ProfileScreen extends ConsumerWidget {
   }
 
 
-  Widget _buildActionCard(List<Widget> children) {
+  Widget _buildActionCard(List<Widget> children, {bool isDanger = true}) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.02),
+        color: isDanger ? Colors.red.withOpacity(0.02) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.red.withOpacity(0.1)),
+        border: Border.all(color: isDanger ? Colors.red.withOpacity(0.1) : Colors.grey.shade100),
+        boxShadow: isDanger ? null : [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(children: children),
     );
@@ -301,6 +333,28 @@ class ProfileScreen extends ConsumerWidget {
         ),
         if (!isLast) Divider(height: 1, indent: 70, color: Colors.grey.shade100),
       ],
+    );
+  }
+
+  Future<bool?> _showLogoutDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Logout?'),
+        content: const Text('Are you sure you want to end your current session?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true), 
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.maroon,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('LOGOUT', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 

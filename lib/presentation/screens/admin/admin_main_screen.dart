@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/app_drawer.dart';
 import '../shared/home_screen.dart';
-import 'reports/report_management_screen.dart';
+
 import 'menu/menu_management_screen.dart';
 import 'tables/table_management_screen.dart';
 import '../../../core/app_theme.dart';
@@ -22,7 +22,7 @@ class _AdminMainScreenState extends ConsumerState<AdminMainScreen> {
 
   final List<Widget> _screens = [
     const OperationalHomeScreen(useShell: true),
-    const ReportManagementScreen(useShell: true),
+    const Center(child: Text('Reports - Coming Soon', style: TextStyle(fontSize: 18, color: Colors.grey))),
     const MenuManagementScreen(useShell: true),
     const TableManagementScreen(useShell: true),
   ];

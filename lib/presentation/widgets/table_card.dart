@@ -29,46 +29,43 @@ class TableCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statusColor = _getStatusColor();
+    final isOccupied = table.status.toLowerCase() == 'occupied';
 
-    return Stack(
-      children: [
-        InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => OrderScreen(table: table)),
-            );
-          },
-          onLongPress: () {
-            _showQuickActions(context, ref);
-          },
-          child: Card(
-            elevation: 1,
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide.none, // Explicitly no lines
-            ),
+    final role = ref.watch(activeUserRoleProvider);
+    final canCheckout = role == 'admin' || role == 'cashier';
+
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => OrderScreen(table: table)),
+              );
+            },
+            onLongPress: isOccupied ? () => _showQuickActions(context, ref) : null,
             child: Column(
               children: [
                 // Status Header
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                    ),
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  color: statusColor,
                   child: Text(
                     table.status.toUpperCase(),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 10,
+                      fontSize: 9,
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -77,122 +74,119 @@ class TableCard extends ConsumerWidget {
                 // Table Info
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          table.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.maroon,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        if (table.activeOrderId != null) ...[
-                          Text('${table.itemCount} Items', 
-                            style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 8),
-                          Text(
-                            '₹${table.totalAmount.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.deepGreen,
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              table.name,
+                              style: TextStyle(
+                                fontSize: isOccupied ? 36 : 28,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.maroon,
+                                letterSpacing: -0.5,
+                              ),
                             ),
                           ),
-                        ] else
-                          Text('Seats: ${table.capacity}', 
-                            style: const TextStyle(color: Colors.grey)),
+                        ),
+                        if (!isOccupied) ...[
+                          const SizedBox(height: 2),
+                          if (table.activeOrderId != null) ...[
+                            Text('${table.itemCount} Items', 
+                              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 11)),
+                            const SizedBox(height: 2),
+                            Text(
+                              '₹${table.totalAmount.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.deepGreen,
+                              ),
+                            ),
+                          ] else
+                            Text('Seats: ${table.capacity}', 
+                              style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                        ],
                       ],
                     ),
                   ),
                 ),
+
+                // Checkout Button Strip (Only when occupied and allowed)
+                if (isOccupied && canCheckout)
+                  Material(
+                    color: AppTheme.maroon,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => BillingScreen(table: table)),
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: const Text(
+                          'CHECKOUT',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 11,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
-        ),
-        
-        // Unprinted KOT Indicator (Only show if table is not available)
-        if (table.status != 'available' && (table.unprintedKotCount ?? 0) > 0)
-          Positioned(
-            top: 2,
-            right: 2,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.8, end: 1.2),
-              duration: const Duration(milliseconds: 1000),
-              builder: (context, scale, child) {
-                return Transform.scale(
-                  scale: scale,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.orange,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(color: Colors.black26, blurRadius: 4, spreadRadius: 1)
-                      ]
-                    ),
-                    child: const Icon(
-                      Icons.print,
-                      color: Colors.white,
-                      size: 14,
-                    ),
-                  ),
-                );
-              },
-              onEnd: () {
-                // This is a stateless hack to loop, better would be a stateful widget
-                // but for a quick indicator this works in some flutter versions
-                // or we can just make it static.
-              },
+          
+          // Unprinted KOT Indicator
+          if (table.status != 'available' && (table.unprintedKotCount ?? 0) > 0)
+            Positioned(
+              top: 32, // Below status header
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.orange,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.print,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
   void _showQuickActions(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+      ),
       builder: (context) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (table.activeOrderId != null)
-                ListTile(
-                  leading: const Icon(Icons.receipt_long, color: AppTheme.maroon),
-                  title: const Text('Generate Bill'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => BillingScreen(table: table)),
-                    );
-                  },
-                ),
-              if (table.activeOrderId != null && (table.unprintedKotCount ?? 0) > 0)
-                ListTile(
-                  leading: const Icon(Icons.print, color: Colors.orange),
-                  title: Text('Print Pending KOTs (${table.unprintedKotCount})'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OrderScreen(
-                          table: table,
-                          initialIndex: 1, // Open history tab
-                        ),
-                      ),
-                    );
-                  },
-                ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                child: Text('ADMIN ACTIONS', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+              ),
               ListTile(
-                leading: const Icon(Icons.cleaning_services, color: AppTheme.statusOccupied),
-                title: const Text('Clear Table'),
+                leading: const Icon(Icons.cleaning_services_rounded, color: AppTheme.statusOccupied),
+                title: const Text('Clear Table (Admin Only)', style: TextStyle(fontWeight: FontWeight.bold)),
                 onTap: () async {
                   Navigator.pop(context);
                   final branchId = ref.read(activeBranchIdProvider);
@@ -200,6 +194,7 @@ class TableCard extends ConsumerWidget {
                   await service.clearTable(table.tableId);
                 },
               ),
+              const SizedBox(height: 16),
             ],
           ),
         );

@@ -12,93 +12,14 @@ class ProfileMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authStateProvider).value;
-
     return Padding(
       padding: const EdgeInsets.only(right: 12.0),
-      child: PopupMenuButton<String>(
-        offset: const Offset(0, 50),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        itemBuilder: (context) => [
-          PopupMenuItem(
-            enabled: false,
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: AppTheme.maroon.withOpacity(0.1),
-                  child: const Icon(Icons.person, size: 18, color: AppTheme.maroon),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.displayName ?? 'Rajmandir User',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        user?.email ?? '',
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const PopupMenuDivider(),
-          const PopupMenuItem(
-            value: 'profile',
-            child: Row(
-              children: [
-                Icon(Icons.person_outline, size: 20, color: Colors.black87),
-                SizedBox(width: 12),
-                Text('My Profile'),
-              ],
-            ),
-          ),
-          const PopupMenuItem(
-            value: 'settings',
-            child: Row(
-              children: [
-                Icon(Icons.settings_outlined, size: 20, color: Colors.black87),
-                SizedBox(width: 12),
-                Text('App Settings'),
-              ],
-            ),
-          ),
-          const PopupMenuDivider(),
-          PopupMenuItem(
-            value: 'logout',
-            child: Row(
-              children: [
-                const Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
-                const SizedBox(width: 12),
-                Text('Logout', style: TextStyle(color: Colors.redAccent.shade700, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-        ],
-        onSelected: (value) async {
-          switch (value) {
-            case 'profile':
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
-              break;
-            case 'settings':
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
-              break;
-            case 'logout':
-              final confirm = await _showLogoutDialog(context);
-              if (confirm == true) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-                await ref.read(authServiceProvider).logout();
-              }
-              break;
-          }
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
         },
         child: Hero(
           tag: 'profile-avatar',
@@ -111,27 +32,10 @@ class ProfileMenu extends ConsumerWidget {
             child: CircleAvatar(
               radius: 18,
               backgroundColor: AppTheme.maroon.withOpacity(0.05),
-              child: const Icon(Icons.account_circle_rounded, color: AppTheme.maroon),
+              child: const Icon(Icons.account_circle_rounded, color: AppTheme.maroon, size: 24),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Future<bool?> _showLogoutDialog(BuildContext context) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout?'),
-        content: const Text('Are you sure you want to end your current session?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true), 
-            child: const Text('LOGOUT', style: TextStyle(color: Colors.red)),
-          ),
-        ],
       ),
     );
   }

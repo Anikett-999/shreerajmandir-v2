@@ -36,67 +36,103 @@ class OperationalHomeScreen extends ConsumerStatefulWidget {
 class _OperationalHomeScreenState extends ConsumerState<OperationalHomeScreen> {
   String _selectedFilter = 'All';
   String _searchQuery = '';
+  late ScrollController _scrollController;
+  bool _isAtTop = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(() {
+      if (_scrollController.offset <= 20) {
+        if (!_isAtTop) setState(() => _isAtTop = true);
+      } else {
+        if (_isAtTop) setState(() => _isAtTop = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final tablesAsync = ref.watch(tablesStreamProvider);
 
-    Widget content = Column(
-      children: [
-        // Header Controls: Status Dropdown + Search
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          child: Row(
-            children: [
-              // Status Filter Dropdown
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                height: 45,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedFilter,
-                    icon: const Icon(Icons.filter_list, size: 18),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) setState(() => _selectedFilter = newValue);
-                    },
-                    items: ['All', 'Available', 'Occupied', 'Billing']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value, style: const TextStyle(fontSize: 14)),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Search Bar
-              Expanded(
-                child: SizedBox(
-                  height: 45,
-                  child: TextField(
-                    onChanged: (value) => setState(() => _searchQuery = value),
-                    decoration: InputDecoration(
-                      hintText: 'Search table...',
-                      prefixIcon: const Icon(Icons.search, size: 20),
-                      isDense: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                      filled: true,
-                      fillColor: Colors.grey[100],
+    Widget headerControls = AnimatedSize(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      child: _isAtTop
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              child: Row(
+                children: [
+                  // Status Filter Dropdown
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[200]!),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                      ],
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedFilter,
+                        icon: const Icon(Icons.filter_list_rounded, size: 18, color: AppTheme.maroon),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) setState(() => _selectedFilter = newValue);
+                        },
+                        items: ['All', 'Available', 'Occupied', 'Billing']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  // Search Bar
+                  Expanded(
+                    child: Container(
+                      height: 45,
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                        ],
+                      ),
+                      child: TextField(
+                        onChanged: (value) => setState(() => _searchQuery = value),
+                        decoration: InputDecoration(
+                          hintText: 'Search table...',
+                          prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppTheme.maroon),
+                          isDense: true,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.maroon, width: 1.5)),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        
+            )
+          : const SizedBox(width: double.infinity, height: 0),
+    );
+
+    Widget content = Column(
+      children: [
+        headerControls,
         // Table Grid
         Expanded(
           child: tablesAsync.when(
@@ -108,13 +144,27 @@ class _OperationalHomeScreenState extends ConsumerState<OperationalHomeScreen> {
                 return matchesFilter && matchesSearch;
               }).toList();
 
+              if (filteredTables.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.table_restaurant_outlined, size: 64, color: Colors.grey[300]),
+                      const SizedBox(height: 16),
+                      Text('No tables found', style: TextStyle(color: Colors.grey[400], fontSize: 16)),
+                    ],
+                  ),
+                );
+              }
+
               return GridView.builder(
+                controller: _scrollController,
                 padding: const EdgeInsets.all(16.0),
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                   maxCrossAxisExtent: 220,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
-                  childAspectRatio: 0.9,
+                  childAspectRatio: 0.75,
                 ),
                 itemCount: filteredTables.length,
                 itemBuilder: (context, index) {
@@ -122,7 +172,7 @@ class _OperationalHomeScreenState extends ConsumerState<OperationalHomeScreen> {
                 },
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.maroon)),
             error: (err, stack) => Center(child: Text('❌ Error: $err')),
           ),
         ),
@@ -134,13 +184,16 @@ class _OperationalHomeScreenState extends ConsumerState<OperationalHomeScreen> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Image.asset('assets/branding/splash_logo.png', height: 40),
         centerTitle: true,
         backgroundColor: Colors.white,
+        elevation: 0,
         surfaceTintColor: Colors.white,
-        actions: [
-          const ProfileMenu(),
+        actions: const [
+          ProfileMenu(),
+          SizedBox(width: 8),
         ],
       ),
       drawer: const AppDrawer(),

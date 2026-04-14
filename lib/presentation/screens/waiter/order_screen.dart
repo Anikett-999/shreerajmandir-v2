@@ -146,7 +146,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
     }
   }
 
-  Future<void> _sendToKitchen({KOTModel? existingKOT}) async {
+  Future<void> _sendToKitchen({KOTModel? existingKOT, bool shouldPrint = false}) async {
     final cart = ref.read(cartProvider(widget.table.tableId));
     if (cart.isEmpty && existingKOT == null) return;
     if (_isProcessing) return;
@@ -198,7 +198,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
 
       bool printSuccess = true;
 
-      if (config.autoPrintKOT || existingKOT != null) {
+      if (shouldPrint || existingKOT != null) {
         setState(() => _processingStatus = "Sending to printer...");
         final bytes = await printService.generateKOTBytes(kot!, config.paperSize);
         printSuccess = await printService.printReceipt(bytes, config);
@@ -822,17 +822,48 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                 height: 60,
                 child: Consumer(builder: (c, ref, _) {
                    final cart = ref.watch(cartProvider(widget.table.tableId));
-                   return ElevatedButton(
-                     onPressed: cart.isEmpty ? null : () {
-                       Navigator.pop(ctx);
-                       _sendToKitchen();
-                     },
-                     style: ElevatedButton.styleFrom(
-                       backgroundColor: AppTheme.deepGreen, 
-                       foregroundColor: Colors.white,
-                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                     ),
-                     child: const Text('SEND TO KITCHEN', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                   final isDisabled = cart.isEmpty;
+                   return Row(
+                     children: [
+                       Expanded(
+                         flex: 3,
+                         child: SizedBox(
+                           height: 60,
+                           child: ElevatedButton(
+                             onPressed: isDisabled ? null : () {
+                               Navigator.pop(ctx);
+                               _sendToKitchen();
+                             },
+                             style: ElevatedButton.styleFrom(
+                               backgroundColor: AppTheme.deepGreen,
+                               foregroundColor: Colors.white,
+                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                             ),
+                             child: const Text('SEND TO KITCHEN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                           ),
+                         ),
+                       ),
+                       const SizedBox(width: 10),
+                       Expanded(
+                         flex: 2,
+                         child: SizedBox(
+                           height: 60,
+                           child: ElevatedButton.icon(
+                             onPressed: isDisabled ? null : () {
+                               Navigator.pop(ctx);
+                               _sendToKitchen(shouldPrint: true);
+                             },
+                             icon: const Icon(Icons.print, size: 20),
+                             label: const Text('SEND & PRINT', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                             style: ElevatedButton.styleFrom(
+                               backgroundColor: AppTheme.maroon,
+                               foregroundColor: Colors.white,
+                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                             ),
+                           ),
+                         ),
+                       ),
+                     ],
                    );
                 }),
               ),
@@ -920,14 +951,33 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 58,
-                      child: ElevatedButton(
-                        onPressed: ref.watch(cartProvider(widget.table.tableId)).isEmpty ? null : _sendToKitchen,
-                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.deepGreen, foregroundColor: Colors.white),
-                        child: const Text('SEND TO KITCHEN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: SizedBox(
+                            height: 58,
+                            child: ElevatedButton(
+                              onPressed: ref.watch(cartProvider(widget.table.tableId)).isEmpty ? null : () => _sendToKitchen(),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.deepGreen, foregroundColor: Colors.white),
+                              child: const Text('SEND TO KITCHEN', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: SizedBox(
+                            height: 58,
+                            child: ElevatedButton.icon(
+                              onPressed: ref.watch(cartProvider(widget.table.tableId)).isEmpty ? null : () => _sendToKitchen(shouldPrint: true),
+                              icon: const Icon(Icons.print, size: 18),
+                              label: const Text('SEND & PRINT', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.maroon, foregroundColor: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
