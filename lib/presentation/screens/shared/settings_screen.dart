@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/branch_provider.dart';
 import '../../../core/app_theme.dart';
+import '../../../services/branch_service.dart';
+import '../../../domain/models/branch_model.dart';
 import 'printer_settings_screen.dart';
 import '../../widgets/global/editorial_background.dart';
+import '../../widgets/global/base_widgets.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -32,6 +36,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
     final branchAsync = ref.watch(branchProvider);
+    final userAsync = ref.watch(userModelProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -67,7 +72,29 @@ class SettingsScreen extends ConsumerWidget {
             data: (branch) => _buildAestheticCard([
               _buildSimpleTile(Icons.storefront_rounded, 'Branch Name', branch.branchName),
               _buildSimpleTile(Icons.location_on_rounded, 'Location', branch.location),
-              _buildSimpleTile(Icons.map_rounded, 'Address', branch.address, isLast: true),
+              _buildSimpleTile(Icons.map_rounded, 'Address', branch.address),
+              if (branch.instagramId.isNotEmpty)
+                _buildSimpleTile(Icons.camera_alt_outlined, 'Instagram', '@${branch.instagramId}'),
+              if (branch.reviewQrUrl.isNotEmpty)
+                _buildSimpleTile(Icons.qr_code_2_rounded, 'Review Link', branch.reviewQrUrl),
+              
+              userAsync.when(
+                data: (user) {
+                  if (user?.isAdmin == true) {
+                    return _buildActionTile(
+                      context, 
+                      icon: Icons.edit_note_rounded, 
+                      title: 'Edit Branch Details', 
+                      subtitle: 'Update address, IG, and review links', 
+                      onTap: () => _showEditBranchDialog(context, ref, branch),
+                      isLast: true,
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
             ]),
             loading: () => const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(color: AppTheme.maroon))),
             error: (e, s) => Center(child: Text('Failed to load branch data: $e', style: const TextStyle(color: Colors.red))),
@@ -252,6 +279,107 @@ class SettingsScreen extends ConsumerWidget {
         ),
         if (!isLast) Divider(height: 1, indent: 72, color: Colors.grey.shade100),
       ],
+    );
+  }
+
+  void _showEditBranchDialog(BuildContext context, WidgetRef ref, BranchModel branch) {
+    final nameController = TextEditingController(text: branch.branchName);
+    final locationController = TextEditingController(text: branch.location);
+    final addressController = TextEditingController(text: branch.address);
+    final phoneController = TextEditingController(text: branch.phone);
+    final instagramController = TextEditingController(text: branch.instagramId);
+    final reviewQrController = TextEditingController(text: branch.reviewQrUrl);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('EDIT BRANCH INFO', style: TextStyle(fontWeight: FontWeight.w900, color: AppTheme.maroon)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'Branch Name', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: locationController,
+                decoration: InputDecoration(labelText: 'Short Location', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: addressController,
+                maxLines: 2,
+                decoration: InputDecoration(labelText: 'Full Address', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(labelText: 'Phone', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: instagramController,
+                decoration: InputDecoration(
+                  labelText: 'Instagram ID (@handle)', 
+                  prefixText: '@',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reviewQrController,
+                decoration: InputDecoration(
+                  labelText: 'Google Review Link', 
+                  helperText: 'Paste the direct Google Maps review URL',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.maroon, foregroundColor: Colors.white),
+            onPressed: () async {
+              final updatedBranch = branch.copyWith(
+                branchName: nameController.text.trim(),
+                location: locationController.text.trim(),
+                address: addressController.text.trim(),
+                phone: phoneController.text.trim(),
+                instagramId: instagramController.text.trim().replaceAll('@', ''),
+                reviewQrUrl: reviewQrController.text.trim(),
+              );
+
+              try {
+                await ref.read(branchServiceProvider).updateBranchDetails(updatedBranch);
+                // Invalidate the provider to refresh the UI
+                ref.invalidate(branchProvider);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Branch updated successfully'), backgroundColor: AppTheme.successGreen),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            child: const Text('SAVE CHANGES'),
+          ),
+        ],
+      ),
     );
   }
 }

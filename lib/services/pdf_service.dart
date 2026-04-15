@@ -11,7 +11,7 @@ import '../domain/models/dashboard_stats.dart';
 import '../domain/models/branch_model.dart';
 
 class PdfService {
-  static Future<Uint8List> generateBillPdf(BillModel bill) async {
+  static Future<Uint8List> generateBillPdf(BillModel bill, BranchModel branch) async {
     final pdf = pw.Document();
     final dateStr = DateFormat('dd/MM/yy').format(bill.createdAt);
     final timeStr = DateFormat('hh:mm a').format(bill.createdAt);
@@ -34,12 +34,20 @@ class PdfService {
                   children: [
                     pw.Text('SHREE RAJMANDIR',
                         style: pw.TextStyle(
-                            fontSize: 16, fontWeight: pw.FontWeight.bold)),
-                    pw.Text('QUALITY ICE CREAM & SNACKS', style: const pw.TextStyle(fontSize: 10)),
+                            fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    pw.Text(branch.location.toUpperCase(),
+                        style: pw.TextStyle(
+                            fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                    pw.Text(branch.address,
+                        textAlign: pw.TextAlign.center,
+                        style: const pw.TextStyle(fontSize: 8)),
+                    if (branch.phone.isNotEmpty)
+                      pw.Text('Phone: ${branch.phone}',
+                          style: const pw.TextStyle(fontSize: 8)),
                     pw.SizedBox(height: 5),
                     pw.Text('DIGITAL RECEIPT',
                         style: pw.TextStyle(
-                            fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                            fontSize: 9, fontWeight: pw.FontWeight.bold)),
                     pw.SizedBox(height: 10),
                   ],
                 ),
@@ -49,12 +57,12 @@ class PdfService {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text(bill.billId, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                  pw.Text(dateStr, style: const pw.TextStyle(fontSize: 9)),
-                  pw.Text('$timeStr by:$shortUser', style: const pw.TextStyle(fontSize: 9)),
+                  pw.Text(bill.billId, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(dateStr, style: const pw.TextStyle(fontSize: 8)),
+                  pw.Text('$timeStr by:$shortUser', style: const pw.TextStyle(fontSize: 8)),
                 ],
               ),
-              pw.Center(child: pw.Text('TABLE: ${bill.tableName.toUpperCase()}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold))),
+              pw.Center(child: pw.Text('TABLE: ${bill.tableName.toUpperCase()}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold))),
               pw.Divider(thickness: 0.5),
 
               // Items Header
@@ -64,18 +72,18 @@ class PdfService {
                       flex: 4,
                       child: pw.Text('ITEMS',
                           style: pw.TextStyle(
-                              fontSize: 9, fontWeight: pw.FontWeight.bold))),
+                              fontSize: 8, fontWeight: pw.FontWeight.bold))),
                   pw.Expanded(
                       flex: 1,
                       child: pw.Text('QTY',
                           style: pw.TextStyle(
-                              fontSize: 9, fontWeight: pw.FontWeight.bold),
+                              fontSize: 8, fontWeight: pw.FontWeight.bold),
                           textAlign: pw.TextAlign.center)),
                   pw.Expanded(
                       flex: 1,
                       child: pw.Text('AMOUNT',
                           style: pw.TextStyle(
-                              fontSize: 9, fontWeight: pw.FontWeight.bold),
+                              fontSize: 8, fontWeight: pw.FontWeight.bold),
                           textAlign: pw.TextAlign.right)),
                 ],
               ),
@@ -93,17 +101,17 @@ class PdfService {
                           pw.Expanded(
                               flex: 4,
                               child: pw.Text(itemName,
-                                  style: const pw.TextStyle(fontSize: 8))),
+                                  style: const pw.TextStyle(fontSize: 7))),
                           pw.Expanded(
                               flex: 1,
                               child: pw.Text(item.qty.toString(),
-                                  style: const pw.TextStyle(fontSize: 9),
+                                  style: const pw.TextStyle(fontSize: 8),
                                   textAlign: pw.TextAlign.center)),
                           pw.Expanded(
                               flex: 1,
                               child: pw.Text(
                                   (item.price * item.qty).toStringAsFixed(0),
-                                  style: const pw.TextStyle(fontSize: 9),
+                                  style: const pw.TextStyle(fontSize: 8),
                                   textAlign: pw.TextAlign.right)),
                         ],
                       ),
@@ -119,9 +127,9 @@ class PdfService {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('Subtotal:', style: const pw.TextStyle(fontSize: 9)),
+                  pw.Text('Subtotal:', style: const pw.TextStyle(fontSize: 8)),
                   pw.Text('Rs. ${bill.subtotal.toStringAsFixed(2)}',
-                      style: const pw.TextStyle(fontSize: 9)),
+                      style: const pw.TextStyle(fontSize: 8)),
                 ],
               ),
               if (bill.discountAmount > 0)
@@ -131,18 +139,18 @@ class PdfService {
                     pw.Text(bill.discountType == 'flat'
                         ? 'Discount (Flat):'
                         : 'Discount (${bill.discountPercent.toStringAsFixed(0)}%):',
-                        style: const pw.TextStyle(fontSize: 9)),
+                        style: const pw.TextStyle(fontSize: 8)),
                     pw.Text('-Rs. ${bill.discountAmount.toStringAsFixed(2)}',
-                        style: const pw.TextStyle(fontSize: 9)),
+                        style: const pw.TextStyle(fontSize: 8)),
                   ],
                 ),
               if (bill.extraCharges > 0)
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('Extra Charges:', style: const pw.TextStyle(fontSize: 9)),
+                    pw.Text('Extra Charges:', style: const pw.TextStyle(fontSize: 8)),
                     pw.Text('+Rs. ${bill.extraCharges.toStringAsFixed(2)}',
-                        style: const pw.TextStyle(fontSize: 9)),
+                        style: const pw.TextStyle(fontSize: 8)),
                   ],
                 ),
               pw.Divider(thickness: 0.5),
@@ -151,20 +159,77 @@ class PdfService {
                 children: [
                   pw.Text('GRAND TOTAL:',
                       style: pw.TextStyle(
-                          fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                          fontSize: 10, fontWeight: pw.FontWeight.bold)),
                   pw.Text('Rs. ${bill.total.toStringAsFixed(2)}',
                       style: pw.TextStyle(
-                          fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                          fontSize: 10, fontWeight: pw.FontWeight.bold)),
                 ],
               ),
               pw.Divider(thickness: 1),
+              pw.SizedBox(height: 10),
 
-              // Footer
+              // NEW ENHANCED FOOTER (Side-by-Side)
+              if (branch.reviewQrUrl.isNotEmpty || branch.instagramId.isNotEmpty)
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    // Left: QR Code Section
+                    if (branch.reviewQrUrl.isNotEmpty)
+                      pw.Container(
+                        width: 70,
+                        height: 70,
+                        padding: const pw.EdgeInsets.all(4),
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: PdfColors.black, width: 0.5),
+                          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                        ),
+                        child: pw.Column(
+                          mainAxisAlignment: pw.MainAxisAlignment.center,
+                          children: [
+                            pw.Text('REVIEW US', style: pw.TextStyle(fontSize: 5, fontWeight: pw.FontWeight.bold)),
+                            pw.SizedBox(height: 2),
+                            pw.BarcodeWidget(
+                              barcode: pw.Barcode.qrCode(),
+                              data: branch.reviewQrUrl,
+                              width: 50,
+                              height: 50,
+                            ),
+                          ],
+                        ),
+                      ),
+                    
+                    pw.SizedBox(width: 10),
+
+                    // Right: Warm Message & Instagram
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            "Crafted with love, served with a smile. Every scoop tells a story of pure cream and joy!",
+                            style: pw.TextStyle(fontSize: 7, fontStyle: pw.FontStyle.italic),
+                          ),
+                          if (branch.instagramId.isNotEmpty) ...[
+                             pw.SizedBox(height: 5),
+                             pw.Row(
+                               children: [
+                                 pw.Text('FOLLOW US ', style: pw.TextStyle(fontSize: 6, fontWeight: pw.FontWeight.bold)),
+                                 pw.Text('@${branch.instagramId}', style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold)),
+                               ]
+                             )
+                          ]
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+              pw.SizedBox(height: 10),
               pw.Center(
                 child: pw.Column(
                   children: [
-                    pw.Text('Visit Again!', style: const pw.TextStyle(fontSize: 10)),
-                    pw.Text('THANK YOU', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                    pw.Text('Visit Again!', style: const pw.TextStyle(fontSize: 8)),
+                    pw.Text('THANK YOU', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                   ],
                 ),
               ),

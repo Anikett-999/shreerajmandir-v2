@@ -11,6 +11,8 @@ class BranchModel with _$BranchModel {
     @Default('') String location,
     @Default('') String address,
     @Default('') String phone,
+    @Default('') String instagramId,
+    @Default('') String reviewQrUrl,
     @Default(true) bool isActive,
   }) = _BranchModel;
 

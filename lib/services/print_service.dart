@@ -1,12 +1,18 @@
-import 'dart:convert';
+import 'dart:ui' as ui;
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter_pos_printer_platform_image_3/flutter_pos_printer_platform_image_3.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:image/image.dart' as img;
 import '../domain/models/bill_model.dart';
 import '../domain/models/kot_model.dart';
+import '../domain/models/branch_model.dart';
 import '../domain/models/printer_config.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 
 class PrintService {
   // Generate KOT ESC/POS commands
@@ -89,7 +95,7 @@ class PrintService {
   }
 
   // Generate Bill ESC/POS commands
-  Future<List<int>> generateBillBytes(BillModel bill, PrinterPaperSize paperSize) async {
+  Future<List<int>> generateBillBytes(BillModel bill, BranchModel branch, PrinterPaperSize paperSize) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(
       paperSize == PrinterPaperSize.mm80 ? PaperSize.mm80 : PaperSize.mm58, 
@@ -126,7 +132,11 @@ class PrintService {
     bytes += generator.text(dsep);
     bytes += generator.text('SHREE RAJMANDIR', 
         styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-    bytes += generator.text('     QUALITY ICE CREAM ', styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text(branch.location.toUpperCase(), styles: const PosStyles(align: PosAlign.center, bold: true));
+    bytes += generator.text(branch.address, styles: const PosStyles(align: PosAlign.center));
+    if (branch.phone.isNotEmpty) {
+      bytes += generator.text('Phone: ${branch.phone}', styles: const PosStyles(align: PosAlign.center));
+    }
     bytes += generator.feed(1);
 
     // 2. Metadata (Professional Layout)
@@ -184,9 +194,25 @@ class PrintService {
     
     bytes += generator.text(dsep);
     
-    // 5. Footer
-    bytes += generator.feed(1);
-    bytes += generator.text('Visit Again!', styles: const PosStyles(align: PosAlign.center));
+    // 5. Footer (Side-by-Side QR & Branding)
+    if (branch.reviewQrUrl.isNotEmpty || branch.instagramId.isNotEmpty) {
+      bytes += generator.feed(1);
+      try {
+        final int imageWidth = paperSize == PrinterPaperSize.mm80 ? 512 : 384; // Leave margins
+        final footerImg = await _generateFooterGraphic(branch, imageWidth);
+        if (footerImg != null) {
+          bytes += generator.image(footerImg);
+        } else {
+           bytes += generator.text('Visit Again!', styles: const PosStyles(align: PosAlign.center));
+        }
+      } catch (e) {
+        print("Error generating footer image: $e");
+        bytes += generator.text('Visit Again!', styles: const PosStyles(align: PosAlign.center));
+      }
+    } else {
+      bytes += generator.text('Visit Again!', styles: const PosStyles(align: PosAlign.center));
+    }
+    
     bytes += generator.text('THANK YOU', styles: const PosStyles(align: PosAlign.center, bold: true));
     bytes += generator.text(dsep);
     bytes += generator.feed(2);
@@ -296,5 +322,109 @@ class PrintService {
       print(' Print Error: $e');
       rethrow;
     }
+  }
+
+  /// Generates a side-by-side footer graphic with a framed QR code and a warm message.
+  Future<img.Image?> _generateFooterGraphic(BranchModel branch, int totalWidth) async {
+    const double height = 180.0;
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder, ui.Rect.fromLTWH(0, 0, totalWidth.toDouble(), height));
+    
+    // Background (White)
+    final paint = ui.Paint()..color = Colors.white;
+    canvas.drawRect(ui.Rect.fromLTWH(0, 0, totalWidth.toDouble(), height), paint);
+
+    // 1. Left Side: Framed QR Code
+    final double qrBoxSize = 140.0;
+    final double qrX = 10.0;
+    final double qrY = (height - qrBoxSize) / 2;
+
+    if (branch.reviewQrUrl.isNotEmpty) {
+      // Draw Thin Frame
+      final framePaint = ui.Paint()
+        ..color = Colors.black
+        ..style = ui.PaintingStyle.stroke
+        ..strokeWidth = 1.2;
+      canvas.drawRRect(
+        ui.RRect.fromRectAndRadius(ui.Rect.fromLTWH(qrX, qrY, qrBoxSize, qrBoxSize), const Radius.circular(8)), 
+        framePaint
+      );
+
+      // Label above QR
+      final textPainter = TextPainter(
+        textDirection: ui.TextDirection.ltr,
+        text: const TextSpan(
+          text: 'REVIEW US',
+          style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+        ),
+      )..layout();
+      textPainter.paint(canvas, ui.Offset(qrX + (qrBoxSize - textPainter.width) / 2, qrY - 12));
+
+      // Draw QR Code
+      final qrValidationResult = QrValidator.validate(
+        data: branch.reviewQrUrl,
+        version: QrVersions.auto,
+        errorCorrectionLevel: QrErrorCorrectLevel.M,
+      );
+
+      if (qrValidationResult.status == QrValidationStatus.valid) {
+        final qrCode = qrValidationResult.qrCode!;
+        final painter = QrPainter.withQr(
+          qr: qrCode,
+          color: const Color(0xFF000000),
+          emptyColor: const Color(0xFFFFFFFF),
+          gapless: true,
+        );
+        
+        // Draw centered inside the box with some padding
+        const double padding = 15.0;
+        canvas.save();
+        canvas.translate(qrX + padding, qrY + padding);
+        painter.paint(canvas, ui.Size(qrBoxSize - padding * 2, qrBoxSize - padding * 2));
+        canvas.restore();
+      }
+    }
+
+    // 2. Right Side: Warm Message + Instagram
+    final double textLeft = qrBoxSize + 30.0;
+    final double textWidth = totalWidth - textLeft - 10.0;
+
+    const String warmMessage = "Crafted with love, served with a smile. Every scoop tells a story of pure cream and joy!";
+    
+    // Message text
+    final messagePainter = TextPainter(
+      textDirection: ui.TextDirection.ltr,
+      textAlign: ui.TextAlign.left,
+      text: const TextSpan(
+        text: warmMessage,
+        style: TextStyle(color: Colors.black, fontSize: 13, fontStyle: FontStyle.italic, fontWeight: FontWeight.w400),
+      ),
+    )..layout(maxWidth: textWidth);
+    messagePainter.paint(canvas, ui.Offset(textLeft, qrY + 10));
+
+    // Instagram Handle
+    if (branch.instagramId.isNotEmpty) {
+      final igPainter = TextPainter(
+        textDirection: ui.TextDirection.ltr,
+        text: TextSpan(
+          children: [
+            const TextSpan(text: 'FOLLOW US ', style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold)),
+            TextSpan(text: '@${branch.instagramId}', style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w900)),
+          ],
+        ),
+      )..layout(maxWidth: textWidth);
+      igPainter.paint(canvas, ui.Offset(textLeft, qrY + messagePainter.height + 25));
+    }
+
+    // Convert to Image
+    final picture = recorder.endRecording();
+    final img_ui = await picture.toImage(totalWidth, height.toInt());
+    final byteData = await img_ui.toByteData(format: ui.ImageByteFormat.png);
+    
+    if (byteData == null) return null;
+    
+    // Decode into 'image' package format for esc_pos_utils
+    final decoded = img.decodePng(byteData.buffer.asUint8List());
+    return decoded;
   }
 }

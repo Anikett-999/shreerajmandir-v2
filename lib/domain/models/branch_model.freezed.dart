@@ -26,6 +26,8 @@ mixin _$BranchModel {
   String get location => throw _privateConstructorUsedError;
   String get address => throw _privateConstructorUsedError;
   String get phone => throw _privateConstructorUsedError;
+  String get instagramId => throw _privateConstructorUsedError;
+  String get reviewQrUrl => throw _privateConstructorUsedError;
   bool get isActive => throw _privateConstructorUsedError;
 
   /// Serializes this BranchModel to a JSON map.
@@ -51,6 +53,8 @@ abstract class $BranchModelCopyWith<$Res> {
     String location,
     String address,
     String phone,
+    String instagramId,
+    String reviewQrUrl,
     bool isActive,
   });
 }
@@ -75,6 +79,8 @@ class _$BranchModelCopyWithImpl<$Res, $Val extends BranchModel>
     Object? location = null,
     Object? address = null,
     Object? phone = null,
+    Object? instagramId = null,
+    Object? reviewQrUrl = null,
     Object? isActive = null,
   }) {
     return _then(
@@ -98,6 +104,14 @@ class _$BranchModelCopyWithImpl<$Res, $Val extends BranchModel>
             phone: null == phone
                 ? _value.phone
                 : phone // ignore: cast_nullable_to_non_nullable
+                      as String,
+            instagramId: null == instagramId
+                ? _value.instagramId
+                : instagramId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            reviewQrUrl: null == reviewQrUrl
+                ? _value.reviewQrUrl
+                : reviewQrUrl // ignore: cast_nullable_to_non_nullable
                       as String,
             isActive: null == isActive
                 ? _value.isActive
@@ -124,6 +138,8 @@ abstract class _$$BranchModelImplCopyWith<$Res>
     String location,
     String address,
     String phone,
+    String instagramId,
+    String reviewQrUrl,
     bool isActive,
   });
 }
@@ -147,6 +163,8 @@ class __$$BranchModelImplCopyWithImpl<$Res>
     Object? location = null,
     Object? address = null,
     Object? phone = null,
+    Object? instagramId = null,
+    Object? reviewQrUrl = null,
     Object? isActive = null,
   }) {
     return _then(
@@ -171,6 +189,14 @@ class __$$BranchModelImplCopyWithImpl<$Res>
             ? _value.phone
             : phone // ignore: cast_nullable_to_non_nullable
                   as String,
+        instagramId: null == instagramId
+            ? _value.instagramId
+            : instagramId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        reviewQrUrl: null == reviewQrUrl
+            ? _value.reviewQrUrl
+            : reviewQrUrl // ignore: cast_nullable_to_non_nullable
+                  as String,
         isActive: null == isActive
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
@@ -189,6 +215,8 @@ class _$BranchModelImpl implements _BranchModel {
     this.location = '',
     this.address = '',
     this.phone = '',
+    this.instagramId = '',
+    this.reviewQrUrl = '',
     this.isActive = true,
   });
 
@@ -212,11 +240,17 @@ class _$BranchModelImpl implements _BranchModel {
   final String phone;
   @override
   @JsonKey()
+  final String instagramId;
+  @override
+  @JsonKey()
+  final String reviewQrUrl;
+  @override
+  @JsonKey()
   final bool isActive;
 
   @override
   String toString() {
-    return 'BranchModel(branchId: $branchId, branchName: $branchName, location: $location, address: $address, phone: $phone, isActive: $isActive)';
+    return 'BranchModel(branchId: $branchId, branchName: $branchName, location: $location, address: $address, phone: $phone, instagramId: $instagramId, reviewQrUrl: $reviewQrUrl, isActive: $isActive)';
   }
 
   @override
@@ -232,6 +266,10 @@ class _$BranchModelImpl implements _BranchModel {
                 other.location == location) &&
             (identical(other.address, address) || other.address == address) &&
             (identical(other.phone, phone) || other.phone == phone) &&
+            (identical(other.instagramId, instagramId) ||
+                other.instagramId == instagramId) &&
+            (identical(other.reviewQrUrl, reviewQrUrl) ||
+                other.reviewQrUrl == reviewQrUrl) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive));
   }
@@ -245,6 +283,8 @@ class _$BranchModelImpl implements _BranchModel {
     location,
     address,
     phone,
+    instagramId,
+    reviewQrUrl,
     isActive,
   );
 
@@ -269,6 +309,8 @@ abstract class _BranchModel implements BranchModel {
     final String location,
     final String address,
     final String phone,
+    final String instagramId,
+    final String reviewQrUrl,
     final bool isActive,
   }) = _$BranchModelImpl;
 
@@ -285,6 +327,10 @@ abstract class _BranchModel implements BranchModel {
   String get address;
   @override
   String get phone;
+  @override
+  String get instagramId;
+  @override
+  String get reviewQrUrl;
   @override
   bool get isActive;
 

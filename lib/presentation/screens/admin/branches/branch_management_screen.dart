@@ -64,6 +64,8 @@ class BranchManagementScreen extends ConsumerWidget {
     final locationController = TextEditingController();
     final addressController = TextEditingController();
     final phoneController = TextEditingController();
+    final instagramController = TextEditingController();
+    final reviewQrController = TextEditingController();
 
     // Auto-generate branch ID based on existing branches
     String newBranchId = 'branch_001';
@@ -112,6 +114,24 @@ class BranchManagementScreen extends ConsumerWidget {
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(labelText: 'Phone', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
               ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: instagramController,
+                decoration: InputDecoration(
+                  labelText: 'Instagram ID (@handle)', 
+                  prefixText: '@',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reviewQrController,
+                decoration: InputDecoration(
+                  labelText: 'Google Review Link', 
+                  helperText: 'Paste the direct Google Maps review URL',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))
+                ),
+              ),
             ],
           ),
         ),
@@ -131,6 +151,8 @@ class BranchManagementScreen extends ConsumerWidget {
                 location: locationController.text.trim(),
                 address: addressController.text.trim(),
                 phone: phoneController.text.trim(),
+                instagramId: instagramController.text.trim().replaceAll('@', ''),
+                reviewQrUrl: reviewQrController.text.trim(),
                 isActive: true,
               );
 
@@ -205,6 +227,14 @@ class _BranchListItem extends ConsumerWidget {
                 _infoRow(Icons.location_on_outlined, 'Address', branch.address),
                 const SizedBox(height: 12),
                 _infoRow(Icons.phone_outlined, 'Contact', branch.phone),
+                if (branch.instagramId.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _infoRow(Icons.camera_alt_outlined, 'Instagram', '@${branch.instagramId}'),
+                ],
+                if (branch.reviewQrUrl.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _infoRow(Icons.qr_code_2_rounded, 'Review URL', branch.reviewQrUrl),
+                ],
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -252,6 +282,8 @@ class _BranchListItem extends ConsumerWidget {
     final locationController = TextEditingController(text: branch.location);
     final addressController = TextEditingController(text: branch.address);
     final phoneController = TextEditingController(text: branch.phone);
+    final instagramController = TextEditingController(text: branch.instagramId);
+    final reviewQrController = TextEditingController(text: branch.reviewQrUrl);
 
     showDialog(
       context: context,
@@ -283,6 +315,24 @@ class _BranchListItem extends ConsumerWidget {
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(labelText: 'Phone', border: OutlineInputBorder()),
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: instagramController,
+                decoration: const InputDecoration(
+                  labelText: 'Instagram ID (@handle)', 
+                  prefixText: '@',
+                  border: OutlineInputBorder()
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: reviewQrController,
+                decoration: const InputDecoration(
+                  labelText: 'Google Review Link', 
+                  helperText: 'Paste the direct Google Maps review URL',
+                  border: OutlineInputBorder()
+                ),
+              ),
             ],
           ),
         ),
@@ -299,6 +349,8 @@ class _BranchListItem extends ConsumerWidget {
                 location: locationController.text,
                 address: addressController.text,
                 phone: phoneController.text,
+                instagramId: instagramController.text.replaceAll('@', ''),
+                reviewQrUrl: reviewQrController.text,
               );
 
               try {

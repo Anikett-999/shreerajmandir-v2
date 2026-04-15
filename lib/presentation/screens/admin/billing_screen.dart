@@ -6,12 +6,14 @@ import '../../../core/app_theme.dart';
 import '../../../domain/models/bill_model.dart';
 import '../../../domain/models/kot_model.dart';
 import '../../../domain/models/table_model.dart';
+import '../../../domain/models/branch_model.dart';
 import '../../../services/billing_service.dart';
 import '../../../services/print_service.dart';
 import '../../../services/pdf_service.dart';
 import '../../providers/printer_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/active_branch_provider.dart';
+import '../../providers/branch_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/admin/bill_aggregated_list.dart';
 import '../../widgets/global/editorial_background.dart';
 
@@ -120,7 +122,18 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   Future<void> _handleShareDigitalBill(BillModel bill) async {
     try {
-      final pdfBytes = await PdfService.generateBillPdf(bill);
+      final branchAsync = ref.read(branchProvider);
+      final branch = branchAsync.value ?? BranchModel(
+        branchId: 'branch_001',
+        branchName: 'Rajmandir',
+        location: 'Pune',
+        address: 'Pune, Maharashtra',
+        phone: '',
+        instagramId: '',
+        reviewQrUrl: '',
+      );
+      
+      final pdfBytes = await PdfService.generateBillPdf(bill, branch);
       final fileName = 'Bill_${bill.tableName}_${DateFormat('ddMMyy_HHmm').format(bill.createdAt)}.pdf';
       final file = await PdfService.savePdfToFile(pdfBytes, fileName);
       
@@ -176,7 +189,18 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       String? printError;
 
       try {
-        final bytes = await printService.generateBillBytes(bill, config.paperSize);
+        final branchAsync = ref.read(branchProvider);
+        final branch = branchAsync.value ?? BranchModel(
+          branchId: 'branch_001',
+          branchName: 'Rajmandir',
+          location: 'Pune',
+          address: 'Pune, Maharashtra',
+          phone: '',
+          instagramId: '',
+          reviewQrUrl: '',
+        );
+        
+        final bytes = await printService.generateBillBytes(bill, branch, config.paperSize);
         printSuccess = await printService.printReceipt(bytes, config);
       } catch (printErr) {
         printSuccess = false;
