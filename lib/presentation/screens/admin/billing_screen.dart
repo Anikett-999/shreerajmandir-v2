@@ -60,7 +60,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final branchId = ref.read(activeBranchIdProvider);
     final billingService = BillingService(branchId: branchId ?? 'branch_001');
     final preview = await billingService.previewBill(widget.table.activeOrderId!);
-    setState(() => _billPreviewData = preview);
+    if (mounted) {
+      setState(() => _billPreviewData = preview);
+    }
   }
 
   double get _total {
@@ -165,8 +167,14 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       final billingService = BillingService(branchId: branchId ?? 'branch_001');
       final config = ref.read(printerConfigProvider);
       final printService = ref.read(printServiceProvider);
-      final currentUser = ref.read(authServiceProvider).currentUser;
-      final cleanUserName = currentUser?.displayName ?? currentUser?.email?.split('@')[0] ?? 'Admin';
+      final authService = ref.read(authServiceProvider);
+      final currentUser = authService.currentUser;
+      final currentUserData = await authService.getCurrentUserData();
+      final cleanUserName = currentUserData?.name.trim().isNotEmpty == true
+          ? currentUserData!.name.trim()
+          : (currentUser?.displayName?.trim().isNotEmpty == true
+              ? currentUser!.displayName!.trim()
+              : (currentUser?.email?.split('@')[0] ?? 'Staff'));
 
       if (widget.table.activeOrderId == null) {
         throw Exception('Cannot generate bill: Missing Order ID');
@@ -436,21 +444,24 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
+        builder: (context, setModalState) {
+          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+          return SafeArea(
+          top: false,
+          child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
           ),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-            left: 24, right: 24, top: 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(24, 20, 24, bottomInset + 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               const Text('Bill Adjustments', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               // Discount Type Toggle
               Row(
                 children: [
@@ -461,7 +472,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                         setState(() {});
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
                           color: _discountType == 'percent' ? AppTheme.maroon : Colors.white,
                           border: Border.all(color: _discountType == 'percent' ? AppTheme.maroon : Colors.grey.shade300),
@@ -482,7 +493,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                         setState(() {});
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
                           color: _discountType == 'flat' ? AppTheme.maroon : Colors.white,
                           border: Border.all(color: _discountType == 'flat' ? AppTheme.maroon : Colors.grey.shade300),
@@ -498,7 +509,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               TextField(
                 controller: _discountController,
                 decoration: InputDecoration(
@@ -517,7 +528,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                   setState(() {});
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               TextField(
                 controller: _extraChargesController,
                 decoration: InputDecoration(
@@ -532,26 +543,26 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                   setState(() {});
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               const Text('PAYMENT MODE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Row(
                 children: ['Cash', 'UPI', 'Card'].map((mode) {
                   final isSelected = _selectedPaymentMode == mode;
                   return Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: InkWell(
                         onTap: () {
                           setModalState(() => _selectedPaymentMode = mode);
                           setState(() {});
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
                           decoration: BoxDecoration(
                             color: isSelected ? AppTheme.maroon : Colors.white,
                             border: Border.all(color: isSelected ? AppTheme.maroon : Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             mode,
@@ -567,7 +578,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
@@ -578,9 +589,12 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 ),
                 child: const Text('APPLY'),
               ),
-            ],
+              ],
+            ),
           ),
-        ),
+          ),
+        );
+        },
       ),
     );
   }

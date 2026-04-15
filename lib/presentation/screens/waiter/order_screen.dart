@@ -131,6 +131,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
   String? _selectedCategoryId;
   bool _isProcessing = false;
   String _processingStatus = "";
+  bool _isUpdatingKotHistory = false;
 
   @override
   void initState() {
@@ -286,6 +287,67 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
           content: Text('❌ Error: $e'),
           backgroundColor: Colors.red,
         ));
+      }
+    }
+  }
+
+  Future<void> _updateKotHistoryItem({
+    required KOTModel kot,
+    required KOTItem item,
+    required bool removeWholeItem,
+  }) async {
+    if (_isUpdatingKotHistory) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(removeWholeItem ? 'Remove Item?' : 'Deduct Item?'),
+        content: Text(
+          removeWholeItem
+              ? 'Remove ${item.name} from KOT #${kot.kotNumber}?'
+              : 'Deduct 1 quantity from ${item.name} in KOT #${kot.kotNumber}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: removeWholeItem ? Colors.red.shade700 : AppTheme.maroon,
+            ),
+            child: Text(removeWholeItem ? 'Remove' : 'Deduct'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isUpdatingKotHistory = true);
+    try {
+      final kotService = ref.read(kotServiceProvider);
+      if (removeWholeItem) {
+        await kotService.removeKotItem(kotId: kot.kotId, itemUniqueId: item.uniqueId);
+      } else {
+        await kotService.deductKotItem(kotId: kot.kotId, itemUniqueId: item.uniqueId);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${item.name} updated successfully.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update item: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingKotHistory = false);
       }
     }
   }
@@ -518,6 +580,8 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
       }
 
   void _showOrderHistory(BuildContext context) {
+    final role = ref.read(activeUserRoleProvider);
+    final canManageKotItems = role == 'admin';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -618,22 +682,79 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                                             ...kot.items.map((item) {
                                               return Padding(
                                                 padding: const EdgeInsets.symmetric(vertical: 4),
-                                                child: Row(
+                                                child: Column(
                                                   children: [
-                                                    Text(
-                                                      '${item.qty}x ',
-                                                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon),
+                                                    Row(
+                                                      children: [
+                                                        Text(
+                                                          '${item.qty}x ',
+                                                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon),
+                                                        ),
+                                                        Expanded(
+                                                          child: Text(
+                                                            '${item.name}${item.variant.isNotEmpty ? " (${item.variant})" : ""}',
+                                                            style: const TextStyle(fontSize: 14),
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          '₹${(item.price * item.qty).toStringAsFixed(0)}',
+                                                          style: const TextStyle(fontWeight: FontWeight.w500),
+                                                        ),
+                                                      ],
                                                     ),
-                                                    Expanded(
-                                                      child: Text(
-                                                        '${item.name}${item.variant.isNotEmpty ? " (${item.variant})" : ""}',
-                                                        style: const TextStyle(fontSize: 14),
+                                                    if (item.note.isNotEmpty)
+                                                      Padding(
+                                                        padding: const EdgeInsets.only(top: 4),
+                                                        child: Align(
+                                                          alignment: Alignment.centerLeft,
+                                                          child: Text(
+                                                            item.note,
+                                                            style: const TextStyle(
+                                                              fontSize: 12,
+                                                              color: Colors.grey,
+                                                              fontStyle: FontStyle.italic,
+                                                            ),
+                                                          ),
+                                                        ),
                                                       ),
-                                                    ),
-                                                    Text(
-                                                      '₹${(item.price * item.qty).toStringAsFixed(0)}',
-                                                      style: const TextStyle(fontWeight: FontWeight.w500),
-                                                    ),
+                                                    if (canManageKotItems)
+                                                      Padding(
+                                                        padding: const EdgeInsets.only(top: 8),
+                                                        child: Row(
+                                                          mainAxisAlignment: MainAxisAlignment.end,
+                                                          children: [
+                                                            OutlinedButton.icon(
+                                                              onPressed: _isUpdatingKotHistory
+                                                                  ? null
+                                                                  : () => _updateKotHistoryItem(
+                                                                        kot: kot,
+                                                                        item: item,
+                                                                        removeWholeItem: false,
+                                                                      ),
+                                                              icon: const Icon(Icons.remove_circle_outline, size: 16),
+                                                              label: const Text('Deduct 1'),
+                                                              style: OutlinedButton.styleFrom(
+                                                                foregroundColor: Colors.orange,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(width: 8),
+                                                            OutlinedButton.icon(
+                                                              onPressed: _isUpdatingKotHistory
+                                                                  ? null
+                                                                  : () => _updateKotHistoryItem(
+                                                                        kot: kot,
+                                                                        item: item,
+                                                                        removeWholeItem: true,
+                                                                      ),
+                                                              icon: const Icon(Icons.delete_outline, size: 16),
+                                                              label: const Text('Remove'),
+                                                              style: OutlinedButton.styleFrom(
+                                                                foregroundColor: Colors.red,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
                                                   ],
                                                 ),
                                               );

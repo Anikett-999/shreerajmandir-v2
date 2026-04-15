@@ -41,7 +41,7 @@ class CategoryListView extends ConsumerWidget {
             maxCrossAxisExtent: 220,
             mainAxisSpacing: 16,
             crossAxisSpacing: 16,
-            childAspectRatio: 1.3,
+            childAspectRatio: 1.18,
           ),
           itemCount: filteredCategories.length,
           itemBuilder: (context, index) {
@@ -105,29 +105,32 @@ class _CategoryCard extends ConsumerWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      category.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                    Padding(
+                      padding: const EdgeInsets.only(right: 28),
+                      child: Text(
+                        category.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          height: 1.15,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: AppTheme.maroon.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         'View Items',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           color: AppTheme.maroon,
                           fontWeight: FontWeight.w600,
                         ),

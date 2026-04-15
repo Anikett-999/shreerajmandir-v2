@@ -197,6 +197,121 @@ class KOTService {
     });
   }
 
+  Future<void> deductKotItem({
+    required String kotId,
+    required String itemUniqueId,
+  }) async {
+    await _mutateKotItem(
+      kotId: kotId,
+      itemUniqueId: itemUniqueId,
+      action: _KotItemMutationAction.deduct,
+    );
+  }
+
+  Future<void> removeKotItem({
+    required String kotId,
+    required String itemUniqueId,
+  }) async {
+    await _mutateKotItem(
+      kotId: kotId,
+      itemUniqueId: itemUniqueId,
+      action: _KotItemMutationAction.remove,
+    );
+  }
+
+  Future<void> _mutateKotItem({
+    required String kotId,
+    required String itemUniqueId,
+    required _KotItemMutationAction action,
+  }) async {
+    final kotRef = _kotCollection.doc(kotId);
+
+    await _firestore.runTransaction((transaction) async {
+      final kotSnap = await transaction.get(kotRef);
+      if (!kotSnap.exists) {
+        throw Exception('KOT not found');
+      }
+
+      final kotData = kotSnap.data() as Map<String, dynamic>;
+      final orderId = kotData['orderId'] as String? ?? '';
+      final tableId = kotData['tableId'] as String? ?? '';
+      if (orderId.isEmpty || tableId.isEmpty) {
+        throw Exception('KOT is missing order or table linkage');
+      }
+
+      final tableRef = _tableCollection.doc(tableId);
+      final orderRef = _orderCollection.doc(orderId);
+
+      final tableSnap = await transaction.get(tableRef);
+      final orderSnap = await transaction.get(orderRef);
+      if (!tableSnap.exists || !orderSnap.exists) {
+        throw Exception('Linked order/table not found');
+      }
+
+      final tableData = tableSnap.data() as Map<String, dynamic>;
+      final items = List<Map<String, dynamic>>.from(
+        (kotData['items'] as List<dynamic>? ?? []).map((item) => Map<String, dynamic>.from(item as Map)),
+      );
+
+      final itemIndex = items.indexWhere((item) => item['uniqueId'] == itemUniqueId);
+      if (itemIndex == -1) {
+        throw Exception('KOT item not found');
+      }
+
+      final item = items[itemIndex];
+      final qty = (item['qty'] as num?)?.toInt() ?? 0;
+      final price = (item['price'] as num?)?.toDouble() ?? 0.0;
+      if (qty <= 0) {
+        throw Exception('Invalid KOT quantity');
+      }
+
+      final currentTableTotal = (tableData['totalAmount'] as num?)?.toDouble() ?? 0.0;
+      final currentItemCount = (tableData['itemCount'] as num?)?.toInt() ?? 0;
+      final currentKotCount = (tableData['kotCount'] as num?)?.toInt() ?? 0;
+      final currentUnprintedCount = (tableData['unprintedKotCount'] as num?)?.toInt() ?? 0;
+      final currentKotTotal = (kotData['totalAmount'] as num?)?.toDouble() ?? 0.0;
+      final isPrinted = kotData['isPrinted'] == true;
+
+      final tableUpdates = <String, dynamic>{
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (action == _KotItemMutationAction.deduct && qty > 1) {
+        items[itemIndex]['qty'] = qty - 1;
+        transaction.update(kotRef, {
+          'items': items,
+          'totalAmount': (currentKotTotal - price).clamp(0, double.infinity),
+        });
+        tableUpdates['totalAmount'] = (currentTableTotal - price).clamp(0, double.infinity);
+        transaction.update(tableRef, tableUpdates);
+        return;
+      }
+
+      final removedLineValue = price * qty;
+      items.removeAt(itemIndex);
+      tableUpdates['totalAmount'] = (currentTableTotal - removedLineValue).clamp(0, double.infinity);
+      tableUpdates['itemCount'] = currentItemCount > 0 ? currentItemCount - 1 : 0;
+
+      if (items.isEmpty) {
+        transaction.delete(kotRef);
+        transaction.update(orderRef, {
+          'kotIds': FieldValue.arrayRemove([kotId]),
+        });
+        tableUpdates['kotCount'] = currentKotCount > 0 ? currentKotCount - 1 : 0;
+        if (!isPrinted && currentUnprintedCount > 0) {
+          tableUpdates['unprintedKotCount'] = currentUnprintedCount - 1;
+        }
+      } else {
+        transaction.update(kotRef, {
+          'items': items,
+          'totalAmount': (currentKotTotal - removedLineValue).clamp(0, double.infinity),
+        });
+      }
+
+      transaction.update(tableRef, tableUpdates);
+    });
+  }
+
   // Mark KOT as printed and update table count
   Future<void> markAsPrinted(String kotId, String tableId) async {
     final kotRef = _kotCollection.doc(kotId);
@@ -221,4 +336,9 @@ class KOTService {
       }
     });
   }
+}
+
+enum _KotItemMutationAction {
+  deduct,
+  remove,
 }

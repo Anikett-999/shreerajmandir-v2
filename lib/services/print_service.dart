@@ -110,22 +110,81 @@ class PrintService {
     final String sep = '-' * maxChars;
     final String dsep = '=' * maxChars;
 
-    // Helper for Bill rows (Optimized for 80mm/48chars)
-    String formatBillRow(String name, String qty, String amt) {
-      if (maxChars == 48) {
-        // [Item: 32] + [Qty: 6] + [Amt: 10] = 48
-        // We use 30 for name to leave some padding
-        String s1 = name.padRight(32).substring(0, 32);
-        String s2 = qty.padLeft(6).substring(0, 6);
-        String s3 = amt.padLeft(10).substring(0, 10);
-        return s1 + s2 + s3;
-      } else {
-        // fallback for 58mm
-        String s1 = name.padRight(18).substring(0, 18);
-        String s2 = qty.padLeft(5).substring(0, 5);
-        String s3 = amt.padLeft(9).substring(0, 9);
-        return s1 + s2 + s3;
+    // Fixed-width row formatter keeps the three columns stable on thermal printers.
+    String fitCell(String text, int width, {bool alignRight = false, bool alignCenter = false}) {
+      final normalized = text.length > width ? text.substring(0, width) : text;
+      if (alignCenter) {
+        final totalPad = width - normalized.length;
+        final leftPad = totalPad ~/ 2;
+        final rightPad = totalPad - leftPad;
+        return (' ' * leftPad) + normalized + (' ' * rightPad);
       }
+      return alignRight ? normalized.padLeft(width) : normalized.padRight(width);
+    }
+
+    List<String> wrapText(String text, int width) {
+      if (text.isEmpty) return [''];
+
+      final words = text.split(RegExp(r'\s+'));
+      final lines = <String>[];
+      var current = '';
+
+      for (final word in words) {
+        if (word.length > width) {
+          if (current.isNotEmpty) {
+            lines.add(current);
+            current = '';
+          }
+          for (var i = 0; i < word.length; i += width) {
+            final end = (i + width < word.length) ? i + width : word.length;
+            lines.add(word.substring(i, end));
+          }
+          continue;
+        }
+
+        final candidate = current.isEmpty ? word : '$current $word';
+        if (candidate.length <= width) {
+          current = candidate;
+        } else {
+          lines.add(current);
+          current = word;
+        }
+      }
+
+      if (current.isNotEmpty) {
+        lines.add(current);
+      }
+
+      return lines;
+    }
+
+    List<String> formatBillRow(String name, String qty, String amt) {
+      final int itemWidth = maxChars == 48 ? 30 : 19;
+      final int qtyWidth = maxChars == 48 ? 5 : 4;
+      final int amountWidth = maxChars - itemWidth - qtyWidth;
+      final itemLines = wrapText(name, itemWidth);
+      final formatted = <String>[
+        fitCell(itemLines.first, itemWidth) +
+            fitCell(qty, qtyWidth, alignCenter: true) +
+            fitCell(amt, amountWidth, alignRight: true),
+      ];
+
+      for (final continuation in itemLines.skip(1)) {
+        formatted.add(
+          fitCell(continuation, itemWidth) +
+              fitCell('', qtyWidth, alignCenter: true) +
+              fitCell('', amountWidth, alignRight: true),
+        );
+      }
+
+      return formatted;
+    }
+
+    String formatDualLine(String left, String right) {
+      final maxLeft = (maxChars - right.length - 1).clamp(0, maxChars);
+      final clippedLeft = left.length > maxLeft ? left.substring(0, maxLeft) : left;
+      final spaces = maxChars - clippedLeft.length - right.length;
+      return clippedLeft + (' ' * spaces) + right;
     }
 
     // 1. Branding Header
@@ -140,30 +199,31 @@ class PrintService {
     bytes += generator.feed(1);
 
     // 2. Metadata (Professional Layout)
-    // Professional Row: Bill ID (Left) | Date (Center) | Time & by:User (Right)
     final dateStr = DateFormat('dd/MM/yy').format(bill.createdAt);
     final timeStr = DateFormat('hh:mm a').format(bill.createdAt);
-    final shortUser = bill.userName.length > 5 ? bill.userName.substring(0, 5) : bill.userName;
-    final timeAndBy = "$timeStr by:$shortUser";
-    
-    // Calculate spacing for 48 chars
-    // [ID: 15] [Date: 10] [Time/By: 23] = 48
-    String idPart = bill.billId.padRight(15).substring(0, 15);
-    String datePart = dateStr.padLeft(11).padRight(16); // Centerish
-    String rightPart = timeAndBy.padLeft(17);
-    
-    bytes += generator.text(idPart + datePart + rightPart);
-    bytes += generator.text('TABLE: ${bill.tableName.toUpperCase()}', styles: const PosStyles(bold: true, align: PosAlign.center));
+    final printableUserName = bill.userName.trim().isNotEmpty
+        ? bill.userName.trim()
+        : (bill.lastPrintedBy?.trim().isNotEmpty == true ? bill.lastPrintedBy!.trim() : 'Staff');
+    final shortUser =
+        printableUserName.length > 14 ? printableUserName.substring(0, 14) : printableUserName;
+
+    bytes += generator.text(formatDualLine('Bill: ${bill.billId}', dateStr));
+    bytes += generator.text(formatDualLine('Table: ${bill.tableName.toUpperCase()}', timeStr));
+    bytes += generator.text('By: $shortUser', styles: const PosStyles(bold: true));
     
     bytes += generator.text(sep);
-    bytes += generator.text(formatBillRow('ITEMS', 'QTY', 'AMOUNT'), styles: const PosStyles(bold: true));
+    bytes += generator.text(
+      formatBillRow('ITEMS', 'QTY', 'AMOUNT').first,
+      styles: const PosStyles(bold: true),
+    );
     bytes += generator.text(sep);
 
     // 3. Items List (with Category prefix)
     for (var item in bill.items) {
       String itemName = item.category.isNotEmpty ? "[${item.category.toUpperCase()}] ${item.name}" : item.name;
-      bytes += generator.text(formatBillRow(itemName, '${item.qty}', (item.price * item.qty).toStringAsFixed(0)));
-      // Sub-item spacing
+      for (final rowLine in formatBillRow(itemName, '${item.qty}', 'Rs ${ (item.price * item.qty).toStringAsFixed(0)}')) {
+        bytes += generator.text(rowLine);
+      }
       bytes += generator.text(sep);
     }
 
@@ -187,10 +247,10 @@ class PrintService {
 
     bytes += generator.text(sep);
     
-    // Total Amount (Double Height, Right Aligned)
-    final String totalStr = 'Rs.${bill.total.toStringAsFixed(2)}';
+    // Total Amount (Medium emphasis, Right aligned)
+    final String totalStr = 'Rs. ${bill.total.toStringAsFixed(2)}';
     bytes += generator.text('GRAND TOTAL'.padRight(maxChars - totalStr.length) + totalStr, 
-        styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+        styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size1));
     
     bytes += generator.text(dsep);
     
@@ -326,7 +386,7 @@ class PrintService {
 
   /// Generates a side-by-side footer graphic with a framed QR code and a warm message.
   Future<img.Image?> _generateFooterGraphic(BranchModel branch, int totalWidth) async {
-    const double height = 180.0;
+    const double height = 196.0;
     final recorder = ui.PictureRecorder();
     final canvas = ui.Canvas(recorder, ui.Rect.fromLTWH(0, 0, totalWidth.toDouble(), height));
     
@@ -335,18 +395,24 @@ class PrintService {
     canvas.drawRect(ui.Rect.fromLTWH(0, 0, totalWidth.toDouble(), height), paint);
 
     // 1. Left Side: Framed QR Code
-    final double qrBoxSize = 140.0;
-    final double qrX = 10.0;
-    final double qrY = (height - qrBoxSize) / 2;
+    const double qrLabelHeight = 24.0;
+    const double qrBoxSize = 144.0;
+    const double qrBorderPadding = 8.0;
+    final double qrX = 0.0;
+    final double qrY = (height - (qrLabelHeight + qrBoxSize)) / 2;
+    final double qrFrameHeight = qrLabelHeight + qrBoxSize;
 
     if (branch.reviewQrUrl.isNotEmpty) {
-      // Draw Thin Frame
+      // Draw bold frame
       final framePaint = ui.Paint()
         ..color = Colors.black
         ..style = ui.PaintingStyle.stroke
-        ..strokeWidth = 1.2;
+        ..strokeWidth = 2.4;
       canvas.drawRRect(
-        ui.RRect.fromRectAndRadius(ui.Rect.fromLTWH(qrX, qrY, qrBoxSize, qrBoxSize), const Radius.circular(8)), 
+        ui.RRect.fromRectAndRadius(
+          ui.Rect.fromLTWH(qrX, qrY, qrBoxSize, qrFrameHeight),
+          const Radius.circular(10),
+        ),
         framePaint
       );
 
@@ -355,10 +421,10 @@ class PrintService {
         textDirection: ui.TextDirection.ltr,
         text: const TextSpan(
           text: 'REVIEW US',
-          style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900),
         ),
       )..layout();
-      textPainter.paint(canvas, ui.Offset(qrX + (qrBoxSize - textPainter.width) / 2, qrY - 12));
+      textPainter.paint(canvas, ui.Offset(qrX + (qrBoxSize - textPainter.width) / 2, qrY + 2));
 
       // Draw QR Code
       final qrValidationResult = QrValidator.validate(
@@ -376,20 +442,25 @@ class PrintService {
           gapless: true,
         );
         
-        // Draw centered inside the box with some padding
-        const double padding = 15.0;
+        // Draw centered inside the box with tight padding so the block sits flush-left.
         canvas.save();
-        canvas.translate(qrX + padding, qrY + padding);
-        painter.paint(canvas, ui.Size(qrBoxSize - padding * 2, qrBoxSize - padding * 2));
+        canvas.translate(qrX + qrBorderPadding, qrY + qrLabelHeight + qrBorderPadding);
+        painter.paint(
+          canvas,
+          const ui.Size(qrBoxSize - qrBorderPadding * 2, qrBoxSize - qrBorderPadding * 2),
+        );
         canvas.restore();
       }
     }
 
     // 2. Right Side: Warm Message + Instagram
-    final double textLeft = qrBoxSize + 30.0;
-    final double textWidth = totalWidth - textLeft - 10.0;
+    final double textLeft = qrBoxSize + 16.0;
+    final double textWidth = totalWidth - textLeft;
 
-    const String warmMessage = "Crafted with love, served with a smile. Every scoop tells a story of pure cream and joy!";
+    const String warmMessage =
+        "Loved your visit?\n"
+        "Scan the QR to rate us and stay connected\n"
+        "for more sweet moments with Shree Rajmandir.";
     
     // Message text
     final messagePainter = TextPainter(
@@ -397,10 +468,15 @@ class PrintService {
       textAlign: ui.TextAlign.left,
       text: const TextSpan(
         text: warmMessage,
-        style: TextStyle(color: Colors.black, fontSize: 13, fontStyle: FontStyle.italic, fontWeight: FontWeight.w400),
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 17,
+          height: 1.25,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     )..layout(maxWidth: textWidth);
-    messagePainter.paint(canvas, ui.Offset(textLeft, qrY + 10));
+    messagePainter.paint(canvas, ui.Offset(textLeft, qrY + 8));
 
     // Instagram Handle
     if (branch.instagramId.isNotEmpty) {
@@ -408,12 +484,19 @@ class PrintService {
         textDirection: ui.TextDirection.ltr,
         text: TextSpan(
           children: [
-            const TextSpan(text: 'FOLLOW US ', style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold)),
-            TextSpan(text: '@${branch.instagramId}', style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w900)),
+            TextSpan(
+              text: '@${branch.instagramId}',
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ],
         ),
       )..layout(maxWidth: textWidth);
-      igPainter.paint(canvas, ui.Offset(textLeft, qrY + messagePainter.height + 25));
+      final double igTop = qrY + messagePainter.height + 14;
+      igPainter.paint(canvas, ui.Offset(textLeft, igTop));
     }
 
     // Convert to Image
