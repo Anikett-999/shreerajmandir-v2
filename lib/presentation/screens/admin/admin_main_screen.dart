@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/app_drawer.dart';
 import '../shared/home_screen.dart';
 
+import 'reports/reports_dashboard_screen.dart';
 import 'menu/menu_management_screen.dart';
 import 'tables/table_management_screen.dart';
 import '../../../core/app_theme.dart';
@@ -22,7 +23,7 @@ class _AdminMainScreenState extends ConsumerState<AdminMainScreen> {
 
   final List<Widget> _screens = [
     const OperationalHomeScreen(useShell: true),
-    const Center(child: Text('Reports - Coming Soon', style: TextStyle(fontSize: 18, color: Colors.grey))),
+    const ReportsDashboardScreen(),
     const MenuManagementScreen(useShell: true),
     const TableManagementScreen(useShell: true),
   ];
@@ -37,7 +38,9 @@ class _AdminMainScreenState extends ConsumerState<AdminMainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset('assets/branding/splash_logo.png', height: 35),
+        title: _selectedIndex == 1 
+          ? const Text('DATA ANALYTICS', style: TextStyle(color: AppTheme.maroon, fontWeight: FontWeight.bold, fontSize: 18))
+          : Image.asset('assets/branding/splash_logo.png', height: 35),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,

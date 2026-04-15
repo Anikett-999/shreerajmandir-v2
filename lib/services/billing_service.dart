@@ -2,14 +2,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../domain/models/bill_model.dart';
 import '../domain/models/kot_model.dart';
 import '../domain/models/table_model.dart';
+import 'analytics_service.dart';
 import 'package:uuid/uuid.dart';
+
 
 class BillingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String businessId = 'rajmandir_main';
   final String branchId;
+  final AnalyticsService _analyticsService = AnalyticsService();
 
   BillingService({required this.branchId});
+
 
   DocumentReference get _branchRef => _firestore
       .collection('businesses')
@@ -165,15 +169,20 @@ class BillingService {
 
       transaction.set(_billCollection.doc(billId), bill.toJson());
 
-      // 5. Update Table Status
       transaction.update(tableRef, {
         'status': 'billing',
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
+      // Update Analytics (Async Fire-and-Forget for performance)
+      _analyticsService.updateDailyAnalytics(bill, branchId).catchError((e) {
+        print('Error updating analytics: $e');
+      });
+
       return bill;
     });
   }
+
 
   // Finalize and Clear Table
   Future<void> finalizeAndClearTable(String tableId, String orderId) async {

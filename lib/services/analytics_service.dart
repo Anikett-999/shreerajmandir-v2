@@ -7,6 +7,9 @@ import '../domain/models/kot_model.dart';
 import '../domain/models/table_model.dart';
 import '../domain/models/dashboard_stats.dart';
 import '../domain/models/product_insights.dart';
+import '../domain/models/daily_analytics.dart';
+import 'package:intl/intl.dart';
+
 
 class AnalyticsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -27,8 +30,14 @@ class AnalyticsService {
       final data = doc.data() as Map<String, dynamic>?;
       if (data == null) return null;
 
+      final billId = data['billId'] ?? doc.id;
+      // FILTER: Only process new format bills (starting with INV-)
+      if (!billId.toString().startsWith('INV-')) {
+        return null; 
+      }
+
       // Inject IDs and provide structural fallbacks
-      data['billId'] = data['billId'] ?? doc.id;
+      data['billId'] = billId;
       data['orderId'] = data['orderId'] ?? 'N/A';
       data['tableId'] = data['tableId'] ?? 'N/A';
       data['tableName'] = data['tableName'] ?? 'N/A';
@@ -343,6 +352,196 @@ class AnalyticsService {
     });
   }
 
+  // --- Pre-Aggregation Analytics (The New Performance Strategy) ---
 
+  String _sanitizeKey(String key) {
+    return key.replaceAll('.', '_').replaceAll('/', '_').replaceAll('[', '_').replaceAll(']', '_').replaceAll('#', '_').replaceAll(r'$', '_');
+  }
+
+  Future<void> updateDailyAnalytics(BillModel bill, String branchId) async {
+    // FILTER: Only update analytics for new format bills
+    if (!bill.billId.startsWith('INV-')) return;
+
+    final dateKey = DateFormat('yyyy-MM-dd').format(bill.createdAt);
+    final hourKey = bill.createdAt.hour.toString();
+    final branchRef = _getBranchRef(branchId);
+    final dailyDoc = branchRef.collection('analytics_daily').doc(dateKey);
+
+    // Build the dot-notation map for update()
+    final Map<String, dynamic> updateData = {
+      'totalSales': FieldValue.increment(bill.total),
+      'totalBills': FieldValue.increment(1),
+      'totalDiscount': FieldValue.increment(bill.discountAmount),
+    };
+
+    // Add Payment Stats
+    for (final p in bill.payments) {
+      final mode = p.mode.toLowerCase();
+      updateData['paymentStats.$mode'] = FieldValue.increment(p.amount);
+    }
+
+    // Add Hourly Stats
+    updateData['hourlyStats.$hourKey.sales'] = FieldValue.increment(bill.total);
+    updateData['hourlyStats.$hourKey.orders'] = FieldValue.increment(1);
+
+    // Add Item Stats
+    for (final item in bill.items) {
+      final safeName = _sanitizeKey(item.name);
+      updateData['itemStats.$safeName.name'] = item.name;
+      updateData['itemStats.$safeName.qty'] = FieldValue.increment(item.qty);
+      updateData['itemStats.$safeName.revenue'] = FieldValue.increment(item.qty * item.price);
+    }
+
+    try {
+      // Use update() because it correctly interprets dot-notation keys for deep nesting
+      await dailyDoc.update(updateData);
+    } catch (e) {
+      // If document doesn't exist, we must use set() but with a NESTED structure
+      // set() does NOT interpret dot-notation keys as deep paths.
+      final Map<String, dynamic> nestedData = {
+        'totalSales': bill.total,
+        'totalBills': 1,
+        'totalDiscount': bill.discountAmount,
+        'paymentStats': {},
+        'hourlyStats': {},
+        'itemStats': {},
+      };
+
+      for (final p in bill.payments) {
+        nestedData['paymentStats'][p.mode.toLowerCase()] = p.amount;
+      }
+
+      nestedData['hourlyStats'][hourKey] = {
+        'sales': bill.total,
+        'orders': 1,
+      };
+
+      for (final item in bill.items) {
+        final safeName = _sanitizeKey(item.name);
+        nestedData['itemStats'][safeName] = {
+          'name': item.name,
+          'qty': item.qty,
+          'revenue': item.qty * item.price,
+        };
+      }
+
+      await dailyDoc.set(nestedData, SetOptions(merge: true));
+    }
+  }
+
+  Stream<DailyAnalytics> watchDailyAnalytics(String branchId, DateTime date) {
+    final dateKey = DateFormat('yyyy-MM-dd').format(date);
+    return _getBranchRef(branchId)
+        .collection('analytics_daily')
+        .doc(dateKey)
+        .snapshots()
+        .map((doc) {
+          if (!doc.exists) return const DailyAnalytics();
+          return DailyAnalytics.fromJson(doc.data() as Map<String, dynamic>);
+        });
+  }
+
+  Future<DailyAnalytics> getAnalyticsReport(String branchId, DateTime start, [DateTime? end]) async {
+    final branchRef = _getBranchRef(branchId);
+    
+    if (end == null || DateFormat('yyyy-MM-dd').format(start) == DateFormat('yyyy-MM-dd').format(end)) {
+      // Single day
+      final dateKey = DateFormat('yyyy-MM-dd').format(start);
+      final doc = await branchRef.collection('analytics_daily').doc(dateKey).get();
+      if (!doc.exists) return const DailyAnalytics();
+      return DailyAnalytics.fromJson(doc.data() as Map<String, dynamic>);
+    }
+
+    // Date range
+    final startDate = DateTime(start.year, start.month, start.day);
+    final endDate = DateTime(end.year, end.month, end.day);
+    
+    final startKey = DateFormat('yyyy-MM-dd').format(startDate);
+    final endKey = DateFormat('yyyy-MM-dd').format(endDate);
+
+    final query = await branchRef.collection('analytics_daily')
+        .where(FieldPath.documentId, isGreaterThanOrEqualTo: startKey)
+        .where(FieldPath.documentId, isLessThanOrEqualTo: endKey)
+        .get();
+
+    DailyAnalytics merged = const DailyAnalytics();
+    for (var doc in query.docs) {
+      final data = DailyAnalytics.fromJson(doc.data());
+      merged = DailyAnalytics.merge(merged, data);
+    }
+
+    return merged;
+  }
+
+  /// One-time utility to sync historical bills into pre-aggregated analytics
+  Future<void> syncHistoricalData(String branchId) async {
+    final branchRef = _getBranchRef(branchId);
+    final billsSnap = await branchRef.collection('bills').get();
+    
+    debugPrint('Syncing ${billsSnap.docs.length} historical bills...');
+
+    // Group bills by date to minimize Firestore writes
+    final Map<String, List<BillModel>> groupedBills = {};
+    for (var doc in billsSnap.docs) {
+      final bill = _safeParseBill(doc);
+      if (bill != null) {
+        final dateKey = DateFormat('yyyy-MM-dd').format(bill.createdAt);
+        groupedBills.putIfAbsent(dateKey, () => []).add(bill);
+      }
+    }
+
+    // For each date, rebuild the document locally then save
+    for (var entry in groupedBills.entries) {
+      final dateKey = entry.key;
+      final bills = entry.value;
+      
+      double totalSales = 0;
+      double totalDiscount = 0;
+      Map<String, double> paymentStats = {};
+      Map<String, HourStat> hourlyStats = {};
+      Map<String, ItemStat> itemStats = {};
+
+      for (var bill in bills) {
+        totalSales += bill.total;
+        totalDiscount += bill.discountAmount;
+
+        for (var p in bill.payments) {
+          final mode = p.mode.toLowerCase();
+          paymentStats[mode] = (paymentStats[mode] ?? 0.0) + p.amount;
+        }
+
+        final hourKey = bill.createdAt.hour.toString();
+        final hStat = hourlyStats[hourKey] ?? const HourStat();
+        hourlyStats[hourKey] = hStat.copyWith(
+          sales: hStat.sales + bill.total,
+          orders: hStat.orders + 1,
+        );
+
+        for (var item in bill.items) {
+          final safeName = _sanitizeKey(item.name);
+          final iStat = itemStats[safeName] ?? ItemStat(name: item.name);
+          itemStats[safeName] = iStat.copyWith(
+            qty: iStat.qty + item.qty,
+            revenue: iStat.revenue + (item.qty * item.price),
+          );
+        }
+      }
+
+      final analytics = DailyAnalytics(
+        totalSales: totalSales,
+        totalBills: bills.length,
+        totalDiscount: totalDiscount,
+        paymentStats: paymentStats,
+        hourlyStats: hourlyStats,
+        itemStats: itemStats,
+      );
+
+      await branchRef.collection('analytics_daily').doc(dateKey).set(analytics.toJson());
+      debugPrint('Synced $dateKey');
+    }
+    debugPrint('Historical sync completed.');
+  }
 }
+
+
 
