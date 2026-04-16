@@ -10,7 +10,8 @@ import '../../widgets/global/editorial_background.dart';
 
 final kotServiceProvider = Provider<KOTService>((ref) {
   final branchId = ref.watch(activeBranchIdProvider);
-  return KOTService(branchId: branchId ?? 'branch_001');
+  if (branchId == null) throw Exception('No active branch selected');
+  return KOTService(branchId: branchId);
 });
 
 final liveKOTsProvider = StreamProvider<List<KOTModel>>((ref) {

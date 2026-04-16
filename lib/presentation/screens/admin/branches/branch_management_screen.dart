@@ -296,7 +296,14 @@ class _BranchListItem extends ConsumerWidget {
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Branch Name', border: OutlineInputBorder()),
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'Branch Name', 
+                  helperText: 'Branch name cannot be changed once created',
+                  border: const OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(

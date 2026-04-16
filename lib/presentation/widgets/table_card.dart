@@ -190,7 +190,8 @@ class TableCard extends ConsumerWidget {
                 onTap: () async {
                   Navigator.pop(context);
                   final branchId = ref.read(activeBranchIdProvider);
-                  final service = TableService(branchId: branchId ?? 'branch_001');
+                  if (branchId == null) throw Exception('No active branch selected');
+                  final service = TableService(branchId: branchId);
                   await service.clearTable(table.tableId);
                 },
               ),

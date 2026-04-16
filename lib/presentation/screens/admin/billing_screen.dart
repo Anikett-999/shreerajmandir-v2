@@ -58,7 +58,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       return;
     }
     final branchId = ref.read(activeBranchIdProvider);
-    final billingService = BillingService(branchId: branchId ?? 'branch_001');
+    if (branchId == null) throw Exception('No active branch selected');
+    final billingService = BillingService(branchId: branchId);
     final preview = await billingService.previewBill(widget.table.activeOrderId!);
     if (mounted) {
       setState(() => _billPreviewData = preview);
@@ -125,15 +126,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   Future<void> _handleShareDigitalBill(BillModel bill) async {
     try {
       final branchAsync = ref.read(branchProvider);
-      final branch = branchAsync.value ?? BranchModel(
-        branchId: 'branch_001',
-        branchName: 'Rajmandir',
-        location: 'Pune',
-        address: 'Pune, Maharashtra',
-        phone: '',
-        instagramId: '',
-        reviewQrUrl: '',
-      );
+      final branch = branchAsync.value;
+      if (branch == null) throw Exception('Branch data not available for sharing');
       
       final pdfBytes = await PdfService.generateBillPdf(bill, branch);
       final fileName = 'Bill_${bill.tableName}_${DateFormat('ddMMyy_HHmm').format(bill.createdAt)}.pdf';
@@ -164,7 +158,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     setState(() => _isLoading = true);
     try {
       final branchId = ref.read(activeBranchIdProvider);
-      final billingService = BillingService(branchId: branchId ?? 'branch_001');
+      if (branchId == null) throw Exception('No active branch selected');
+      final billingService = BillingService(branchId: branchId);
       final config = ref.read(printerConfigProvider);
       final printService = ref.read(printServiceProvider);
       final authService = ref.read(authServiceProvider);
@@ -198,15 +193,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
       try {
         final branchAsync = ref.read(branchProvider);
-        final branch = branchAsync.value ?? BranchModel(
-          branchId: 'branch_001',
-          branchName: 'Rajmandir',
-          location: 'Pune',
-          address: 'Pune, Maharashtra',
-          phone: '',
-          instagramId: '',
-          reviewQrUrl: '',
-        );
+        final branch = branchAsync.value;
+        if (branch == null) throw Exception('Branch data not available for printing');
         
         final bytes = await printService.generateBillBytes(bill, branch, config.paperSize);
         printSuccess = await printService.printReceipt(bytes, config);

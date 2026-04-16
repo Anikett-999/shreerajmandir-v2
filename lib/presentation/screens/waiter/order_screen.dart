@@ -24,11 +24,13 @@ import 'package:uuid/uuid.dart';
 // --- State Providers ---
 final menuServiceProvider = Provider((ref) {
   final branchId = ref.watch(activeBranchIdProvider);
-  return MenuService(branchId: branchId ?? 'branch_001');
+  if (branchId == null) throw Exception('No active branch selected');
+  return MenuService(branchId: branchId);
 });
 final kotServiceProvider = Provider((ref) {
   final branchId = ref.watch(activeBranchIdProvider);
-  return KOTService(branchId: branchId ?? 'branch_001');
+  if (branchId == null) throw Exception('No active branch selected');
+  return KOTService(branchId: branchId);
 });
 
 final categoriesProvider = StreamProvider<List<Category>>((ref) {

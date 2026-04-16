@@ -6,7 +6,8 @@ import 'active_branch_provider.dart';
 // Provider for TableService
 final tableServiceProvider = Provider((ref) {
   final branchId = ref.watch(activeBranchIdProvider);
-  return TableService(branchId: branchId ?? 'branch_001');
+  if (branchId == null) throw Exception('No active branch selected');
+  return TableService(branchId: branchId);
 });
 
 // StreamProvider for Tables

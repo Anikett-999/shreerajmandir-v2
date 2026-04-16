@@ -6,23 +6,17 @@ import './active_branch_provider.dart';
 
 final branchProvider = StreamProvider<BranchModel>((ref) {
   final activeBranchId = ref.watch(activeBranchIdProvider);
-  
-  // Default to Main if nothing selected (should mostly be handled by UI/Gate)
-  final branchId = activeBranchId ?? 'branch_001';
-  final branchPath = 'businesses/rajmandir_main/branches/$branchId';
+  if (activeBranchId == null) {
+     throw Exception('No active branch selected');
+  }
+  final branchPath = 'businesses/rajmandir_main/branches/$activeBranchId';
   
   return FirebaseFirestore.instance
       .doc(branchPath)
       .snapshots()
       .map((snapshot) {
     if (!snapshot.exists) {
-      return const BranchModel(
-        branchId: 'branch_001',
-        branchName: 'Rajmandir - Main Branch',
-        location: 'Pune',
-        address: 'Pune, Maharashtra',
-        phone: '9999999999',
-      );
+      throw Exception('Branch data not found for ID: $activeBranchId');
     }
     return BranchModel.fromJson(snapshot.data()!);
   });

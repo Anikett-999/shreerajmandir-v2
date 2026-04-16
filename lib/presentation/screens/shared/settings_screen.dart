@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/branch_provider.dart';
+import '../../providers/active_branch_provider.dart';
 import '../../../core/app_theme.dart';
 import '../../../services/branch_service.dart';
 import '../../../domain/models/branch_model.dart';
@@ -80,17 +81,50 @@ class SettingsScreen extends ConsumerWidget {
               
               userAsync.when(
                 data: (user) {
-                  if (user?.isAdmin == true) {
-                    return _buildActionTile(
-                      context, 
-                      icon: Icons.edit_note_rounded, 
-                      title: 'Edit Branch Details', 
-                      subtitle: 'Update address, IG, and review links', 
-                      onTap: () => _showEditBranchDialog(context, ref, branch),
-                      isLast: true,
-                    );
-                  }
-                  return const SizedBox.shrink();
+                  if (user == null) return const SizedBox.shrink();
+                  
+                  final isAuthorized = user.isAdmin || user.isCashier;
+                  if (!isAuthorized) return const SizedBox.shrink();
+
+                  return Column(
+                    children: [
+                      _buildActionTile(
+                        context,
+                        icon: Icons.swap_horiz_rounded,
+                        title: 'Switch Branch',
+                        subtitle: 'Change which branch you are managing',
+                        onTap: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('SWITCH BRANCH?'),
+                              content: const Text('You will be returned to the selection screen.'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.maroon, foregroundColor: Colors.white),
+                                  onPressed: () => Navigator.pop(context, true), 
+                                  child: const Text('SWITCH'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            await ref.read(activeBranchProvider.notifier).clearBranch();
+                          }
+                        },
+                      ),
+                      if (user.isAdmin)
+                        _buildActionTile(
+                          context, 
+                          icon: Icons.edit_note_rounded, 
+                          title: 'Edit Branch Details', 
+                          subtitle: 'Update address, IG, and review links', 
+                          onTap: () => _showEditBranchDialog(context, ref, branch),
+                          isLast: true,
+                        ),
+                    ],
+                  );
                 },
                 loading: () => const SizedBox.shrink(),
                 error: (_, __) => const SizedBox.shrink(),
@@ -301,7 +335,14 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               TextField(
                 controller: nameController,
-                decoration: InputDecoration(labelText: 'Branch Name', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'Branch Name', 
+                  helperText: 'Branch name cannot be changed',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(

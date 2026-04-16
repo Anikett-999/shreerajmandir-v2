@@ -7,7 +7,8 @@ import 'active_branch_provider.dart';
 // Provider for MenuService
 final menuServiceProvider = Provider<MenuService>((ref) {
   final branchId = ref.watch(activeBranchIdProvider);
-  return MenuService(branchId: branchId ?? 'branch_001');
+  if (branchId == null) throw Exception('No active branch selected');
+  return MenuService(branchId: branchId);
 });
 
 // Stream of All Categories (sorted by order)
@@ -17,7 +18,11 @@ final categoriesStreamProvider = StreamProvider<List<Category>>((ref) {
 });
 
 // State for the currently selected category ID in the management UI
-final selectedCategoryIdProvider = StateProvider<String?>((ref) => null);
+final selectedCategoryIdProvider = StateProvider<String?>((ref) {
+  // Watch branchId so this provider resets to null when branch changes
+  ref.watch(activeBranchIdProvider);
+  return null;
+});
 
 // Stream of Items for the selected category
 final itemsByCategoryProvider = StreamProvider<List<Item>>((ref) {

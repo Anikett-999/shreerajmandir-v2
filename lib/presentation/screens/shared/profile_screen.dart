@@ -282,9 +282,11 @@ class ProfileScreen extends ConsumerWidget {
             )
           : null,
         onTap: canSwitch
-          ? () {
-              ref.read(activeBranchIdProvider.notifier).state = null;
-              Navigator.of(context).popUntil((route) => route.isFirst);
+          ? () async {
+              await ref.read(activeBranchProvider.notifier).clearBranch();
+              if (context.mounted) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              }
             }
           : null,
       ),

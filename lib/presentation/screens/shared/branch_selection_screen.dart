@@ -167,8 +167,9 @@ class _BranchCard extends ConsumerWidget {
         elevation: 2,
         shadowColor: Colors.black12,
         child: InkWell(
-          onTap: () {
-            ref.read(activeBranchIdProvider.notifier).state = branch.branchId;
+        onTap: () async {
+            // Use the notifier to save the selection persistently
+            await ref.read(activeBranchProvider.notifier).setBranch(branch.branchId);
           },
           borderRadius: BorderRadius.circular(16),
           child: Padding(
