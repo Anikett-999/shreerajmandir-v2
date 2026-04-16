@@ -117,7 +117,7 @@ class _CategoryCard extends ConsumerWidget {
                           color: Colors.black87,
                           height: 1.15,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -225,9 +225,11 @@ class CategoryListViewLogic {
         title: Text(category == null ? 'Add Category' : 'Edit Category'),
         content: TextField(
           controller: nameController,
+          maxLength: 25,
           decoration: InputDecoration(
             labelText: 'Category Name',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            counterText: "", // Hide counter if you want it cleaner, or keep it.
           ),
           autofocus: true,
         ),

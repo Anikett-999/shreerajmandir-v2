@@ -236,10 +236,12 @@ class ItemListViewLogic {
               children: [
                 TextField(
                   controller: nameController,
+                  maxLength: 25,
                   decoration: const InputDecoration(
                     labelText: 'Item Name',
                     border: OutlineInputBorder(),
                     floatingLabelStyle: TextStyle(color: AppTheme.maroon),
+                    counterText: "",
                   ),
                   autofocus: true,
                 ),

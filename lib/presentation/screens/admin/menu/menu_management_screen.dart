@@ -23,7 +23,7 @@ class _MenuManagementScreenState extends ConsumerState<MenuManagementScreen> {
         // Search Bar & Add Button Section
         Container(
           color: AppTheme.maroon,
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -31,43 +31,43 @@ class _MenuManagementScreenState extends ConsumerState<MenuManagementScreen> {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.14),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white.withOpacity(0.08)),
                   ),
                   child: TextField(
                     onChanged: (value) => setState(() => _searchQuery = value),
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Search categories...',
                       hintStyle: TextStyle(
                         color: Colors.white.withOpacity(0.72),
-                        fontSize: 16,
+                        fontSize: 15,
                       ),
                       prefixIcon: Padding(
                         padding: const EdgeInsets.only(left: 8, right: 2),
-                        child: Icon(Icons.search_rounded, color: Colors.white.withOpacity(0.82), size: 24),
+                        child: Icon(Icons.search_rounded, color: Colors.white.withOpacity(0.82), size: 20),
                       ),
-                      prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                      prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                       filled: true,
                       fillColor: Colors.transparent,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: Colors.white.withOpacity(0.16)),
                       ),
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
                   ),
                 ),
@@ -76,18 +76,18 @@ class _MenuManagementScreenState extends ConsumerState<MenuManagementScreen> {
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.16),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white.withOpacity(0.08)),
                 ),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(12),
                     onTap: () => CategoryListViewLogic.showCategoryDialog(context, ref),
                     child: const SizedBox(
-                      width: 72,
-                      height: 56,
-                      child: Icon(Icons.add_rounded, color: Colors.white, size: 30),
+                      width: 44,
+                      height: 44,
+                      child: Icon(Icons.add_rounded, color: Colors.white, size: 24),
                     ),
                   ),
                 ),

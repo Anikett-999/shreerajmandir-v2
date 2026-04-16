@@ -372,6 +372,7 @@ class AnalyticsService {
       'totalSales': FieldValue.increment(bill.total),
       'totalBills': FieldValue.increment(1),
       'totalDiscount': FieldValue.increment(bill.discountAmount),
+      'extraCharges': FieldValue.increment(bill.extraCharges),
     };
 
     // Add Payment Stats
@@ -384,13 +385,24 @@ class AnalyticsService {
     updateData['hourlyStats.$hourKey.sales'] = FieldValue.increment(bill.total);
     updateData['hourlyStats.$hourKey.orders'] = FieldValue.increment(1);
 
-    // Add Item Stats
+    // Add Item & Category Stats
     for (final item in bill.items) {
       final safeName = _sanitizeKey(item.name);
       updateData['itemStats.$safeName.name'] = item.name;
       updateData['itemStats.$safeName.qty'] = FieldValue.increment(item.qty);
       updateData['itemStats.$safeName.revenue'] = FieldValue.increment(item.qty * item.price);
+
+      final safeCategory = _sanitizeKey(item.category.isEmpty ? 'Uncategorized' : item.category);
+      updateData['categoryStats.$safeCategory'] = FieldValue.increment(item.qty * item.price);
     }
+
+    // Add User Stats
+    final safeUser = _sanitizeKey(bill.userName.isEmpty ? 'System' : bill.userName);
+    updateData['userStats.$safeUser'] = FieldValue.increment(bill.total);
+
+    // Add Delivery/Table Stats
+    final safeTable = _sanitizeKey(bill.tableName.isEmpty ? 'Unknown' : bill.tableName);
+    updateData['deliveryMethodsStats.$safeTable'] = FieldValue.increment(1);
 
     try {
       // Use update() because it correctly interprets dot-notation keys for deep nesting
@@ -402,6 +414,7 @@ class AnalyticsService {
         'totalSales': bill.total,
         'totalBills': 1,
         'totalDiscount': bill.discountAmount,
+        'extraCharges': bill.extraCharges,
         'paymentStats': {},
         'hourlyStats': {},
         'itemStats': {},
@@ -423,7 +436,16 @@ class AnalyticsService {
           'qty': item.qty,
           'revenue': item.qty * item.price,
         };
+        final safeCategory = _sanitizeKey(item.category.isEmpty ? 'Uncategorized' : item.category);
+        nestedData['categoryStats'] ??= {};
+        nestedData['categoryStats'][safeCategory] = (nestedData['categoryStats'][safeCategory] ?? 0.0) + (item.qty * item.price);
       }
+
+      final safeUser = _sanitizeKey(bill.userName.isEmpty ? 'System' : bill.userName);
+      nestedData['userStats'] = {safeUser: bill.total};
+
+      final safeTable = _sanitizeKey(bill.tableName.isEmpty ? 'Unknown' : bill.tableName);
+      nestedData['deliveryMethodsStats'] = {safeTable: 1.0};
 
       await dailyDoc.set(nestedData, SetOptions(merge: true));
     }
@@ -497,13 +519,19 @@ class AnalyticsService {
       
       double totalSales = 0;
       double totalDiscount = 0;
+      double extraCharges = 0;
       Map<String, double> paymentStats = {};
       Map<String, HourStat> hourlyStats = {};
       Map<String, ItemStat> itemStats = {};
 
+      Map<String, double> categoryStats = {};
+      Map<String, double> userStats = {};
+      Map<String, double> deliveryMethodsStats = {};
+
       for (var bill in bills) {
         totalSales += bill.total;
         totalDiscount += bill.discountAmount;
+        extraCharges += bill.extraCharges;
 
         for (var p in bill.payments) {
           final mode = p.mode.toLowerCase();
@@ -517,6 +545,12 @@ class AnalyticsService {
           orders: hStat.orders + 1,
         );
 
+        final safeUser = _sanitizeKey(bill.userName.isEmpty ? 'System' : bill.userName);
+        userStats[safeUser] = (userStats[safeUser] ?? 0.0) + bill.total;
+
+        final safeTable = _sanitizeKey(bill.tableName.isEmpty ? 'Unknown' : bill.tableName);
+        deliveryMethodsStats[safeTable] = (deliveryMethodsStats[safeTable] ?? 0.0) + 1;
+
         for (var item in bill.items) {
           final safeName = _sanitizeKey(item.name);
           final iStat = itemStats[safeName] ?? ItemStat(name: item.name);
@@ -524,6 +558,9 @@ class AnalyticsService {
             qty: iStat.qty + item.qty,
             revenue: iStat.revenue + (item.qty * item.price),
           );
+
+          final safeCategory = _sanitizeKey(item.category.isEmpty ? 'Uncategorized' : item.category);
+          categoryStats[safeCategory] = (categoryStats[safeCategory] ?? 0.0) + (item.qty * item.price);
         }
       }
 
@@ -531,9 +568,13 @@ class AnalyticsService {
         totalSales: totalSales,
         totalBills: bills.length,
         totalDiscount: totalDiscount,
+        extraCharges: extraCharges,
         paymentStats: paymentStats,
         hourlyStats: hourlyStats,
         itemStats: itemStats,
+        categoryStats: categoryStats,
+        userStats: userStats,
+        deliveryMethodsStats: deliveryMethodsStats,
       );
 
       await branchRef.collection('analytics_daily').doc(dateKey).set(analytics.toJson());

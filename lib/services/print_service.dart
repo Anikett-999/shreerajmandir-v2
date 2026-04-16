@@ -29,15 +29,15 @@ class PrintService {
     bytes += [0x1D, 0x4C, 0x00, 0x00]; // GS L 0 0 (Set left margin to 0)
 
     // Configuration for 80mm vs 58mm
-    final int maxChars = paperSize == PrinterPaperSize.mm80 ? 48 : 32;
+    // Modern 80mm printers usually support up to 64 chars (Font B)
+    final int maxChars = paperSize == PrinterPaperSize.mm80 ? 64 : 32;
     
     // Helper for manual rows (C1: Items, C2: Category, C3: Qty)
     String formatKOTRow(String c1, String c2, String c3) {
-      // Configuration for 48-character width (Standard 80mm)
-      // [Items: 28] + [Gap: 2] + [Cat: 12] + [Gap: 2] + [Qty: 4] = 48
-      int w1 = 28; 
-      int w2 = 12; 
-      int w3 = 4;  
+      // Relative width calculations: Item (60%), Category (25%), Qty (15%)
+      int w1 = (maxChars * 0.6).floor(); 
+      int w2 = (maxChars * 0.25).floor(); 
+      int w3 = maxChars - w1 - w2 - 4; // Subtracting 4 for gaps
       
       String s1 = c1.padRight(w1).substring(0, w1);
       String s2 = c2.padRight(w2).substring(0, w2);
@@ -106,7 +106,10 @@ class PrintService {
     bytes += [0x1B, 0x40]; 
     bytes += [0x1D, 0x4C, 0x00, 0x00]; 
 
-    final int maxChars = paperSize == PrinterPaperSize.mm80 ? 48 : 32;
+    // Configuration for 80mm vs 58mm
+    // Modern 80mm printers usually support up to 64 chars (Font B) or 48 (Font A)
+    // Using 64 to ensure full-width utilization on standard 80mm rolls.
+    final int maxChars = paperSize == PrinterPaperSize.mm80 ? 64 : 32;
     final String sep = '-' * maxChars;
     final String dsep = '=' * maxChars;
 
@@ -159,8 +162,9 @@ class PrintService {
     }
 
     List<String> formatBillRow(String name, String qty, String amt) {
-      final int itemWidth = maxChars == 48 ? 30 : 19;
-      final int qtyWidth = maxChars == 48 ? 5 : 4;
+      // Relative width calculations: Item (60%), Qty (10%), Amount (30%)
+      final int itemWidth = (maxChars * 0.6).floor();
+      final int qtyWidth = (maxChars * 0.1).floor();
       final int amountWidth = maxChars - itemWidth - qtyWidth;
       final itemLines = wrapText(name, itemWidth);
       final formatted = <String>[

@@ -24,9 +24,14 @@ mixin _$DailyAnalytics {
   double get totalSales => throw _privateConstructorUsedError;
   int get totalBills => throw _privateConstructorUsedError;
   double get totalDiscount => throw _privateConstructorUsedError;
+  double get extraCharges => throw _privateConstructorUsedError;
   Map<String, ItemStat> get itemStats => throw _privateConstructorUsedError;
   Map<String, HourStat> get hourlyStats => throw _privateConstructorUsedError;
   Map<String, double> get paymentStats => throw _privateConstructorUsedError;
+  Map<String, double> get categoryStats => throw _privateConstructorUsedError;
+  Map<String, double> get deliveryMethodsStats =>
+      throw _privateConstructorUsedError;
+  Map<String, double> get userStats => throw _privateConstructorUsedError;
 
   /// Serializes this DailyAnalytics to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -49,9 +54,13 @@ abstract class $DailyAnalyticsCopyWith<$Res> {
     double totalSales,
     int totalBills,
     double totalDiscount,
+    double extraCharges,
     Map<String, ItemStat> itemStats,
     Map<String, HourStat> hourlyStats,
     Map<String, double> paymentStats,
+    Map<String, double> categoryStats,
+    Map<String, double> deliveryMethodsStats,
+    Map<String, double> userStats,
   });
 }
 
@@ -73,9 +82,13 @@ class _$DailyAnalyticsCopyWithImpl<$Res, $Val extends DailyAnalytics>
     Object? totalSales = null,
     Object? totalBills = null,
     Object? totalDiscount = null,
+    Object? extraCharges = null,
     Object? itemStats = null,
     Object? hourlyStats = null,
     Object? paymentStats = null,
+    Object? categoryStats = null,
+    Object? deliveryMethodsStats = null,
+    Object? userStats = null,
   }) {
     return _then(
       _value.copyWith(
@@ -91,6 +104,10 @@ class _$DailyAnalyticsCopyWithImpl<$Res, $Val extends DailyAnalytics>
                 ? _value.totalDiscount
                 : totalDiscount // ignore: cast_nullable_to_non_nullable
                       as double,
+            extraCharges: null == extraCharges
+                ? _value.extraCharges
+                : extraCharges // ignore: cast_nullable_to_non_nullable
+                      as double,
             itemStats: null == itemStats
                 ? _value.itemStats
                 : itemStats // ignore: cast_nullable_to_non_nullable
@@ -102,6 +119,18 @@ class _$DailyAnalyticsCopyWithImpl<$Res, $Val extends DailyAnalytics>
             paymentStats: null == paymentStats
                 ? _value.paymentStats
                 : paymentStats // ignore: cast_nullable_to_non_nullable
+                      as Map<String, double>,
+            categoryStats: null == categoryStats
+                ? _value.categoryStats
+                : categoryStats // ignore: cast_nullable_to_non_nullable
+                      as Map<String, double>,
+            deliveryMethodsStats: null == deliveryMethodsStats
+                ? _value.deliveryMethodsStats
+                : deliveryMethodsStats // ignore: cast_nullable_to_non_nullable
+                      as Map<String, double>,
+            userStats: null == userStats
+                ? _value.userStats
+                : userStats // ignore: cast_nullable_to_non_nullable
                       as Map<String, double>,
           )
           as $Val,
@@ -122,9 +151,13 @@ abstract class _$$DailyAnalyticsImplCopyWith<$Res>
     double totalSales,
     int totalBills,
     double totalDiscount,
+    double extraCharges,
     Map<String, ItemStat> itemStats,
     Map<String, HourStat> hourlyStats,
     Map<String, double> paymentStats,
+    Map<String, double> categoryStats,
+    Map<String, double> deliveryMethodsStats,
+    Map<String, double> userStats,
   });
 }
 
@@ -145,9 +178,13 @@ class __$$DailyAnalyticsImplCopyWithImpl<$Res>
     Object? totalSales = null,
     Object? totalBills = null,
     Object? totalDiscount = null,
+    Object? extraCharges = null,
     Object? itemStats = null,
     Object? hourlyStats = null,
     Object? paymentStats = null,
+    Object? categoryStats = null,
+    Object? deliveryMethodsStats = null,
+    Object? userStats = null,
   }) {
     return _then(
       _$DailyAnalyticsImpl(
@@ -163,6 +200,10 @@ class __$$DailyAnalyticsImplCopyWithImpl<$Res>
             ? _value.totalDiscount
             : totalDiscount // ignore: cast_nullable_to_non_nullable
                   as double,
+        extraCharges: null == extraCharges
+            ? _value.extraCharges
+            : extraCharges // ignore: cast_nullable_to_non_nullable
+                  as double,
         itemStats: null == itemStats
             ? _value._itemStats
             : itemStats // ignore: cast_nullable_to_non_nullable
@@ -174,6 +215,18 @@ class __$$DailyAnalyticsImplCopyWithImpl<$Res>
         paymentStats: null == paymentStats
             ? _value._paymentStats
             : paymentStats // ignore: cast_nullable_to_non_nullable
+                  as Map<String, double>,
+        categoryStats: null == categoryStats
+            ? _value._categoryStats
+            : categoryStats // ignore: cast_nullable_to_non_nullable
+                  as Map<String, double>,
+        deliveryMethodsStats: null == deliveryMethodsStats
+            ? _value._deliveryMethodsStats
+            : deliveryMethodsStats // ignore: cast_nullable_to_non_nullable
+                  as Map<String, double>,
+        userStats: null == userStats
+            ? _value._userStats
+            : userStats // ignore: cast_nullable_to_non_nullable
                   as Map<String, double>,
       ),
     );
@@ -187,6 +240,7 @@ class _$DailyAnalyticsImpl implements _DailyAnalytics {
     this.totalSales = 0.0,
     this.totalBills = 0,
     this.totalDiscount = 0.0,
+    this.extraCharges = 0.0,
     final Map<String, ItemStat> itemStats = const {},
     final Map<String, HourStat> hourlyStats = const {},
     final Map<String, double> paymentStats = const {
@@ -194,9 +248,15 @@ class _$DailyAnalyticsImpl implements _DailyAnalytics {
       'upi': 0.0,
       'card': 0.0,
     },
+    final Map<String, double> categoryStats = const {},
+    final Map<String, double> deliveryMethodsStats = const {},
+    final Map<String, double> userStats = const {},
   }) : _itemStats = itemStats,
        _hourlyStats = hourlyStats,
-       _paymentStats = paymentStats;
+       _paymentStats = paymentStats,
+       _categoryStats = categoryStats,
+       _deliveryMethodsStats = deliveryMethodsStats,
+       _userStats = userStats;
 
   factory _$DailyAnalyticsImpl.fromJson(Map<String, dynamic> json) =>
       _$$DailyAnalyticsImplFromJson(json);
@@ -210,6 +270,9 @@ class _$DailyAnalyticsImpl implements _DailyAnalytics {
   @override
   @JsonKey()
   final double totalDiscount;
+  @override
+  @JsonKey()
+  final double extraCharges;
   final Map<String, ItemStat> _itemStats;
   @override
   @JsonKey()
@@ -237,9 +300,37 @@ class _$DailyAnalyticsImpl implements _DailyAnalytics {
     return EqualUnmodifiableMapView(_paymentStats);
   }
 
+  final Map<String, double> _categoryStats;
+  @override
+  @JsonKey()
+  Map<String, double> get categoryStats {
+    if (_categoryStats is EqualUnmodifiableMapView) return _categoryStats;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_categoryStats);
+  }
+
+  final Map<String, double> _deliveryMethodsStats;
+  @override
+  @JsonKey()
+  Map<String, double> get deliveryMethodsStats {
+    if (_deliveryMethodsStats is EqualUnmodifiableMapView)
+      return _deliveryMethodsStats;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_deliveryMethodsStats);
+  }
+
+  final Map<String, double> _userStats;
+  @override
+  @JsonKey()
+  Map<String, double> get userStats {
+    if (_userStats is EqualUnmodifiableMapView) return _userStats;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_userStats);
+  }
+
   @override
   String toString() {
-    return 'DailyAnalytics(totalSales: $totalSales, totalBills: $totalBills, totalDiscount: $totalDiscount, itemStats: $itemStats, hourlyStats: $hourlyStats, paymentStats: $paymentStats)';
+    return 'DailyAnalytics(totalSales: $totalSales, totalBills: $totalBills, totalDiscount: $totalDiscount, extraCharges: $extraCharges, itemStats: $itemStats, hourlyStats: $hourlyStats, paymentStats: $paymentStats, categoryStats: $categoryStats, deliveryMethodsStats: $deliveryMethodsStats, userStats: $userStats)';
   }
 
   @override
@@ -253,6 +344,8 @@ class _$DailyAnalyticsImpl implements _DailyAnalytics {
                 other.totalBills == totalBills) &&
             (identical(other.totalDiscount, totalDiscount) ||
                 other.totalDiscount == totalDiscount) &&
+            (identical(other.extraCharges, extraCharges) ||
+                other.extraCharges == extraCharges) &&
             const DeepCollectionEquality().equals(
               other._itemStats,
               _itemStats,
@@ -264,6 +357,18 @@ class _$DailyAnalyticsImpl implements _DailyAnalytics {
             const DeepCollectionEquality().equals(
               other._paymentStats,
               _paymentStats,
+            ) &&
+            const DeepCollectionEquality().equals(
+              other._categoryStats,
+              _categoryStats,
+            ) &&
+            const DeepCollectionEquality().equals(
+              other._deliveryMethodsStats,
+              _deliveryMethodsStats,
+            ) &&
+            const DeepCollectionEquality().equals(
+              other._userStats,
+              _userStats,
             ));
   }
 
@@ -274,9 +379,13 @@ class _$DailyAnalyticsImpl implements _DailyAnalytics {
     totalSales,
     totalBills,
     totalDiscount,
+    extraCharges,
     const DeepCollectionEquality().hash(_itemStats),
     const DeepCollectionEquality().hash(_hourlyStats),
     const DeepCollectionEquality().hash(_paymentStats),
+    const DeepCollectionEquality().hash(_categoryStats),
+    const DeepCollectionEquality().hash(_deliveryMethodsStats),
+    const DeepCollectionEquality().hash(_userStats),
   );
 
   /// Create a copy of DailyAnalytics
@@ -301,9 +410,13 @@ abstract class _DailyAnalytics implements DailyAnalytics {
     final double totalSales,
     final int totalBills,
     final double totalDiscount,
+    final double extraCharges,
     final Map<String, ItemStat> itemStats,
     final Map<String, HourStat> hourlyStats,
     final Map<String, double> paymentStats,
+    final Map<String, double> categoryStats,
+    final Map<String, double> deliveryMethodsStats,
+    final Map<String, double> userStats,
   }) = _$DailyAnalyticsImpl;
 
   factory _DailyAnalytics.fromJson(Map<String, dynamic> json) =
@@ -316,11 +429,19 @@ abstract class _DailyAnalytics implements DailyAnalytics {
   @override
   double get totalDiscount;
   @override
+  double get extraCharges;
+  @override
   Map<String, ItemStat> get itemStats;
   @override
   Map<String, HourStat> get hourlyStats;
   @override
   Map<String, double> get paymentStats;
+  @override
+  Map<String, double> get categoryStats;
+  @override
+  Map<String, double> get deliveryMethodsStats;
+  @override
+  Map<String, double> get userStats;
 
   /// Create a copy of DailyAnalytics
   /// with the given fields replaced by the non-null parameter values.

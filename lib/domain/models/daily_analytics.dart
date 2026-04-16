@@ -9,9 +9,13 @@ class DailyAnalytics with _$DailyAnalytics {
     @Default(0.0) double totalSales,
     @Default(0) int totalBills,
     @Default(0.0) double totalDiscount,
+    @Default(0.0) double extraCharges,
     @Default({}) Map<String, ItemStat> itemStats,
     @Default({}) Map<String, HourStat> hourlyStats,
     @Default({'cash': 0.0, 'upi': 0.0, 'card': 0.0}) Map<String, double> paymentStats,
+    @Default({}) Map<String, double> categoryStats,
+    @Default({}) Map<String, double> deliveryMethodsStats,
+    @Default({}) Map<String, double> userStats,
   }) = _DailyAnalytics;
 
   factory DailyAnalytics.fromJson(Map<String, dynamic> json) => _$DailyAnalyticsFromJson(json);
@@ -47,19 +51,26 @@ class DailyAnalytics with _$DailyAnalytics {
       }
     });
 
-    // Merge Payment Stats
-    final mergedPaymentStats = Map<String, double>.from(a.paymentStats);
-    b.paymentStats.forEach((mode, amount) {
-      mergedPaymentStats[mode] = (mergedPaymentStats[mode] ?? 0.0) + amount;
-    });
+    // Merge Map<String, double> stats helper
+    Map<String, double> mergeDoubleMaps(Map<String, double> mapA, Map<String, double> mapB) {
+      final merged = Map<String, double>.from(mapA);
+      mapB.forEach((key, val) {
+        merged[key] = (merged[key] ?? 0.0) + val;
+      });
+      return merged;
+    }
 
     return DailyAnalytics(
       totalSales: a.totalSales + b.totalSales,
       totalBills: a.totalBills + b.totalBills,
       totalDiscount: a.totalDiscount + b.totalDiscount,
+      extraCharges: a.extraCharges + b.extraCharges,
       itemStats: mergedItemStats,
       hourlyStats: mergedHourlyStats,
-      paymentStats: mergedPaymentStats,
+      paymentStats: mergeDoubleMaps(a.paymentStats, b.paymentStats),
+      categoryStats: mergeDoubleMaps(a.categoryStats, b.categoryStats),
+      deliveryMethodsStats: mergeDoubleMaps(a.deliveryMethodsStats, b.deliveryMethodsStats),
+      userStats: mergeDoubleMaps(a.userStats, b.userStats),
     );
   }
 }

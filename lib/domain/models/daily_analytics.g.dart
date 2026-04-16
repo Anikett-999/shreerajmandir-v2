@@ -11,6 +11,7 @@ _$DailyAnalyticsImpl _$$DailyAnalyticsImplFromJson(Map<String, dynamic> json) =>
       totalSales: (json['totalSales'] as num?)?.toDouble() ?? 0.0,
       totalBills: (json['totalBills'] as num?)?.toInt() ?? 0,
       totalDiscount: (json['totalDiscount'] as num?)?.toDouble() ?? 0.0,
+      extraCharges: (json['extraCharges'] as num?)?.toDouble() ?? 0.0,
       itemStats:
           (json['itemStats'] as Map<String, dynamic>?)?.map(
             (k, e) => MapEntry(k, ItemStat.fromJson(e as Map<String, dynamic>)),
@@ -26,6 +27,21 @@ _$DailyAnalyticsImpl _$$DailyAnalyticsImplFromJson(Map<String, dynamic> json) =>
             (k, e) => MapEntry(k, (e as num).toDouble()),
           ) ??
           const {'cash': 0.0, 'upi': 0.0, 'card': 0.0},
+      categoryStats:
+          (json['categoryStats'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, (e as num).toDouble()),
+          ) ??
+          const {},
+      deliveryMethodsStats:
+          (json['deliveryMethodsStats'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, (e as num).toDouble()),
+          ) ??
+          const {},
+      userStats:
+          (json['userStats'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, (e as num).toDouble()),
+          ) ??
+          const {},
     );
 
 Map<String, dynamic> _$$DailyAnalyticsImplToJson(
@@ -34,9 +50,13 @@ Map<String, dynamic> _$$DailyAnalyticsImplToJson(
   'totalSales': instance.totalSales,
   'totalBills': instance.totalBills,
   'totalDiscount': instance.totalDiscount,
+  'extraCharges': instance.extraCharges,
   'itemStats': instance.itemStats.map((k, e) => MapEntry(k, e.toJson())),
   'hourlyStats': instance.hourlyStats.map((k, e) => MapEntry(k, e.toJson())),
   'paymentStats': instance.paymentStats,
+  'categoryStats': instance.categoryStats,
+  'deliveryMethodsStats': instance.deliveryMethodsStats,
+  'userStats': instance.userStats,
 };
 
 _$ItemStatImpl _$$ItemStatImplFromJson(Map<String, dynamic> json) =>
