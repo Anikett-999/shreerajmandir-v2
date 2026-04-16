@@ -58,7 +58,6 @@ class AnalyticsService {
 
       return BillModel.fromJson(data);
     } catch (e) {
-      debugPrint('Error parsing Bill ${doc.id}: $e');
       return null;
     }
   }
@@ -77,7 +76,6 @@ class AnalyticsService {
       
       return TableModel.fromJson(data);
     } catch (e) {
-      print('Error parsing Table ${doc.id}: $e');
       return null;
     }
   }
@@ -92,7 +90,6 @@ class AnalyticsService {
       
       return KOTModel.fromJson(data);
     } catch (e) {
-      print('Error parsing KOT ${doc.id}: $e');
       return null;
     }
   }
@@ -499,8 +496,6 @@ class AnalyticsService {
   Future<void> syncHistoricalData(String branchId) async {
     final branchRef = _getBranchRef(branchId);
     final billsSnap = await branchRef.collection('bills').get();
-    
-    debugPrint('Syncing ${billsSnap.docs.length} historical bills...');
 
     // Group bills by date to minimize Firestore writes
     final Map<String, List<BillModel>> groupedBills = {};
@@ -578,9 +573,7 @@ class AnalyticsService {
       );
 
       await branchRef.collection('analytics_daily').doc(dateKey).set(analytics.toJson());
-      debugPrint('Synced $dateKey');
     }
-    debugPrint('Historical sync completed.');
   }
 }
 

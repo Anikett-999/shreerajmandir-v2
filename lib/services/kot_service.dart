@@ -146,7 +146,7 @@ class KOTService {
         try {
           kots.add(KOTModel.fromJson(doc.data() as Map<String, dynamic>));
         } catch (e) {
-          print('❌ Skipping corrupted KOT ${doc.id}: $e');
+          // Skipping corrupted KOT
         }
       }
       // Client-side sort by createdAt descending
@@ -167,7 +167,7 @@ class KOTService {
         try {
           kots.add(KOTModel.fromJson(doc.data() as Map<String, dynamic>));
         } catch (e) {
-          print('❌ Skipping corrupted KOT ${doc.id}: $e');
+          // Skipping corrupted KOT
         }
       }
       return kots;

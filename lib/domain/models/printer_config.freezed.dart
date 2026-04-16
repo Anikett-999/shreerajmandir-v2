@@ -30,6 +30,7 @@ mixin _$PrinterConfig {
   String get name => throw _privateConstructorUsedError;
   bool get autoPrintKOT => throw _privateConstructorUsedError;
   bool get autoPrintBill => throw _privateConstructorUsedError;
+  bool get autoConnect => throw _privateConstructorUsedError;
   bool get isBle => throw _privateConstructorUsedError;
 
   /// Serializes this PrinterConfig to a JSON map.
@@ -57,6 +58,7 @@ abstract class $PrinterConfigCopyWith<$Res> {
     String name,
     bool autoPrintKOT,
     bool autoPrintBill,
+    bool autoConnect,
     bool isBle,
   });
 }
@@ -83,6 +85,7 @@ class _$PrinterConfigCopyWithImpl<$Res, $Val extends PrinterConfig>
     Object? name = null,
     Object? autoPrintKOT = null,
     Object? autoPrintBill = null,
+    Object? autoConnect = null,
     Object? isBle = null,
   }) {
     return _then(
@@ -115,6 +118,10 @@ class _$PrinterConfigCopyWithImpl<$Res, $Val extends PrinterConfig>
                 ? _value.autoPrintBill
                 : autoPrintBill // ignore: cast_nullable_to_non_nullable
                       as bool,
+            autoConnect: null == autoConnect
+                ? _value.autoConnect
+                : autoConnect // ignore: cast_nullable_to_non_nullable
+                      as bool,
             isBle: null == isBle
                 ? _value.isBle
                 : isBle // ignore: cast_nullable_to_non_nullable
@@ -142,6 +149,7 @@ abstract class _$$PrinterConfigImplCopyWith<$Res>
     String name,
     bool autoPrintKOT,
     bool autoPrintBill,
+    bool autoConnect,
     bool isBle,
   });
 }
@@ -167,6 +175,7 @@ class __$$PrinterConfigImplCopyWithImpl<$Res>
     Object? name = null,
     Object? autoPrintKOT = null,
     Object? autoPrintBill = null,
+    Object? autoConnect = null,
     Object? isBle = null,
   }) {
     return _then(
@@ -199,6 +208,10 @@ class __$$PrinterConfigImplCopyWithImpl<$Res>
             ? _value.autoPrintBill
             : autoPrintBill // ignore: cast_nullable_to_non_nullable
                   as bool,
+        autoConnect: null == autoConnect
+            ? _value.autoConnect
+            : autoConnect // ignore: cast_nullable_to_non_nullable
+                  as bool,
         isBle: null == isBle
             ? _value.isBle
             : isBle // ignore: cast_nullable_to_non_nullable
@@ -219,6 +232,7 @@ class _$PrinterConfigImpl implements _PrinterConfig {
     this.name = 'Default Printer',
     this.autoPrintKOT = true,
     this.autoPrintBill = true,
+    this.autoConnect = false,
     this.isBle = false,
   });
 
@@ -248,11 +262,14 @@ class _$PrinterConfigImpl implements _PrinterConfig {
   final bool autoPrintBill;
   @override
   @JsonKey()
+  final bool autoConnect;
+  @override
+  @JsonKey()
   final bool isBle;
 
   @override
   String toString() {
-    return 'PrinterConfig(connectionType: $connectionType, paperSize: $paperSize, address: $address, port: $port, name: $name, autoPrintKOT: $autoPrintKOT, autoPrintBill: $autoPrintBill, isBle: $isBle)';
+    return 'PrinterConfig(connectionType: $connectionType, paperSize: $paperSize, address: $address, port: $port, name: $name, autoPrintKOT: $autoPrintKOT, autoPrintBill: $autoPrintBill, autoConnect: $autoConnect, isBle: $isBle)';
   }
 
   @override
@@ -271,6 +288,8 @@ class _$PrinterConfigImpl implements _PrinterConfig {
                 other.autoPrintKOT == autoPrintKOT) &&
             (identical(other.autoPrintBill, autoPrintBill) ||
                 other.autoPrintBill == autoPrintBill) &&
+            (identical(other.autoConnect, autoConnect) ||
+                other.autoConnect == autoConnect) &&
             (identical(other.isBle, isBle) || other.isBle == isBle));
   }
 
@@ -285,6 +304,7 @@ class _$PrinterConfigImpl implements _PrinterConfig {
     name,
     autoPrintKOT,
     autoPrintBill,
+    autoConnect,
     isBle,
   );
 
@@ -311,6 +331,7 @@ abstract class _PrinterConfig implements PrinterConfig {
     final String name,
     final bool autoPrintKOT,
     final bool autoPrintBill,
+    final bool autoConnect,
     final bool isBle,
   }) = _$PrinterConfigImpl;
 
@@ -331,6 +352,8 @@ abstract class _PrinterConfig implements PrinterConfig {
   bool get autoPrintKOT;
   @override
   bool get autoPrintBill;
+  @override
+  bool get autoConnect;
   @override
   bool get isBle;
 

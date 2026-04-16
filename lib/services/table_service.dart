@@ -28,7 +28,6 @@ class TableService {
           }
           return TableModel.fromJson(data);
         } catch (e) {
-          debugPrint('Error parsing TableModel for doc ${doc.id}: $e');
           return null;
         }
       }).whereType<TableModel>().toList();

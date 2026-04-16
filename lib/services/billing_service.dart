@@ -175,9 +175,7 @@ class BillingService {
       });
 
       // Update Analytics (Async Fire-and-Forget for performance)
-      _analyticsService.updateDailyAnalytics(bill, branchId).catchError((e) {
-        print('Error updating analytics: $e');
-      });
+      _analyticsService.updateDailyAnalytics(bill, branchId);
 
       return bill;
     });
