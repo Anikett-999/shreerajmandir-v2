@@ -258,19 +258,12 @@ class PdfService {
     final courierBold = pw.Font.courierBold();
     final timestampStr = DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now());
 
-    // Calculate dynamic height based on row counts to prevent excessive paper feed
-    int totalRows = 25; // Base branding and financial metrics
-    totalRows += analytics.paymentStats.length + 2;
-    totalRows += analytics.categoryStats.length + 2;
-    
-    // 3.5mm per row + margins/headers
-    double dynamicHeight = (totalRows * 3.5) + 50;
 
     pdf.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat(
+        pageFormat: const PdfPageFormat(
           72 * PdfPageFormat.mm,
-          dynamicHeight * PdfPageFormat.mm,
+          double.infinity,
           marginLeft: 2 * PdfPageFormat.mm,
           marginRight: 2 * PdfPageFormat.mm,
           marginTop: 2 * PdfPageFormat.mm,
@@ -395,26 +388,12 @@ class PdfService {
     final courierBold = pw.Font.courierBold();
     final timestampStr = DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now());
 
-    // Calculate dynamic height based on row counts to prevent excessive paper feed
-    int totalRows = 30; // Base branding/header
-    totalRows += 8; // Financial performance block
-    totalRows += analytics.paymentStats.length + 2;
-    if (analytics.deliveryMethodsStats.isNotEmpty) {
-      totalRows += analytics.deliveryMethodsStats.length + 3;
-    }
-    if (analytics.userStats.isNotEmpty) {
-      totalRows += (analytics.userStats.length > 10 ? 10 : analytics.userStats.length) + 3;
-    }
-    totalRows += (analytics.categoryStats.length > 15 ? 15 : analytics.categoryStats.length) + 3;
-    
-    // 3.5mm per row + headers/margins
-    double dynamicHeight = (totalRows * 3.5) + 60;
 
     pdf.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat(
+        pageFormat: const PdfPageFormat(
           72 * PdfPageFormat.mm,
-          dynamicHeight * PdfPageFormat.mm,
+          double.infinity,
           marginLeft: 2 * PdfPageFormat.mm,
           marginRight: 2 * PdfPageFormat.mm,
           marginTop: 2 * PdfPageFormat.mm,

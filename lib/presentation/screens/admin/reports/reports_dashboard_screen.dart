@@ -14,6 +14,8 @@ import '../../../../services/analytics_service.dart';
 import '../../../providers/analytics_provider.dart';
 import '../../../providers/active_branch_provider.dart';
 import '../../../providers/branch_provider.dart';
+import '../../../providers/printer_provider.dart';
+import '../../../../services/print_service.dart';
 import '../../../widgets/global/editorial_background.dart';
 
 class ReportsDashboardScreen extends ConsumerStatefulWidget {
@@ -296,12 +298,55 @@ class _ReportsDashboardScreenState extends ConsumerState<ReportsDashboardScreen>
           ),
           const SizedBox(width: 8),
           _buildActionButton(
-            icon: Icons.ios_share_rounded,
+            icon: Icons.local_printshop_rounded,
             isPrimary: true,
             onTap: (analyticsAsync.hasValue && branchAsync.hasValue) 
               ? () async {
                   try {
+                    final config = ref.read(printerConfigProvider);
+                    final printService = ref.read(printServiceProvider);
+                    
                     _showGlassySnackBar('Generating Business Report...');
+                    final pdfBytes = await PdfService.generateDailyAnalyticsPdf(
+                      analytics: analyticsAsync.value!,
+                      branch: branchAsync.value!,
+                      dateRangeStr: dateStr,
+                    );
+                    
+                    if (config.address != null && config.address!.isNotEmpty) {
+                      _showGlassySnackBar('Printing to ${config.name}...');
+                      final success = await printService.printPdfAsImage(pdfBytes, config);
+                      if (success) {
+                        _showGlassySnackBar('Report printed & cut successfully!');
+                      } else {
+                        _showGlassySnackBar('Thermal print failed. Opening preview...', isError: true);
+                        await Printing.layoutPdf(
+                          onLayout: (format) => pdfBytes, 
+                          name: 'Report_$dateStr',
+                          format: PdfPageFormat(72 * PdfPageFormat.mm, double.infinity),
+                        );
+                      }
+                    } else {
+                      _showGlassySnackBar('No printer configured. Opening preview...');
+                      await Printing.layoutPdf(
+                        onLayout: (format) => pdfBytes, 
+                        name: 'Report_$dateStr',
+                        format: PdfPageFormat(72 * PdfPageFormat.mm, double.infinity),
+                      );
+                    }
+                  } catch (e) {
+                    _showGlassySnackBar('Print failed: $e', isError: true);
+                  }
+                }
+              : null,
+          ),
+          const SizedBox(width: 8),
+          _buildActionButton(
+            icon: Icons.ios_share_rounded,
+            onTap: (analyticsAsync.hasValue && branchAsync.hasValue) 
+              ? () async {
+                  try {
+                    _showGlassySnackBar('Opening PDF Preview...');
                     final pdfBytes = await PdfService.generateDailyAnalyticsPdf(
                       analytics: analyticsAsync.value!,
                       branch: branchAsync.value!,

@@ -13,6 +13,7 @@ import '../domain/models/branch_model.dart';
 import '../domain/models/printer_config.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
+import 'package:printing/printing.dart';
 
 class PrintService {
   // Generate KOT ESC/POS commands
@@ -513,5 +514,45 @@ class PrintService {
     // Decode into 'image' package format for esc_pos_utils
     final decoded = img.decodePng(byteData.buffer.asUint8List());
     return decoded;
+  }
+
+  /// Prints a PDF document to a thermal printer by rasterizing it into images and adding a cut command.
+  Future<bool> printPdfAsImage(Uint8List pdfBytes, PrinterConfig config) async {
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(
+      config.paperSize == PrinterPaperSize.mm80 ? PaperSize.mm80 : PaperSize.mm58,
+      profile
+    );
+    List<int> bytes = [];
+    
+    // Initialize
+    bytes += [0x1B, 0x40]; 
+    bytes += [0x1D, 0x4C, 0x00, 0x00];
+
+    // Configuration for 80mm vs 58mm
+    final int imageWidth = config.paperSize == PrinterPaperSize.mm80 ? 512 : 384;
+
+    try {
+      // Use printing package to rasterize PDF
+      await for (var page in Printing.raster(pdfBytes, dpi: 200)) {
+        final pngBytes = await page.toPng();
+        final decodedImage = img.decodePng(pngBytes);
+        if (decodedImage != null) {
+          // Resize image to fit paper width if necessary
+          final resizedImage = decodedImage.width != imageWidth 
+              ? img.copyResize(decodedImage, width: imageWidth)
+              : decodedImage;
+          bytes += generator.image(resizedImage);
+        }
+      }
+      
+      bytes += generator.feed(2);
+      bytes += generator.cut();
+      
+      return await printReceipt(bytes, config);
+    } catch (e) {
+      debugPrint('Error printing PDF as image: $e');
+      return false;
+    }
   }
 }
