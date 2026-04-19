@@ -271,7 +271,6 @@ class PrintService {
            bytes += generator.text('Visit Again!', styles: const PosStyles(align: PosAlign.center));
         }
       } catch (e) {
-        print("Error generating footer image: $e");
         bytes += generator.text('Visit Again!', styles: const PosStyles(align: PosAlign.center));
       }
     } else {
@@ -328,45 +327,35 @@ class PrintService {
     }
 
     try {
-      print(' Connecting to ${config.connectionType.name} at ${config.address}...');
-      
       // Use a timeout for connection
       final connected = await PrinterManager.instance.connect(
         type: type,
         model: model,
       ).timeout(const Duration(seconds: 5), onTimeout: () {
-        print(' Connection Timeout');
         return false;
       });
 
       if (!connected) {
-        print(' Failed to connect to printer');
         return false;
       }
 
       // Give Bluetooth printers a moment to initialize after connection
       if (type == PrinterType.bluetooth) {
-        print(' Bluetooth connected, waiting for initialization...');
         await Future.delayed(const Duration(milliseconds: 1000));
       }
 
-      print(' Sending ${bytes.length} bytes to printer...');
       final sent = await PrinterManager.instance.send(type: type, bytes: bytes);
       
       if (!sent) {
-        print(' Failed to send bytes to printer');
         return false;
       }
       
       // Short delay for some printers to finish processing before disconnect
       await Future.delayed(const Duration(milliseconds: 500));
       
-      print('🔌 Disconnecting...');
       await PrinterManager.instance.disconnect(type: type);
-      print(' Print Job Completed.');
       return true;
     } catch (e) {
-      print(' Native Print Error: $e');
       return false;
     }
   }
@@ -384,7 +373,6 @@ class PrintService {
         throw Exception('Could not launch RawBT app. Is it installed?');
       }
     } catch (e) {
-      print(' Print Error: $e');
       rethrow;
     }
   }
@@ -551,7 +539,6 @@ class PrintService {
       
       return await printReceipt(bytes, config);
     } catch (e) {
-      debugPrint('Error printing PDF as image: $e');
       return false;
     }
   }
