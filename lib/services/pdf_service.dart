@@ -482,9 +482,40 @@ class PdfService {
             ...(analytics.categoryStats.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).take(15).map((e) => 
                _buildReceiptRow(e.key.toUpperCase(), 'Rs. ${e.value.toStringAsFixed(0)}', font: courier)
             ),
-            pw.Text(dsep, style: baseStyle),
+            pw.Text(sep, style: baseStyle),
             pw.SizedBox(height: 10),
 
+            // Item Analysis - Most Sold
+            if (analytics.itemStats.isNotEmpty) ...[
+              pw.Text('MOST SOLD ITEMS', style: boldStyle),
+              pw.Text(sep, style: baseStyle),
+              _buildItemHeader(boldStyle),
+              pw.Text(sep, style: baseStyle),
+              ...(analytics.itemStats.values.toList()
+                ..sort((a, b) {
+                  int cmp = b.qty.compareTo(a.qty);
+                  if (cmp == 0) return b.revenue.compareTo(a.revenue);
+                  return cmp;
+                })).take(10).map((item) => _buildItemRow(item, courier)),
+              pw.Text(sep, style: baseStyle),
+              pw.SizedBox(height: 10),
+
+              // Item Analysis - Least Performed
+              pw.Text('LEAST PERFORMED ITEMS', style: boldStyle),
+              pw.Text(sep, style: baseStyle),
+              _buildItemHeader(boldStyle),
+              pw.Text(sep, style: baseStyle),
+              ...(analytics.itemStats.values.toList()
+                ..sort((a, b) {
+                  int cmp = a.qty.compareTo(b.qty);
+                  if (cmp == 0) return a.revenue.compareTo(b.revenue);
+                  return cmp;
+                })).take(10).map((item) => _buildItemRow(item, courier)),
+              pw.Text(sep, style: baseStyle),
+              pw.SizedBox(height: 10),
+            ],
+
+            pw.Text(dsep, style: baseStyle),
             pw.Center(
                child: pw.Text('Generation Date: $timestampStr', style: pw.TextStyle(font: courier, fontSize: 7)),
             ),
@@ -498,6 +529,33 @@ class PdfService {
     );
 
     return pdf.save();
+  }
+
+  static pw.Widget _buildItemHeader(pw.TextStyle style) {
+    return pw.Row(
+      children: [
+        pw.Expanded(flex: 3, child: pw.Text('ITEM NAME', style: style)),
+        pw.Expanded(flex: 1, child: pw.Text('QTY', style: style, textAlign: pw.TextAlign.center)),
+        pw.Expanded(flex: 2, child: pw.Text('AMOUNT', style: style, textAlign: pw.TextAlign.right)),
+      ],
+    );
+  }
+
+  static pw.Widget _buildItemRow(ItemStat item, pw.Font font) {
+    final style = pw.TextStyle(font: font, fontSize: 6.5);
+    // Truncate name if it's too long for the column
+    final displayName = item.name.length > 20 ? '${item.name.substring(0, 17)}...' : item.name;
+    
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 0.2),
+      child: pw.Row(
+        children: [
+          pw.Expanded(flex: 3, child: pw.Text(displayName.toUpperCase(), style: style, softWrap: false)),
+          pw.Expanded(flex: 1, child: pw.Text(item.qty.toString(), style: style, textAlign: pw.TextAlign.center)),
+          pw.Expanded(flex: 2, child: pw.Text('Rs.${item.revenue.toStringAsFixed(0)}', style: style, textAlign: pw.TextAlign.right)),
+        ],
+      ),
+    );
   }
 
   static Future<File> savePdfToFile(Uint8List bytes, String fileName) async {
