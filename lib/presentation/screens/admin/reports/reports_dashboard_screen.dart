@@ -415,11 +415,117 @@ class _ReportsDashboardScreenState extends ConsumerState<ReportsDashboardScreen>
               _buildPaymentDistribution(analytics),
             ],
             const SizedBox(height: 24),
+            _buildItemPerformanceAnalysis(analytics),
+            const SizedBox(height: 24),
             _buildInsightsGlass(analytics),
             const SizedBox(height: 40),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildItemPerformanceAnalysis(DailyAnalytics analytics) {
+    if (analytics.itemStats.isEmpty) return const SizedBox.shrink();
+
+    final mostSold = analytics.itemStats.values.toList()
+      ..sort((a, b) {
+        int cmp = b.qty.compareTo(a.qty);
+        if (cmp == 0) return b.revenue.compareTo(a.revenue);
+        return cmp;
+      });
+
+    final leastPerformed = analytics.itemStats.values.toList()
+      ..sort((a, b) {
+        int cmp = a.qty.compareTo(b.qty);
+        if (cmp == 0) return a.revenue.compareTo(b.revenue);
+        return cmp;
+      });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Item Analysis'),
+        const SizedBox(height: 12),
+        GlassContainer(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Most Sold Items', style: GoogleFonts.epilogue(fontSize: 14, fontWeight: FontWeight.w800)),
+                  _buildBadge('TOP VOLUME'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ...mostSold.take(5).map((item) => _buildEnhancedItemRow(item, isPositive: true)),
+              
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                child: Divider(height: 1, thickness: 0.5),
+              ),
+              
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Least Performed Items', style: GoogleFonts.epilogue(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.grey[800])),
+                  _buildBadge('LOW VOLUME'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ...leastPerformed.take(5).map((item) => _buildEnhancedItemRow(item, isPositive: false)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEnhancedItemRow(ItemStat item, {required bool isPositive}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: (isPositive ? Colors.green : Colors.orange).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+              size: 16,
+              color: isPositive ? Colors.green : Colors.orange,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name.toUpperCase(), 
+                  style: GoogleFonts.epilogue(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.black87),
+                  maxLines: 1, 
+                  overflow: TextOverflow.ellipsis
+                ),
+                Text(
+                  '${item.qty} Sold', 
+                  style: GoogleFonts.epilogue(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey[600])
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            '₹${item.revenue.toStringAsFixed(0)}', 
+            style: GoogleFonts.epilogue(fontSize: 13, fontWeight: FontWeight.w900, color: AppTheme.maroon)
+          ),
+        ],
+      ),
     );
   }
 
