@@ -84,6 +84,13 @@ class BillingService {
     required List<Payment> payments,
     required String userId,
   }) async {
+    // Idempotency guard: if a bill already exists for this order, return it
+    final existing = await _billCollection.where('orderId', isEqualTo: orderId).limit(1).get();
+    if (existing.docs.isNotEmpty) {
+      final data = existing.docs.first.data() as Map<String, dynamic>;
+      return BillModel.fromJson(data);
+    }
+
     return await _firestore.runTransaction((transaction) async {
       // 1. Lock table for billing
       final tableRef = _tableCollection.doc(tableId);

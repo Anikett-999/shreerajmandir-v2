@@ -177,6 +177,7 @@ class _OperationalHomeScreenState extends ConsumerState<OperationalHomeScreen> {
                     key: ValueKey(table.tableId),
                     table: table,
                     canCheckout: canCheckout,
+                    isAdmin: activeRole == 'admin',
                     onClear: branchId == null
                         ? null
                         : () async {

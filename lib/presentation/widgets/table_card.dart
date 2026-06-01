@@ -8,8 +8,9 @@ class TableCard extends StatelessWidget {
   final TableModel table;
   final bool canCheckout;
   final Future<void> Function()? onClear;
+  final bool isAdmin;
 
-  const TableCard({super.key, required this.table, required this.canCheckout, this.onClear});
+  const TableCard({super.key, required this.table, required this.canCheckout, this.onClear, this.isAdmin = false});
 
   Color _getStatusColor() {
     switch (table.status.toLowerCase()) {
@@ -26,8 +27,11 @@ class TableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final status = table.status.toLowerCase();
     final statusColor = _getStatusColor();
-    final isOccupied = table.status.toLowerCase() == 'occupied';
+    final isOccupied = status == 'occupied';
+    final isBilling = status == 'billing';
+    final isBillable = isOccupied || isBilling;
 
     return Card(
       elevation: 0,
@@ -46,7 +50,7 @@ class TableCard extends StatelessWidget {
                 MaterialPageRoute(builder: (context) => OrderScreen(table: table)),
               );
             },
-            onLongPress: isOccupied ? () => _showQuickActions(context) : null,
+            onLongPress: (isOccupied || (isBilling && isAdmin)) ? () => _showQuickActions(context) : null,
             child: Column(
               children: [
                 // Status Header
@@ -110,10 +114,10 @@ class TableCard extends StatelessWidget {
                   ),
                 ),
 
-                // Checkout Button Strip (Only when occupied and allowed)
-                if (isOccupied && canCheckout)
+                // Checkout Button Strip (Shown when occupied or billing and allowed)
+                if (isBillable && canCheckout)
                   Material(
-                    color: AppTheme.maroon,
+                    color: isBilling ? AppTheme.statusOccupied : AppTheme.maroon,
                     child: InkWell(
                       onTap: () {
                         Navigator.push(
@@ -124,8 +128,8 @@ class TableCard extends StatelessWidget {
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: const Text(
-                          'CHECKOUT',
+                        child: Text(
+                          isBilling ? 'RESUME BILLING' : 'CHECKOUT',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
