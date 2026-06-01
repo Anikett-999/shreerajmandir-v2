@@ -8,8 +8,10 @@ class KOTService {
   final String businessId = 'rajmandir_main';
   final String branchId;
 
-  KOTService({FirebaseFirestore? firestore, required this.branchId}) 
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  // Make branchId optional for tests; production code should pass explicit branchId.
+  KOTService({FirebaseFirestore? firestore, String? branchId})
+      : _firestore = firestore ?? FirebaseFirestore.instance,
+        branchId = branchId ?? 'branch_001';
 
   DocumentReference get _branchRef => _firestore
       .collection('businesses')

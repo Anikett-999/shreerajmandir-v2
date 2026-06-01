@@ -8,6 +8,7 @@ import '../../widgets/global/profile_menu.dart';
 import '../../providers/active_branch_provider.dart';
 import '../admin/admin_main_screen.dart';
 import '../../providers/table_provider.dart';
+import '../../../services/table_service.dart';
 import '../../widgets/global/editorial_background.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -61,6 +62,9 @@ class _OperationalHomeScreenState extends ConsumerState<OperationalHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final tablesAsync = ref.watch(tablesStreamProvider);
+    final activeRole = ref.watch(activeUserRoleProvider);
+    final canCheckout = activeRole == 'admin' || activeRole == 'cashier';
+    final branchId = ref.read(activeBranchIdProvider);
 
     Widget headerControls = AnimatedSize(
       duration: const Duration(milliseconds: 200),
@@ -168,7 +172,18 @@ class _OperationalHomeScreenState extends ConsumerState<OperationalHomeScreen> {
                 ),
                 itemCount: filteredTables.length,
                 itemBuilder: (context, index) {
-                  return TableCard(table: filteredTables[index]);
+                  final table = filteredTables[index];
+                  return TableCard(
+                    key: ValueKey(table.tableId),
+                    table: table,
+                    canCheckout: canCheckout,
+                    onClear: branchId == null
+                        ? null
+                        : () async {
+                            final service = TableService(branchId: branchId);
+                            await service.clearTable(table.tableId);
+                          },
+                  );
                 },
               );
             },

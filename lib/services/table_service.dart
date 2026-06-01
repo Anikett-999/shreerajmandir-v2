@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../domain/models/table_model.dart';
@@ -18,33 +19,64 @@ class TableService {
 
   // Stream of all tables for the current branch
   Stream<List<TableModel>> watchTables() {
-    return _tableCollection.snapshots().map((snapshot) {
-      final tables = snapshot.docs.map((doc) {
-        try {
-          final data = doc.data() as Map<String, dynamic>;
-          // Fix: Convert Firestore Timestamp to ISO string for Freezed DateTime parsing
+    // Use incremental updates to avoid reparsing/sorting entire lists on each snapshot
+    final controller = StreamController<List<TableModel>>.broadcast(onListen: () {});
+    final Map<String, TableModel> cache = {};
+
+    final sub = _tableCollection.snapshots().listen((snapshot) {
+      try {
+        // Apply document changes incrementally
+        for (final change in snapshot.docChanges) {
+          final doc = change.doc;
+          final raw = doc.data() as Map<String, dynamic>?;
+          if (raw == null) continue;
+
+          final data = Map<String, dynamic>.from(raw);
+          // Ensure tableId exists for parsing
+          if (!data.containsKey('tableId') || (data['tableId'] as String).isEmpty) {
+            data['tableId'] = doc.id;
+          }
+          // Convert Timestamp to ISO string if needed
           if (data['updatedAt'] is Timestamp) {
             data['updatedAt'] = (data['updatedAt'] as Timestamp).toDate().toIso8601String();
           }
-          return TableModel.fromJson(data);
-        } catch (e) {
-          return null;
-        }
-      }).whereType<TableModel>().toList();
 
-      // Implement natural sorting (1, 2, 3... instead of 1, 10, 2)
-      tables.sort((a, b) {
-        final aNum = int.tryParse(RegExp(r'\d+').stringMatch(a.name) ?? '');
-        final bNum = int.tryParse(RegExp(r'\d+').stringMatch(b.name) ?? '');
-        
-        if (aNum != null && bNum != null) {
-          if (aNum != bNum) return aNum.compareTo(bNum);
+          try {
+            final model = TableModel.fromJson(data);
+            if (change.type == DocumentChangeType.removed) {
+              cache.remove(model.tableId);
+            } else {
+              cache[model.tableId] = model;
+            }
+          } catch (e) {
+            // Ignore parse errors for individual docs
+            continue;
+          }
         }
-        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-      });
 
-      return tables;
+        // Emit sorted list
+        final tables = cache.values.toList();
+        tables.sort((a, b) {
+          final aNum = int.tryParse(RegExp(r'\d+').stringMatch(a.name) ?? '');
+          final bNum = int.tryParse(RegExp(r'\d+').stringMatch(b.name) ?? '');
+          if (aNum != null && bNum != null) {
+            if (aNum != bNum) return aNum.compareTo(bNum);
+          }
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+
+        controller.add(tables);
+      } catch (e) {
+        // If anything goes wrong, do not crash the stream
+      }
     });
+
+    controller.onCancel = () {
+      sub.cancel();
+      controller.close();
+    };
+
+    return controller.stream;
   }
 
   // Create a new table (Admin only)

@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shreerajmandir_pos/core/app_theme.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shreerajmandir_pos/domain/models/table_model.dart';
-import 'package:shreerajmandir_pos/services/table_service.dart';
 import 'package:shreerajmandir_pos/presentation/screens/waiter/order_screen.dart';
 import 'package:shreerajmandir_pos/presentation/screens/admin/billing_screen.dart';
 
-import 'package:shreerajmandir_pos/presentation/providers/active_branch_provider.dart';
-
-class TableCard extends ConsumerWidget {
+class TableCard extends StatelessWidget {
   final TableModel table;
+  final bool canCheckout;
+  final Future<void> Function()? onClear;
 
-  const TableCard({super.key, required this.table});
+  const TableCard({super.key, required this.table, required this.canCheckout, this.onClear});
 
   Color _getStatusColor() {
     switch (table.status.toLowerCase()) {
@@ -27,12 +25,9 @@ class TableCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final statusColor = _getStatusColor();
     final isOccupied = table.status.toLowerCase() == 'occupied';
-
-    final role = ref.watch(activeUserRoleProvider);
-    final canCheckout = role == 'admin' || role == 'cashier';
 
     return Card(
       elevation: 0,
@@ -51,7 +46,7 @@ class TableCard extends ConsumerWidget {
                 MaterialPageRoute(builder: (context) => OrderScreen(table: table)),
               );
             },
-            onLongPress: isOccupied ? () => _showQuickActions(context, ref) : null,
+            onLongPress: isOccupied ? () => _showQuickActions(context) : null,
             child: Column(
               children: [
                 // Status Header
@@ -169,7 +164,7 @@ class TableCard extends ConsumerWidget {
     );
   }
 
-  void _showQuickActions(BuildContext context, WidgetRef ref) {
+  void _showQuickActions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -189,10 +184,7 @@ class TableCard extends ConsumerWidget {
                 title: const Text('Clear Table (Admin Only)', style: TextStyle(fontWeight: FontWeight.bold)),
                 onTap: () async {
                   Navigator.pop(context);
-                  final branchId = ref.read(activeBranchIdProvider);
-                  if (branchId == null) throw Exception('No active branch selected');
-                  final service = TableService(branchId: branchId);
-                  await service.clearTable(table.tableId);
+                  if (onClear != null) await onClear!();
                 },
               ),
               const SizedBox(height: 16),
