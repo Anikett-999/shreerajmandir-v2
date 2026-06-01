@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/models/user_model.dart';
-
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -44,6 +44,12 @@ class AuthService extends ChangeNotifier {
       _setLoading(true);
       profileIssueMessage = null;
       await _auth.signInWithEmailAndPassword(email: email, password: password);
+      
+      // Update last login timestamp
+      await _firestore.collection('users').doc(_auth.currentUser?.uid).update({
+        'lastLogin': FieldValue.serverTimestamp(),
+      });
+      
       return null; // success
     } on FirebaseAuthException catch (e) {
       return _mapFirebaseAuthError(e);
@@ -109,14 +115,97 @@ class AuthService extends ChangeNotifier {
     return UserModel.fromJson(doc.data() as Map<String, dynamic>);
   }
 
-  Future<void> registerUser(String email, String password, String name, List<UserRole> roles) async {
-    final userCredential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
-    final user = UserModel(
-      userId: userCredential.user!.uid,
-      name: name,
-      email: email,
-      roles: roles,
+  Future<void> registerUser(String email, String password, String name, String role, List<String> branchIds) async {
+    FirebaseApp app = await Firebase.initializeApp(
+      name: 'SecondaryApp',
+      options: Firebase.app().options,
     );
-    await _firestore.collection('users').doc(user.userId).set(user.toJson());
+
+    try {
+      final userCredential = await FirebaseAuth.instanceFor(app: app)
+          .createUserWithEmailAndPassword(email: email, password: password);
+      
+      final user = UserModel(
+        userId: userCredential.user!.uid,
+        name: name,
+        email: email,
+        role: role,
+        branchIds: branchIds,
+      );
+      
+      await _firestore.collection('users').doc(user.userId).set(user.toJson());
+      
+      await app.delete();
+    } catch (e) {
+      await app.delete();
+      rethrow;
+    }
+  }
+
+  Future<String?> requestAccountDeletion() async {
+    try {
+      _setLoading(true);
+      final user = _auth.currentUser;
+      if (user != null) {
+        final userData = await getCurrentUserData();
+        
+        await _firestore.collection('account_deletion_requests').doc(user.uid).set({
+          'userId': user.uid,
+          'email': user.email,
+          'name': userData?.name ?? 'Unknown',
+          'requestedAt': FieldValue.serverTimestamp(),
+          'status': 'pending',
+          'note': 'Automated cleanup request from Waiter Module',
+        });
+        
+        return null; // success
+      }
+      return 'No active session found.';
+    } catch (e) {
+      return 'An unexpected error occurred while requesting deletion.';
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<String?> deleteAccount() async {
+    // Keep this for admin-level physical cleanup or re-authentication flows
+    try {
+      _setLoading(true);
+      final user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).delete();
+        await user.delete();
+        return null;
+      }
+      return 'No active session found.';
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        return 'Please log out and log in again to perform this sensitive action.';
+      }
+      return _mapFirebaseAuthError(e);
+    } catch (e) {
+      return 'An unexpected error occurred during account deletion.';
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> toggleUserActiveStatus(String userId, bool currentStatus) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'isActive': !currentStatus,
+      });
+    } catch (e) {
+      throw 'Failed to update user status: $e';
+    }
+  }
+
+  Future<void> updateUserData(String userId, Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('users').doc(userId).update(data);
+    } catch (e) {
+      throw 'Failed to update user data: $e';
+    }
   }
 }

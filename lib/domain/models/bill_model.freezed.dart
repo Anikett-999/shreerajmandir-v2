@@ -22,6 +22,7 @@ BillItem _$BillItemFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$BillItem {
   String get name => throw _privateConstructorUsedError;
+  String get category => throw _privateConstructorUsedError;
   int get qty => throw _privateConstructorUsedError;
   double get price => throw _privateConstructorUsedError;
   String get note => throw _privateConstructorUsedError;
@@ -41,7 +42,7 @@ abstract class $BillItemCopyWith<$Res> {
   factory $BillItemCopyWith(BillItem value, $Res Function(BillItem) then) =
       _$BillItemCopyWithImpl<$Res, BillItem>;
   @useResult
-  $Res call({String name, int qty, double price, String note});
+  $Res call({String name, String category, int qty, double price, String note});
 }
 
 /// @nodoc
@@ -60,6 +61,7 @@ class _$BillItemCopyWithImpl<$Res, $Val extends BillItem>
   @override
   $Res call({
     Object? name = null,
+    Object? category = null,
     Object? qty = null,
     Object? price = null,
     Object? note = null,
@@ -69,6 +71,10 @@ class _$BillItemCopyWithImpl<$Res, $Val extends BillItem>
             name: null == name
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            category: null == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
                       as String,
             qty: null == qty
                 ? _value.qty
@@ -97,7 +103,7 @@ abstract class _$$BillItemImplCopyWith<$Res>
   ) = __$$BillItemImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String name, int qty, double price, String note});
+  $Res call({String name, String category, int qty, double price, String note});
 }
 
 /// @nodoc
@@ -115,6 +121,7 @@ class __$$BillItemImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? name = null,
+    Object? category = null,
     Object? qty = null,
     Object? price = null,
     Object? note = null,
@@ -124,6 +131,10 @@ class __$$BillItemImplCopyWithImpl<$Res>
         name: null == name
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        category: null == category
+            ? _value.category
+            : category // ignore: cast_nullable_to_non_nullable
                   as String,
         qty: null == qty
             ? _value.qty
@@ -147,6 +158,7 @@ class __$$BillItemImplCopyWithImpl<$Res>
 class _$BillItemImpl implements _BillItem {
   const _$BillItemImpl({
     required this.name,
+    this.category = '',
     required this.qty,
     required this.price,
     this.note = '',
@@ -158,6 +170,9 @@ class _$BillItemImpl implements _BillItem {
   @override
   final String name;
   @override
+  @JsonKey()
+  final String category;
+  @override
   final int qty;
   @override
   final double price;
@@ -167,7 +182,7 @@ class _$BillItemImpl implements _BillItem {
 
   @override
   String toString() {
-    return 'BillItem(name: $name, qty: $qty, price: $price, note: $note)';
+    return 'BillItem(name: $name, category: $category, qty: $qty, price: $price, note: $note)';
   }
 
   @override
@@ -176,6 +191,8 @@ class _$BillItemImpl implements _BillItem {
         (other.runtimeType == runtimeType &&
             other is _$BillItemImpl &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
             (identical(other.qty, qty) || other.qty == qty) &&
             (identical(other.price, price) || other.price == price) &&
             (identical(other.note, note) || other.note == note));
@@ -183,7 +200,8 @@ class _$BillItemImpl implements _BillItem {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, name, qty, price, note);
+  int get hashCode =>
+      Object.hash(runtimeType, name, category, qty, price, note);
 
   /// Create a copy of BillItem
   /// with the given fields replaced by the non-null parameter values.
@@ -202,6 +220,7 @@ class _$BillItemImpl implements _BillItem {
 abstract class _BillItem implements BillItem {
   const factory _BillItem({
     required final String name,
+    final String category,
     required final int qty,
     required final double price,
     final String note,
@@ -212,6 +231,8 @@ abstract class _BillItem implements BillItem {
 
   @override
   String get name;
+  @override
+  String get category;
   @override
   int get qty;
   @override
@@ -400,17 +421,22 @@ mixin _$BillModel {
   String get billId => throw _privateConstructorUsedError;
   String get orderId => throw _privateConstructorUsedError;
   String get tableId => throw _privateConstructorUsedError;
+  String get tableName => throw _privateConstructorUsedError;
+  String get userName => throw _privateConstructorUsedError;
   List<BillItem> get items => throw _privateConstructorUsedError;
   double get subtotal => throw _privateConstructorUsedError;
   double get discountPercent => throw _privateConstructorUsedError;
   double get discountAmount => throw _privateConstructorUsedError;
+  String get discountType => throw _privateConstructorUsedError;
   double get extraCharges => throw _privateConstructorUsedError;
   double get total => throw _privateConstructorUsedError;
   List<Payment> get payments => throw _privateConstructorUsedError;
   int get printCount => throw _privateConstructorUsedError;
   bool get isSuspicious => throw _privateConstructorUsedError;
   String get createdBy => throw _privateConstructorUsedError;
+  @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
+  @OptionalTimestampConverter()
   DateTime? get printedAt => throw _privateConstructorUsedError;
   String? get lastPrintedBy => throw _privateConstructorUsedError;
 
@@ -433,18 +459,21 @@ abstract class $BillModelCopyWith<$Res> {
     String billId,
     String orderId,
     String tableId,
+    String tableName,
+    String userName,
     List<BillItem> items,
     double subtotal,
     double discountPercent,
     double discountAmount,
+    String discountType,
     double extraCharges,
     double total,
     List<Payment> payments,
     int printCount,
     bool isSuspicious,
     String createdBy,
-    DateTime createdAt,
-    DateTime? printedAt,
+    @TimestampConverter() DateTime createdAt,
+    @OptionalTimestampConverter() DateTime? printedAt,
     String? lastPrintedBy,
   });
 }
@@ -467,10 +496,13 @@ class _$BillModelCopyWithImpl<$Res, $Val extends BillModel>
     Object? billId = null,
     Object? orderId = null,
     Object? tableId = null,
+    Object? tableName = null,
+    Object? userName = null,
     Object? items = null,
     Object? subtotal = null,
     Object? discountPercent = null,
     Object? discountAmount = null,
+    Object? discountType = null,
     Object? extraCharges = null,
     Object? total = null,
     Object? payments = null,
@@ -495,6 +527,14 @@ class _$BillModelCopyWithImpl<$Res, $Val extends BillModel>
                 ? _value.tableId
                 : tableId // ignore: cast_nullable_to_non_nullable
                       as String,
+            tableName: null == tableName
+                ? _value.tableName
+                : tableName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            userName: null == userName
+                ? _value.userName
+                : userName // ignore: cast_nullable_to_non_nullable
+                      as String,
             items: null == items
                 ? _value.items
                 : items // ignore: cast_nullable_to_non_nullable
@@ -511,6 +551,10 @@ class _$BillModelCopyWithImpl<$Res, $Val extends BillModel>
                 ? _value.discountAmount
                 : discountAmount // ignore: cast_nullable_to_non_nullable
                       as double,
+            discountType: null == discountType
+                ? _value.discountType
+                : discountType // ignore: cast_nullable_to_non_nullable
+                      as String,
             extraCharges: null == extraCharges
                 ? _value.extraCharges
                 : extraCharges // ignore: cast_nullable_to_non_nullable
@@ -566,18 +610,21 @@ abstract class _$$BillModelImplCopyWith<$Res>
     String billId,
     String orderId,
     String tableId,
+    String tableName,
+    String userName,
     List<BillItem> items,
     double subtotal,
     double discountPercent,
     double discountAmount,
+    String discountType,
     double extraCharges,
     double total,
     List<Payment> payments,
     int printCount,
     bool isSuspicious,
     String createdBy,
-    DateTime createdAt,
-    DateTime? printedAt,
+    @TimestampConverter() DateTime createdAt,
+    @OptionalTimestampConverter() DateTime? printedAt,
     String? lastPrintedBy,
   });
 }
@@ -599,10 +646,13 @@ class __$$BillModelImplCopyWithImpl<$Res>
     Object? billId = null,
     Object? orderId = null,
     Object? tableId = null,
+    Object? tableName = null,
+    Object? userName = null,
     Object? items = null,
     Object? subtotal = null,
     Object? discountPercent = null,
     Object? discountAmount = null,
+    Object? discountType = null,
     Object? extraCharges = null,
     Object? total = null,
     Object? payments = null,
@@ -627,6 +677,14 @@ class __$$BillModelImplCopyWithImpl<$Res>
             ? _value.tableId
             : tableId // ignore: cast_nullable_to_non_nullable
                   as String,
+        tableName: null == tableName
+            ? _value.tableName
+            : tableName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        userName: null == userName
+            ? _value.userName
+            : userName // ignore: cast_nullable_to_non_nullable
+                  as String,
         items: null == items
             ? _value._items
             : items // ignore: cast_nullable_to_non_nullable
@@ -643,6 +701,10 @@ class __$$BillModelImplCopyWithImpl<$Res>
             ? _value.discountAmount
             : discountAmount // ignore: cast_nullable_to_non_nullable
                   as double,
+        discountType: null == discountType
+            ? _value.discountType
+            : discountType // ignore: cast_nullable_to_non_nullable
+                  as String,
         extraCharges: null == extraCharges
             ? _value.extraCharges
             : extraCharges // ignore: cast_nullable_to_non_nullable
@@ -691,18 +753,21 @@ class _$BillModelImpl implements _BillModel {
     required this.billId,
     required this.orderId,
     required this.tableId,
+    required this.tableName,
+    required this.userName,
     required final List<BillItem> items,
     required this.subtotal,
     this.discountPercent = 0.0,
     this.discountAmount = 0.0,
+    this.discountType = 'percent',
     this.extraCharges = 0.0,
     required this.total,
     required final List<Payment> payments,
     this.printCount = 1,
     this.isSuspicious = false,
     required this.createdBy,
-    required this.createdAt,
-    this.printedAt,
+    @TimestampConverter() required this.createdAt,
+    @OptionalTimestampConverter() this.printedAt,
     this.lastPrintedBy,
   }) : _items = items,
        _payments = payments;
@@ -716,6 +781,10 @@ class _$BillModelImpl implements _BillModel {
   final String orderId;
   @override
   final String tableId;
+  @override
+  final String tableName;
+  @override
+  final String userName;
   final List<BillItem> _items;
   @override
   List<BillItem> get items {
@@ -732,6 +801,9 @@ class _$BillModelImpl implements _BillModel {
   @override
   @JsonKey()
   final double discountAmount;
+  @override
+  @JsonKey()
+  final String discountType;
   @override
   @JsonKey()
   final double extraCharges;
@@ -754,15 +826,17 @@ class _$BillModelImpl implements _BillModel {
   @override
   final String createdBy;
   @override
+  @TimestampConverter()
   final DateTime createdAt;
   @override
+  @OptionalTimestampConverter()
   final DateTime? printedAt;
   @override
   final String? lastPrintedBy;
 
   @override
   String toString() {
-    return 'BillModel(billId: $billId, orderId: $orderId, tableId: $tableId, items: $items, subtotal: $subtotal, discountPercent: $discountPercent, discountAmount: $discountAmount, extraCharges: $extraCharges, total: $total, payments: $payments, printCount: $printCount, isSuspicious: $isSuspicious, createdBy: $createdBy, createdAt: $createdAt, printedAt: $printedAt, lastPrintedBy: $lastPrintedBy)';
+    return 'BillModel(billId: $billId, orderId: $orderId, tableId: $tableId, tableName: $tableName, userName: $userName, items: $items, subtotal: $subtotal, discountPercent: $discountPercent, discountAmount: $discountAmount, discountType: $discountType, extraCharges: $extraCharges, total: $total, payments: $payments, printCount: $printCount, isSuspicious: $isSuspicious, createdBy: $createdBy, createdAt: $createdAt, printedAt: $printedAt, lastPrintedBy: $lastPrintedBy)';
   }
 
   @override
@@ -773,6 +847,10 @@ class _$BillModelImpl implements _BillModel {
             (identical(other.billId, billId) || other.billId == billId) &&
             (identical(other.orderId, orderId) || other.orderId == orderId) &&
             (identical(other.tableId, tableId) || other.tableId == tableId) &&
+            (identical(other.tableName, tableName) ||
+                other.tableName == tableName) &&
+            (identical(other.userName, userName) ||
+                other.userName == userName) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.subtotal, subtotal) ||
                 other.subtotal == subtotal) &&
@@ -780,6 +858,8 @@ class _$BillModelImpl implements _BillModel {
                 other.discountPercent == discountPercent) &&
             (identical(other.discountAmount, discountAmount) ||
                 other.discountAmount == discountAmount) &&
+            (identical(other.discountType, discountType) ||
+                other.discountType == discountType) &&
             (identical(other.extraCharges, extraCharges) ||
                 other.extraCharges == extraCharges) &&
             (identical(other.total, total) || other.total == total) &&
@@ -800,15 +880,18 @@ class _$BillModelImpl implements _BillModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     billId,
     orderId,
     tableId,
+    tableName,
+    userName,
     const DeepCollectionEquality().hash(_items),
     subtotal,
     discountPercent,
     discountAmount,
+    discountType,
     extraCharges,
     total,
     const DeepCollectionEquality().hash(_payments),
@@ -818,7 +901,7 @@ class _$BillModelImpl implements _BillModel {
     createdAt,
     printedAt,
     lastPrintedBy,
-  );
+  ]);
 
   /// Create a copy of BillModel
   /// with the given fields replaced by the non-null parameter values.
@@ -839,18 +922,21 @@ abstract class _BillModel implements BillModel {
     required final String billId,
     required final String orderId,
     required final String tableId,
+    required final String tableName,
+    required final String userName,
     required final List<BillItem> items,
     required final double subtotal,
     final double discountPercent,
     final double discountAmount,
+    final String discountType,
     final double extraCharges,
     required final double total,
     required final List<Payment> payments,
     final int printCount,
     final bool isSuspicious,
     required final String createdBy,
-    required final DateTime createdAt,
-    final DateTime? printedAt,
+    @TimestampConverter() required final DateTime createdAt,
+    @OptionalTimestampConverter() final DateTime? printedAt,
     final String? lastPrintedBy,
   }) = _$BillModelImpl;
 
@@ -864,6 +950,10 @@ abstract class _BillModel implements BillModel {
   @override
   String get tableId;
   @override
+  String get tableName;
+  @override
+  String get userName;
+  @override
   List<BillItem> get items;
   @override
   double get subtotal;
@@ -871,6 +961,8 @@ abstract class _BillModel implements BillModel {
   double get discountPercent;
   @override
   double get discountAmount;
+  @override
+  String get discountType;
   @override
   double get extraCharges;
   @override
@@ -884,8 +976,10 @@ abstract class _BillModel implements BillModel {
   @override
   String get createdBy;
   @override
+  @TimestampConverter()
   DateTime get createdAt;
   @override
+  @OptionalTimestampConverter()
   DateTime? get printedAt;
   @override
   String? get lastPrintedBy;

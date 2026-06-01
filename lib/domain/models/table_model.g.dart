@@ -16,20 +16,21 @@ _$TableModelImpl _$$TableModelImplFromJson(Map<String, dynamic> json) =>
       totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
       itemCount: (json['itemCount'] as num?)?.toInt() ?? 0,
       kotCount: (json['kotCount'] as num?)?.toInt() ?? 0,
-      updatedAt: json['updatedAt'] == null
-          ? null
-          : DateTime.parse(json['updatedAt'] as String),
+      unprintedKotCount: (json['unprintedKotCount'] as num?)?.toInt() ?? 0,
+      updatedAt: const OptionalTimestampConverter().fromJson(json['updatedAt']),
     );
 
-Map<String, dynamic> _$$TableModelImplToJson(_$TableModelImpl instance) =>
-    <String, dynamic>{
-      'tableId': instance.tableId,
-      'name': instance.name,
-      'capacity': instance.capacity,
-      'status': instance.status,
-      'activeOrderId': instance.activeOrderId,
-      'totalAmount': instance.totalAmount,
-      'itemCount': instance.itemCount,
-      'kotCount': instance.kotCount,
-      'updatedAt': instance.updatedAt?.toIso8601String(),
-    };
+Map<String, dynamic> _$$TableModelImplToJson(
+  _$TableModelImpl instance,
+) => <String, dynamic>{
+  'tableId': instance.tableId,
+  'name': instance.name,
+  'capacity': instance.capacity,
+  'status': instance.status,
+  'activeOrderId': instance.activeOrderId,
+  'totalAmount': instance.totalAmount,
+  'itemCount': instance.itemCount,
+  'kotCount': instance.kotCount,
+  'unprintedKotCount': instance.unprintedKotCount,
+  'updatedAt': const OptionalTimestampConverter().toJson(instance.updatedAt),
+};

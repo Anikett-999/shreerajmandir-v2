@@ -21,11 +21,13 @@ KOTItem _$KOTItemFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$KOTItem {
+  String get uniqueId => throw _privateConstructorUsedError;
   String get itemId => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String get category => throw _privateConstructorUsedError;
   int get qty => throw _privateConstructorUsedError;
   double get price => throw _privateConstructorUsedError;
+  String get variant => throw _privateConstructorUsedError;
   String get note => throw _privateConstructorUsedError;
   String get status => throw _privateConstructorUsedError;
 
@@ -44,11 +46,13 @@ abstract class $KOTItemCopyWith<$Res> {
       _$KOTItemCopyWithImpl<$Res, KOTItem>;
   @useResult
   $Res call({
+    String uniqueId,
     String itemId,
     String name,
     String category,
     int qty,
     double price,
+    String variant,
     String note,
     String status,
   });
@@ -69,16 +73,22 @@ class _$KOTItemCopyWithImpl<$Res, $Val extends KOTItem>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? uniqueId = null,
     Object? itemId = null,
     Object? name = null,
     Object? category = null,
     Object? qty = null,
     Object? price = null,
+    Object? variant = null,
     Object? note = null,
     Object? status = null,
   }) {
     return _then(
       _value.copyWith(
+            uniqueId: null == uniqueId
+                ? _value.uniqueId
+                : uniqueId // ignore: cast_nullable_to_non_nullable
+                      as String,
             itemId: null == itemId
                 ? _value.itemId
                 : itemId // ignore: cast_nullable_to_non_nullable
@@ -99,6 +109,10 @@ class _$KOTItemCopyWithImpl<$Res, $Val extends KOTItem>
                 ? _value.price
                 : price // ignore: cast_nullable_to_non_nullable
                       as double,
+            variant: null == variant
+                ? _value.variant
+                : variant // ignore: cast_nullable_to_non_nullable
+                      as String,
             note: null == note
                 ? _value.note
                 : note // ignore: cast_nullable_to_non_nullable
@@ -122,11 +136,13 @@ abstract class _$$KOTItemImplCopyWith<$Res> implements $KOTItemCopyWith<$Res> {
   @override
   @useResult
   $Res call({
+    String uniqueId,
     String itemId,
     String name,
     String category,
     int qty,
     double price,
+    String variant,
     String note,
     String status,
   });
@@ -146,16 +162,22 @@ class __$$KOTItemImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? uniqueId = null,
     Object? itemId = null,
     Object? name = null,
     Object? category = null,
     Object? qty = null,
     Object? price = null,
+    Object? variant = null,
     Object? note = null,
     Object? status = null,
   }) {
     return _then(
       _$KOTItemImpl(
+        uniqueId: null == uniqueId
+            ? _value.uniqueId
+            : uniqueId // ignore: cast_nullable_to_non_nullable
+                  as String,
         itemId: null == itemId
             ? _value.itemId
             : itemId // ignore: cast_nullable_to_non_nullable
@@ -176,6 +198,10 @@ class __$$KOTItemImplCopyWithImpl<$Res>
             ? _value.price
             : price // ignore: cast_nullable_to_non_nullable
                   as double,
+        variant: null == variant
+            ? _value.variant
+            : variant // ignore: cast_nullable_to_non_nullable
+                  as String,
         note: null == note
             ? _value.note
             : note // ignore: cast_nullable_to_non_nullable
@@ -193,11 +219,13 @@ class __$$KOTItemImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$KOTItemImpl implements _KOTItem {
   const _$KOTItemImpl({
+    required this.uniqueId,
     required this.itemId,
     required this.name,
     required this.category,
     required this.qty,
     required this.price,
+    this.variant = '',
     this.note = '',
     this.status = 'placed',
   });
@@ -205,6 +233,8 @@ class _$KOTItemImpl implements _KOTItem {
   factory _$KOTItemImpl.fromJson(Map<String, dynamic> json) =>
       _$$KOTItemImplFromJson(json);
 
+  @override
+  final String uniqueId;
   @override
   final String itemId;
   @override
@@ -217,6 +247,9 @@ class _$KOTItemImpl implements _KOTItem {
   final double price;
   @override
   @JsonKey()
+  final String variant;
+  @override
+  @JsonKey()
   final String note;
   @override
   @JsonKey()
@@ -224,7 +257,7 @@ class _$KOTItemImpl implements _KOTItem {
 
   @override
   String toString() {
-    return 'KOTItem(itemId: $itemId, name: $name, category: $category, qty: $qty, price: $price, note: $note, status: $status)';
+    return 'KOTItem(uniqueId: $uniqueId, itemId: $itemId, name: $name, category: $category, qty: $qty, price: $price, variant: $variant, note: $note, status: $status)';
   }
 
   @override
@@ -232,12 +265,15 @@ class _$KOTItemImpl implements _KOTItem {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$KOTItemImpl &&
+            (identical(other.uniqueId, uniqueId) ||
+                other.uniqueId == uniqueId) &&
             (identical(other.itemId, itemId) || other.itemId == itemId) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.category, category) ||
                 other.category == category) &&
             (identical(other.qty, qty) || other.qty == qty) &&
             (identical(other.price, price) || other.price == price) &&
+            (identical(other.variant, variant) || other.variant == variant) &&
             (identical(other.note, note) || other.note == note) &&
             (identical(other.status, status) || other.status == status));
   }
@@ -246,11 +282,13 @@ class _$KOTItemImpl implements _KOTItem {
   @override
   int get hashCode => Object.hash(
     runtimeType,
+    uniqueId,
     itemId,
     name,
     category,
     qty,
     price,
+    variant,
     note,
     status,
   );
@@ -271,17 +309,21 @@ class _$KOTItemImpl implements _KOTItem {
 
 abstract class _KOTItem implements KOTItem {
   const factory _KOTItem({
+    required final String uniqueId,
     required final String itemId,
     required final String name,
     required final String category,
     required final int qty,
     required final double price,
+    final String variant,
     final String note,
     final String status,
   }) = _$KOTItemImpl;
 
   factory _KOTItem.fromJson(Map<String, dynamic> json) = _$KOTItemImpl.fromJson;
 
+  @override
+  String get uniqueId;
   @override
   String get itemId;
   @override
@@ -292,6 +334,8 @@ abstract class _KOTItem implements KOTItem {
   int get qty;
   @override
   double get price;
+  @override
+  String get variant;
   @override
   String get note;
   @override
@@ -315,10 +359,13 @@ mixin _$KOTModel {
   int get kotNumber => throw _privateConstructorUsedError;
   String get orderId => throw _privateConstructorUsedError;
   String get tableId => throw _privateConstructorUsedError;
+  String get tableName => throw _privateConstructorUsedError;
   List<KOTItem> get items => throw _privateConstructorUsedError;
   double get totalAmount => throw _privateConstructorUsedError;
   bool get isPrinted => throw _privateConstructorUsedError;
   String get createdBy => throw _privateConstructorUsedError;
+  String get userName => throw _privateConstructorUsedError;
+  @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this KOTModel to a JSON map.
@@ -341,11 +388,13 @@ abstract class $KOTModelCopyWith<$Res> {
     int kotNumber,
     String orderId,
     String tableId,
+    String tableName,
     List<KOTItem> items,
     double totalAmount,
     bool isPrinted,
     String createdBy,
-    DateTime createdAt,
+    String userName,
+    @TimestampConverter() DateTime createdAt,
   });
 }
 
@@ -368,10 +417,12 @@ class _$KOTModelCopyWithImpl<$Res, $Val extends KOTModel>
     Object? kotNumber = null,
     Object? orderId = null,
     Object? tableId = null,
+    Object? tableName = null,
     Object? items = null,
     Object? totalAmount = null,
     Object? isPrinted = null,
     Object? createdBy = null,
+    Object? userName = null,
     Object? createdAt = null,
   }) {
     return _then(
@@ -392,6 +443,10 @@ class _$KOTModelCopyWithImpl<$Res, $Val extends KOTModel>
                 ? _value.tableId
                 : tableId // ignore: cast_nullable_to_non_nullable
                       as String,
+            tableName: null == tableName
+                ? _value.tableName
+                : tableName // ignore: cast_nullable_to_non_nullable
+                      as String,
             items: null == items
                 ? _value.items
                 : items // ignore: cast_nullable_to_non_nullable
@@ -407,6 +462,10 @@ class _$KOTModelCopyWithImpl<$Res, $Val extends KOTModel>
             createdBy: null == createdBy
                 ? _value.createdBy
                 : createdBy // ignore: cast_nullable_to_non_nullable
+                      as String,
+            userName: null == userName
+                ? _value.userName
+                : userName // ignore: cast_nullable_to_non_nullable
                       as String,
             createdAt: null == createdAt
                 ? _value.createdAt
@@ -432,11 +491,13 @@ abstract class _$$KOTModelImplCopyWith<$Res>
     int kotNumber,
     String orderId,
     String tableId,
+    String tableName,
     List<KOTItem> items,
     double totalAmount,
     bool isPrinted,
     String createdBy,
-    DateTime createdAt,
+    String userName,
+    @TimestampConverter() DateTime createdAt,
   });
 }
 
@@ -458,10 +519,12 @@ class __$$KOTModelImplCopyWithImpl<$Res>
     Object? kotNumber = null,
     Object? orderId = null,
     Object? tableId = null,
+    Object? tableName = null,
     Object? items = null,
     Object? totalAmount = null,
     Object? isPrinted = null,
     Object? createdBy = null,
+    Object? userName = null,
     Object? createdAt = null,
   }) {
     return _then(
@@ -482,6 +545,10 @@ class __$$KOTModelImplCopyWithImpl<$Res>
             ? _value.tableId
             : tableId // ignore: cast_nullable_to_non_nullable
                   as String,
+        tableName: null == tableName
+            ? _value.tableName
+            : tableName // ignore: cast_nullable_to_non_nullable
+                  as String,
         items: null == items
             ? _value._items
             : items // ignore: cast_nullable_to_non_nullable
@@ -497,6 +564,10 @@ class __$$KOTModelImplCopyWithImpl<$Res>
         createdBy: null == createdBy
             ? _value.createdBy
             : createdBy // ignore: cast_nullable_to_non_nullable
+                  as String,
+        userName: null == userName
+            ? _value.userName
+            : userName // ignore: cast_nullable_to_non_nullable
                   as String,
         createdAt: null == createdAt
             ? _value.createdAt
@@ -515,11 +586,13 @@ class _$KOTModelImpl implements _KOTModel {
     required this.kotNumber,
     required this.orderId,
     required this.tableId,
+    this.tableName = '',
     required final List<KOTItem> items,
     this.totalAmount = 0.0,
     this.isPrinted = false,
     required this.createdBy,
-    required this.createdAt,
+    this.userName = '',
+    @TimestampConverter() required this.createdAt,
   }) : _items = items;
 
   factory _$KOTModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -533,6 +606,9 @@ class _$KOTModelImpl implements _KOTModel {
   final String orderId;
   @override
   final String tableId;
+  @override
+  @JsonKey()
+  final String tableName;
   final List<KOTItem> _items;
   @override
   List<KOTItem> get items {
@@ -550,11 +626,15 @@ class _$KOTModelImpl implements _KOTModel {
   @override
   final String createdBy;
   @override
+  @JsonKey()
+  final String userName;
+  @override
+  @TimestampConverter()
   final DateTime createdAt;
 
   @override
   String toString() {
-    return 'KOTModel(kotId: $kotId, kotNumber: $kotNumber, orderId: $orderId, tableId: $tableId, items: $items, totalAmount: $totalAmount, isPrinted: $isPrinted, createdBy: $createdBy, createdAt: $createdAt)';
+    return 'KOTModel(kotId: $kotId, kotNumber: $kotNumber, orderId: $orderId, tableId: $tableId, tableName: $tableName, items: $items, totalAmount: $totalAmount, isPrinted: $isPrinted, createdBy: $createdBy, userName: $userName, createdAt: $createdAt)';
   }
 
   @override
@@ -567,6 +647,8 @@ class _$KOTModelImpl implements _KOTModel {
                 other.kotNumber == kotNumber) &&
             (identical(other.orderId, orderId) || other.orderId == orderId) &&
             (identical(other.tableId, tableId) || other.tableId == tableId) &&
+            (identical(other.tableName, tableName) ||
+                other.tableName == tableName) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.totalAmount, totalAmount) ||
                 other.totalAmount == totalAmount) &&
@@ -574,6 +656,8 @@ class _$KOTModelImpl implements _KOTModel {
                 other.isPrinted == isPrinted) &&
             (identical(other.createdBy, createdBy) ||
                 other.createdBy == createdBy) &&
+            (identical(other.userName, userName) ||
+                other.userName == userName) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt));
   }
@@ -586,10 +670,12 @@ class _$KOTModelImpl implements _KOTModel {
     kotNumber,
     orderId,
     tableId,
+    tableName,
     const DeepCollectionEquality().hash(_items),
     totalAmount,
     isPrinted,
     createdBy,
+    userName,
     createdAt,
   );
 
@@ -613,11 +699,13 @@ abstract class _KOTModel implements KOTModel {
     required final int kotNumber,
     required final String orderId,
     required final String tableId,
+    final String tableName,
     required final List<KOTItem> items,
     final double totalAmount,
     final bool isPrinted,
     required final String createdBy,
-    required final DateTime createdAt,
+    final String userName,
+    @TimestampConverter() required final DateTime createdAt,
   }) = _$KOTModelImpl;
 
   factory _KOTModel.fromJson(Map<String, dynamic> json) =
@@ -632,6 +720,8 @@ abstract class _KOTModel implements KOTModel {
   @override
   String get tableId;
   @override
+  String get tableName;
+  @override
   List<KOTItem> get items;
   @override
   double get totalAmount;
@@ -640,6 +730,9 @@ abstract class _KOTModel implements KOTModel {
   @override
   String get createdBy;
   @override
+  String get userName;
+  @override
+  @TimestampConverter()
   DateTime get createdAt;
 
   /// Create a copy of KOTModel

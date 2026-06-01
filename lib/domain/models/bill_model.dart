@@ -1,4 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/timestamp_converter.dart';
 
 part 'bill_model.freezed.dart';
 part 'bill_model.g.dart';
@@ -7,6 +9,7 @@ part 'bill_model.g.dart';
 class BillItem with _$BillItem {
   const factory BillItem({
     required String name,
+    @Default('') String category,
     required int qty,
     required double price,
     @Default('') String note,
@@ -31,18 +34,21 @@ class BillModel with _$BillModel {
     required String billId,
     required String orderId,
     required String tableId,
+    required String tableName,
+    required String userName,
     required List<BillItem> items,
     required double subtotal,
     @Default(0.0) double discountPercent,
     @Default(0.0) double discountAmount,
+    @Default('percent') String discountType,
     @Default(0.0) double extraCharges,
     required double total,
     required List<Payment> payments,
     @Default(1) int printCount,
     @Default(false) bool isSuspicious,
     required String createdBy,
-    required DateTime createdAt,
-    DateTime? printedAt,
+    @TimestampConverter() required DateTime createdAt,
+    @OptionalTimestampConverter() DateTime? printedAt,
     String? lastPrintedBy,
   }) = _BillModel;
 

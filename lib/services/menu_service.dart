@@ -5,9 +5,11 @@ import '../domain/models/item.dart';
 class MenuService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String businessId = 'rajmandir_main';
-  final String branchId = 'branch_001';
+  final String branchId;
 
-  CollectionReference get _branchDoc => _firestore
+  MenuService({required this.branchId});
+
+  CollectionReference get _categoriesCollection => _firestore
       .collection('businesses')
       .doc(businessId)
       .collection('branches')
@@ -23,7 +25,10 @@ class MenuService {
 
   // Watch categories
   Stream<List<Category>> watchCategories() {
-    return _branchDoc.snapshots().map((snapshot) {
+    return _categoriesCollection
+        .orderBy('order')
+        .snapshots()
+        .map((snapshot) {
       return snapshot.docs.map((doc) {
         return Category.fromJson(doc.data() as Map<String, dynamic>);
       }).toList();
@@ -52,5 +57,50 @@ class MenuService {
         return Item.fromJson(doc.data() as Map<String, dynamic>);
       }).toList();
     });
+  }
+
+  // --- CRUD Operations ---
+
+  // Category CRUD
+  Future<void> upsertCategory(Category category) async {
+    await _categoriesCollection.doc(category.categoryId).set(category.toJson());
+  }
+
+  Future<void> deleteCategory(String categoryId) async {
+    // Safety check: Don't delete if there are items in this category
+    final items = await _itemsCollection
+        .where('categoryId', isEqualTo: categoryId)
+        .limit(1)
+        .get();
+
+    if (items.docs.isNotEmpty) {
+      throw Exception('Cannot delete category with items. Move or delete items first.');
+    }
+
+    await _categoriesCollection.doc(categoryId).delete();
+  }
+
+  Future<void> updateCategoryOrder(List<Category> orderedCategories) async {
+    final batch = _firestore.batch();
+    for (int i = 0; i < orderedCategories.length; i++) {
+      batch.update(
+        _categoriesCollection.doc(orderedCategories[i].categoryId),
+        {'order': i},
+      );
+    }
+    await batch.commit();
+  }
+
+  // Item CRUD
+  Future<void> upsertItem(Item item) async {
+    await _itemsCollection.doc(item.itemId).set(item.toJson());
+  }
+
+  Future<void> deleteItem(String itemId) async {
+    await _itemsCollection.doc(itemId).delete();
+  }
+
+  Future<void> updateItemAvailability(String itemId, bool isAvailable) async {
+    await _itemsCollection.doc(itemId).update({'isAvailable': isAvailable});
   }
 }

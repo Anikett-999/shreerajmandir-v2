@@ -67,9 +67,7 @@ class SeedDataService {
             .set(item.toJson());
       }
 
-      print('✅ Database seeded successfully!');
     } catch (e) {
-      print('❌ Error seeding database: $e');
       rethrow;
     }
   }
@@ -93,9 +91,7 @@ class SeedDataService {
           'updatedAt': FieldValue.serverTimestamp(),
         });
       }
-      print('✅ Tables seeded successfully!');
     } catch (e) {
-      print('❌ Error seeding tables: $e');
       rethrow;
     }
   }

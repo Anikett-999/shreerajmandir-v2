@@ -30,6 +30,8 @@ mixin _$TableModel {
   double get totalAmount => throw _privateConstructorUsedError;
   int get itemCount => throw _privateConstructorUsedError;
   int get kotCount => throw _privateConstructorUsedError;
+  int get unprintedKotCount => throw _privateConstructorUsedError;
+  @OptionalTimestampConverter()
   DateTime? get updatedAt => throw _privateConstructorUsedError;
 
   /// Serializes this TableModel to a JSON map.
@@ -58,7 +60,8 @@ abstract class $TableModelCopyWith<$Res> {
     double totalAmount,
     int itemCount,
     int kotCount,
-    DateTime? updatedAt,
+    int unprintedKotCount,
+    @OptionalTimestampConverter() DateTime? updatedAt,
   });
 }
 
@@ -85,6 +88,7 @@ class _$TableModelCopyWithImpl<$Res, $Val extends TableModel>
     Object? totalAmount = null,
     Object? itemCount = null,
     Object? kotCount = null,
+    Object? unprintedKotCount = null,
     Object? updatedAt = freezed,
   }) {
     return _then(
@@ -121,6 +125,10 @@ class _$TableModelCopyWithImpl<$Res, $Val extends TableModel>
                 ? _value.kotCount
                 : kotCount // ignore: cast_nullable_to_non_nullable
                       as int,
+            unprintedKotCount: null == unprintedKotCount
+                ? _value.unprintedKotCount
+                : unprintedKotCount // ignore: cast_nullable_to_non_nullable
+                      as int,
             updatedAt: freezed == updatedAt
                 ? _value.updatedAt
                 : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -149,7 +157,8 @@ abstract class _$$TableModelImplCopyWith<$Res>
     double totalAmount,
     int itemCount,
     int kotCount,
-    DateTime? updatedAt,
+    int unprintedKotCount,
+    @OptionalTimestampConverter() DateTime? updatedAt,
   });
 }
 
@@ -175,6 +184,7 @@ class __$$TableModelImplCopyWithImpl<$Res>
     Object? totalAmount = null,
     Object? itemCount = null,
     Object? kotCount = null,
+    Object? unprintedKotCount = null,
     Object? updatedAt = freezed,
   }) {
     return _then(
@@ -211,6 +221,10 @@ class __$$TableModelImplCopyWithImpl<$Res>
             ? _value.kotCount
             : kotCount // ignore: cast_nullable_to_non_nullable
                   as int,
+        unprintedKotCount: null == unprintedKotCount
+            ? _value.unprintedKotCount
+            : unprintedKotCount // ignore: cast_nullable_to_non_nullable
+                  as int,
         updatedAt: freezed == updatedAt
             ? _value.updatedAt
             : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -232,7 +246,8 @@ class _$TableModelImpl implements _TableModel {
     this.totalAmount = 0.0,
     this.itemCount = 0,
     this.kotCount = 0,
-    this.updatedAt,
+    this.unprintedKotCount = 0,
+    @OptionalTimestampConverter() this.updatedAt,
   });
 
   factory _$TableModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -260,11 +275,15 @@ class _$TableModelImpl implements _TableModel {
   @JsonKey()
   final int kotCount;
   @override
+  @JsonKey()
+  final int unprintedKotCount;
+  @override
+  @OptionalTimestampConverter()
   final DateTime? updatedAt;
 
   @override
   String toString() {
-    return 'TableModel(tableId: $tableId, name: $name, capacity: $capacity, status: $status, activeOrderId: $activeOrderId, totalAmount: $totalAmount, itemCount: $itemCount, kotCount: $kotCount, updatedAt: $updatedAt)';
+    return 'TableModel(tableId: $tableId, name: $name, capacity: $capacity, status: $status, activeOrderId: $activeOrderId, totalAmount: $totalAmount, itemCount: $itemCount, kotCount: $kotCount, unprintedKotCount: $unprintedKotCount, updatedAt: $updatedAt)';
   }
 
   @override
@@ -285,6 +304,8 @@ class _$TableModelImpl implements _TableModel {
                 other.itemCount == itemCount) &&
             (identical(other.kotCount, kotCount) ||
                 other.kotCount == kotCount) &&
+            (identical(other.unprintedKotCount, unprintedKotCount) ||
+                other.unprintedKotCount == unprintedKotCount) &&
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt));
   }
@@ -301,6 +322,7 @@ class _$TableModelImpl implements _TableModel {
     totalAmount,
     itemCount,
     kotCount,
+    unprintedKotCount,
     updatedAt,
   );
 
@@ -328,7 +350,8 @@ abstract class _TableModel implements TableModel {
     final double totalAmount,
     final int itemCount,
     final int kotCount,
-    final DateTime? updatedAt,
+    final int unprintedKotCount,
+    @OptionalTimestampConverter() final DateTime? updatedAt,
   }) = _$TableModelImpl;
 
   factory _TableModel.fromJson(Map<String, dynamic> json) =
@@ -351,6 +374,9 @@ abstract class _TableModel implements TableModel {
   @override
   int get kotCount;
   @override
+  int get unprintedKotCount;
+  @override
+  @OptionalTimestampConverter()
   DateTime? get updatedAt;
 
   /// Create a copy of TableModel
