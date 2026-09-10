@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/app_theme.dart';
-import '../../../domain/models/table_model.dart';
 import '../../widgets/table_card.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/global/profile_menu.dart';

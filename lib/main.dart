@@ -4,10 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'core/app_theme.dart';
 import 'firebase_options.dart';
-import 'presentation/providers/auth_provider.dart';
-import 'presentation/screens/shared/home_screen.dart';
-import 'presentation/screens/shared/login_screen.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/providers/printer_provider.dart';
 import 'presentation/providers/theme_provider.dart';

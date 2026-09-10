@@ -12,7 +12,6 @@ import '../providers/branch_provider.dart';
 import '../providers/active_branch_provider.dart';
 import '../screens/admin/users/user_management_screen.dart';
 import '../screens/admin/branches/branch_management_screen.dart';
-import '../screens/admin/tables/table_management_screen.dart';
 import '../screens/admin/menu/menu_management_screen.dart';
 
 

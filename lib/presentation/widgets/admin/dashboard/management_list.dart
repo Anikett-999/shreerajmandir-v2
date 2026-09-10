@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/app_theme.dart';
 
 class ManagementList extends StatelessWidget {
   final List<ManagementItem> items;

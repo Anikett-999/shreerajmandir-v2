@@ -1,13 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import '../domain/models/bill_model.dart';
-import '../domain/models/dashboard_stats.dart';
 import '../domain/models/branch_model.dart';
 import '../domain/models/daily_analytics.dart';
 
@@ -359,21 +356,6 @@ class PdfService {
             softWrap: false,
             style: pw.TextStyle(font: font, fontSize: fontSize, fontWeight: bold ? pw.FontWeight.bold : null)),
         ],
-      ),
-    );
-  }
-
-  static pw.Widget _buildTableCell(String text, {bool isHeader = false, bool alignRight = false}) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.all(5),
-      child: pw.Text(
-        text,
-        textAlign: alignRight ? pw.TextAlign.right : pw.TextAlign.left,
-        style: pw.TextStyle(
-          fontSize: 8,
-          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
-          color: PdfColors.black,
-        ),
       ),
     );
   }

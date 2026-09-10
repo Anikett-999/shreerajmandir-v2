@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/app_theme.dart';
 import '../../../../domain/models/dashboard_stats.dart';
 
 class SuspiciousActivityList extends StatelessWidget {

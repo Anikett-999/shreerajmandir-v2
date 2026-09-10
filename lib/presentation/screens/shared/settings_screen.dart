@@ -10,7 +10,6 @@ import '../../../services/branch_service.dart';
 import '../../../domain/models/branch_model.dart';
 import 'printer_settings_screen.dart';
 import '../../widgets/global/editorial_background.dart';
-import '../../widgets/global/base_widgets.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});

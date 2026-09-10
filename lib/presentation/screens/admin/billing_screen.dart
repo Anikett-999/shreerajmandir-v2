@@ -6,9 +6,7 @@ import '../../../core/app_theme.dart';
 import '../../../domain/models/bill_model.dart';
 import '../../../domain/models/kot_model.dart';
 import '../../../domain/models/table_model.dart';
-import '../../../domain/models/branch_model.dart';
 import '../../../services/billing_service.dart';
-import '../../../services/print_service.dart';
 import '../../../services/pdf_service.dart';
 import '../../providers/printer_provider.dart';
 import '../../providers/active_branch_provider.dart';
@@ -115,12 +113,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     if (_discountType == 'percent' && discountValue > 100) return true;
     if (_discountType == 'flat' && discountValue > subtotal) return true;
     return false;
-  }
-
-  /// Soft warning (e.g. 100% discount) — not blocking, just a heads-up.
-  bool get _isWarning {
-    final err = _discountValidationError;
-    return err != null && !_hasBlockingError;
   }
 
   Future<void> _handleShareDigitalBill(BillModel bill) async {

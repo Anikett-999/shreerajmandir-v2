@@ -3,8 +3,6 @@ import '../domain/models/bill_model.dart';
 import '../domain/models/kot_model.dart';
 import '../domain/models/table_model.dart';
 import 'analytics_service.dart';
-import 'package:uuid/uuid.dart';
-
 
 class BillingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

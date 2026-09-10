@@ -12,7 +12,6 @@ import 'package:shreerajmandir_pos/domain/models/table_model.dart';
 import 'package:shreerajmandir_pos/domain/models/kot_model.dart';
 import 'package:shreerajmandir_pos/services/menu_service.dart';
 import 'package:shreerajmandir_pos/services/kot_service.dart';
-import 'package:shreerajmandir_pos/services/print_service.dart';
 import 'package:shreerajmandir_pos/presentation/providers/auth_provider.dart';
 import 'package:shreerajmandir_pos/presentation/providers/printer_provider.dart';
 import 'package:shreerajmandir_pos/presentation/providers/active_branch_provider.dart';
@@ -203,7 +202,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
 
       if (shouldPrint || existingKOT != null) {
         setState(() => _processingStatus = "Sending to printer...");
-        final bytes = await printService.generateKOTBytes(kot!, config.paperSize);
+        final bytes = await printService.generateKOTBytes(kot, config.paperSize);
         printSuccess = await printService.printReceipt(bytes, config);
         
         if (printSuccess) {

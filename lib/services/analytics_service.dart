@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
 
 import '../domain/models/bill_model.dart';
@@ -108,10 +107,6 @@ class AnalyticsService {
           .whereType<BillModel>()
           .where((b) => b.createdAt.isAfter(startOfDay.subtract(const Duration(seconds: 1))))
           .toList();
-
-      final tablesStream = branchRef.collection('tables').get();
-      final kotsStream = branchRef.collection('kots').get();
-
       // For simplicity in this stream-based architecture, we'll keep the combine3 approach 
       // but the key fix is the bill filtering above.
       // Re-implementing correctly with combine for the dashboard

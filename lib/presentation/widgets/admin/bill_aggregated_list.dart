@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../domain/models/bill_model.dart';
-import '../../../core/app_theme.dart';
 
 class BillAggregatedList extends StatelessWidget {
   final List<BillItem> items;

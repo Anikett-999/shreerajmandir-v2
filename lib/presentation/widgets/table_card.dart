@@ -146,7 +146,7 @@ class TableCard extends StatelessWidget {
           ),
           
           // Unprinted KOT Indicator
-          if (table.status != 'available' && (table.unprintedKotCount ?? 0) > 0)
+          if (table.status != 'available' && table.unprintedKotCount > 0)
             Positioned(
               top: 32, // Below status header
               right: 8,

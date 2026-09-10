@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/app_theme.dart';
 
 class LiveOperationsMonitor extends StatelessWidget {
   final int activeTables;

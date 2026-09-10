@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
-import '../../../services/auth_service.dart';
 import '../../providers/auth_provider.dart'; // To access authChangeNotifierProvider
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {

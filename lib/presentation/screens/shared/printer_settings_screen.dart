@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pos_printer_platform_image_3/flutter_pos_printer_platform_image_3.dart';
 import '../../providers/printer_provider.dart';
 import '../../../domain/models/printer_config.dart';
-import '../../../services/print_service.dart';
 import '../../widgets/global/confirmation_dialog.dart';
 import '../../../core/app_theme.dart';
 import '../../widgets/global/editorial_background.dart';
@@ -24,7 +23,6 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
 
   StreamSubscription? _scanSubscription;
   bool _isScanning = false;
-  bool _isConnecting = false; 
   String? _lastTestStatus; // 'success' | 'failed' | null
   String? _lastTestError;
   final TextEditingController _ipController = TextEditingController();
@@ -118,7 +116,6 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
       return;
     }
 
-    setState(() => _isConnecting = true);
     
     // Show immediate feedback
     ScaffoldMessenger.of(context).showSnackBar(
@@ -159,7 +156,6 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
       
       if (mounted) {
         setState(() {
-          _isConnecting = false;
           _lastTestStatus = 'success';
           _lastTestError = null;
         });
@@ -176,7 +172,7 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
                 ),
               ],
             ),
-            content: Text('Succesfully connected to ${config.name ?? config.address}. Test receipt generated.'),
+            content: Text('Succesfully connected to ${config.name}. Test receipt generated.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context), 
@@ -189,7 +185,6 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isConnecting = false;
           _lastTestStatus = 'failed';
           _lastTestError = e.toString();
         });

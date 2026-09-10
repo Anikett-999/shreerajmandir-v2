@@ -162,7 +162,7 @@ class _KOTCardState extends ConsumerState<_KOTCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text((widget.kot.tableName ?? '').toUpperCase(), 
+                      Text(widget.kot.tableName.toUpperCase(), 
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
                       Text('KOT #${widget.kot.kotNumber}', 
                         style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13, letterSpacing: 1.1)),
@@ -290,7 +290,7 @@ class _KOTCardState extends ConsumerState<_KOTCard> {
                   children: [
                     const Icon(Icons.person_outline, size: 14, color: Colors.grey),
                     const SizedBox(width: 4),
-                    Text(widget.kot.userName ?? 'Staff', 
+                    Text(widget.kot.userName, 
                       style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500)),
                   ],
                 ),
